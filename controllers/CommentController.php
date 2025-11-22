@@ -2,8 +2,8 @@
 // controllers/CommentController.php
 // Comment Controller to handle business logic for comments
 
-require_once "../config/config.php";
-require_once "../model/comment.php";
+require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../model/comment.php";
 
 class CommentController
 {

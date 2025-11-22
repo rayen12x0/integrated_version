@@ -1,5 +1,8 @@
 // Dashboard script with fixed functionality for all CRUD operations
 
+console.log('Dashboard script loading...');
+console.log('Leaflet available:', typeof L !== 'undefined');
+
 // DOM Elements for dashboard
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
@@ -26,6 +29,11 @@ let currentUser = null;
 
 // Check authentication status on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Dashboard DOM loaded');
+    console.log('Checking dependencies...');
+    console.log('- Leaflet:', typeof L !== 'undefined' ? 'OK' : 'MISSING');
+    console.log('- SweetAlert2:', typeof Swal !== 'undefined' ? 'OK' : 'MISSING');
+
     await checkAuthStatus();
     initializeApp();
 
@@ -80,8 +88,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Check authentication status
 async function checkAuthStatus() {
+    console.log('Checking authentication status...');
+    console.log('API URL:', '../api/users/check_auth.php');
     try {
-        const response = await fetch('../api/check_auth.php');
+        const response = await fetch('../api/users/check_auth.php');
         const result = await response.json();
 
         if (result.success && result.authenticated) {
@@ -258,6 +268,7 @@ function setupEventListeners() {
 
 // Load user's data (own actions and resources)
 async function loadUserData() {
+    console.log('Loading user data for user ID:', currentUser?.id);
     try {
         if (!currentUser) {
             console.error('User not authenticated, cannot load user data');
@@ -268,12 +279,12 @@ async function loadUserData() {
 
         if (currentUser.role === 'admin') {
             // Admin users see all actions and resources
-            actionsResponse = await fetch('../api/get_all_actions.php');
-            resourcesResponse = await fetch('../api/get_all_resources.php');
+            actionsResponse = await fetch('../api/actions/get_all_actions.php');
+            resourcesResponse = await fetch('../api/resources/get_all_resources.php');
         } else {
             // Regular users see only their own actions and resources
-            actionsResponse = await fetch('../api/get_my_actions.php?user_id=' + currentUser.id);
-            resourcesResponse = await fetch('../api/get_my_resources.php?user_id=' + currentUser.id);
+            actionsResponse = await fetch('../api/actions/get_my_actions.php?user_id=' + currentUser.id);
+            resourcesResponse = await fetch('../api/resources/get_my_resources.php?user_id=' + currentUser.id);
         }
 
         const actionsResult = await actionsResponse.json();
@@ -320,7 +331,7 @@ async function loadParticipatedCount() {
             return;
         }
 
-        const response = await fetch(`../api/get_participated_actions.php?user_id=${currentUser.id}`);
+        const response = await fetch(`../api/actions/get_participated_actions.php?user_id=${currentUser.id}`);
         const result = await response.json();
 
         if (result.success) {
@@ -344,7 +355,7 @@ async function loadCommentsCount() {
             return;
         }
 
-        const response = await fetch(`../api/get_my_comments.php?user_id=${currentUser.id}`);
+        const response = await fetch(`../api/comments/get_my_comments.php?user_id=${currentUser.id}`);
         const result = await response.json();
 
         if (result.success) {
@@ -367,7 +378,7 @@ async function loadNotifications() {
     }
 
     try {
-        const response = await fetch(`../api/get_notifications.php?user_id=${currentUser.id}`);
+        const response = await fetch(`../api/notifications/get_notifications.php?user_id=${currentUser.id}`);
         const result = await response.json();
 
         if (result.success) {
@@ -494,7 +505,7 @@ function renderNotifications(notifications) {
 // Mark a specific notification as read
 async function markNotificationAsRead(notificationId) {
     try {
-        const response = await fetch('../api/mark_notification_read.php', {
+        const response = await fetch('../api/notifications/mark_notification_read.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -519,7 +530,7 @@ async function markAllNotificationsAsRead() {
     }
 
     try {
-        const response = await fetch('../api/mark_all_notifications_read.php', {
+        const response = await fetch('../api/notifications/mark_all_notifications_read.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -542,7 +553,7 @@ async function markAllNotificationsAsRead() {
 // Delete a specific notification
 async function deleteNotification(notificationId) {
     try {
-        const response = await fetch('../api/delete_notification.php', {
+        const response = await fetch('../api/notifications/delete_notification.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -611,7 +622,7 @@ async function fetchRecentActivityFromAPI() {
     }
 
     try {
-        const response = await fetch(`../api/recent_activity.php?user_id=${currentUser.id}&role=${currentUser.role}`);
+        const response = await fetch(`../api/other/recent_activity.php?user_id=${currentUser.id}&role=${currentUser.role}`);
         const result = await response.json();
 
         if (result.success && result.recentItems) {
@@ -975,6 +986,10 @@ async function submitActionForm(e) {
     const lngInput = document.getElementById('actionLongitude');
     const countryInput = document.getElementById('actionCountry');
 
+    console.log('Submitting action form...');
+    console.log('Has file:', fileInput && fileInput.files.length > 0);
+    console.log('Location data:', { lat: latInput.value, lng: lngInput.value, country: countryInput.value });
+
     // Check if location has coordinates, if not, geocode the location
     if (!latInput.value || !lngInput.value) {
         // Try to geocode the location
@@ -1030,7 +1045,7 @@ async function submitActionForm(e) {
         }
 
         try {
-            const response = await fetch(editId ? '../api/update_action.php' : '../api/create_action.php', {
+            const response = await fetch(editId ? '../api/actions/update_action.php' : '../api/actions/create_action.php', {
                 method: 'POST',
                 body: formData // Send as FormData to handle file uploads
             });
@@ -1102,6 +1117,10 @@ async function submitResourceForm(e) {
     const lngInput = document.getElementById('resourceLongitude');
     const countryInput = document.getElementById('resourceCountry');
 
+    console.log('Submitting resource form...');
+    console.log('Has file:', resourceImage && resourceImage.files.length > 0);
+    console.log('Location data:', { lat: latInput.value, lng: lngInput.value, country: countryInput.value });
+
     // Check if location has coordinates, if not, geocode the location
     if (!latInput.value || !lngInput.value) {
         // Try to geocode the location
@@ -1157,7 +1176,7 @@ async function submitResourceForm(e) {
         }
 
         try {
-            const response = await fetch(editId ? '../api/update_resource.php' : '../api/create_resource.php', {
+            const response = await fetch(editId ? '../api/resources/update_resource.php' : '../api/resources/create_resource.php', {
                 method: 'POST',
                 body: formData // Send as FormData to handle file uploads
             });
@@ -1225,7 +1244,7 @@ async function openEditModal(type, id) {
         let result;
 
         if (type === 'action') {
-            response = await fetch(`../api/get_action.php?id=${id}`);
+            response = await fetch(`../api/actions/get_action.php?id=${id}`);
             result = await response.json();
 
             if (result.success) {
@@ -1248,7 +1267,7 @@ async function openEditModal(type, id) {
                 switchTab('action-tab');
             }
         } else if (type === 'resource') {
-            response = await fetch(`../api/get_resource.php?id=${id}`);
+            response = await fetch(`../api/resources/get_resource.php?id=${id}`);
             result = await response.json();
 
             if (result.success) {
@@ -1305,7 +1324,7 @@ function confirmDeleteResource(id) {
 // Delete an action
 async function deleteAction(id) {
     try {
-        const response = await fetch('../api/delete_action.php', {
+        const response = await fetch('../api/actions/delete_action.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1330,7 +1349,7 @@ async function deleteAction(id) {
 // Delete a resource
 async function deleteResource(id) {
     try {
-        const response = await fetch('../api/delete_resource.php', {
+        const response = await fetch('../api/resources/delete_resource.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1376,7 +1395,7 @@ function showPage(pageName) {
 async function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
         try {
-            const response = await fetch("../api/logout.php", {
+            const response = await fetch("../api/users/logout.php", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1435,7 +1454,7 @@ async function approveAction(id) {
             return;
         }
 
-        const response = await fetch('../api/approve_action.php', {
+        const response = await fetch('../api/actions/approve_action.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1465,7 +1484,7 @@ async function rejectAction(id) {
             return;
         }
 
-        const response = await fetch('../api/approve_action.php', {
+        const response = await fetch('../api/actions/approve_action.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1495,7 +1514,7 @@ async function approveResource(id) {
             return;
         }
 
-        const response = await fetch('../api/approve_resource.php', {
+        const response = await fetch('../api/resources/approve_resource.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1525,7 +1544,7 @@ async function rejectResource(id) {
             return;
         }
 
-        const response = await fetch('../api/approve_resource.php', {
+        const response = await fetch('../api/resources/approve_resource.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -113,8 +113,8 @@ async function loadCountryData(country) {
 
         // Fetch data from both APIs
         const [actionsResponse, resourcesResponse] = await Promise.allSettled([
-            fetch(`../../api/get_actions_by_country.php?country=${encodeURIComponent(country)}`),
-            fetch(`../../api/get_resources_by_country.php?country=${encodeURIComponent(country)}`)
+            fetch(`../../api/actions/get_actions_by_country.php?country=${encodeURIComponent(country)}`),
+            fetch(`../../api/resources/get_resources_by_country.php?country=${encodeURIComponent(country)}`)
         ]);
 
         // Check each response for errors
@@ -491,7 +491,7 @@ function renderCountryData(country, actions, resources) {
 // Load and display country statistics
 async function loadCountryStatistics(country) {
     try {
-        const response = await fetch(`../../api/get_country_statistics.php?country=${encodeURIComponent(country)}`);
+        const response = await fetch(`../../api/location/get_country_statistics.php?country=${encodeURIComponent(country)}`);
         const data = await response.json();
 
         if (data.success && data.statistics) {
@@ -561,7 +561,7 @@ window.closeCountryPanel = closeCountryPanel;
 // Function to initialize country highlighting based on activity
 async function initCountryActivityHighlights() {
     try {
-        const response = await fetch('../../api/get_countries_with_data.php');
+        const response = await fetch('../../api/location/get_countries_with_data.php');
         const data = await response.json();
 
         if (data.success && data.countries) {

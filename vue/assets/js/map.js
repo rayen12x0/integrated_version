@@ -1,3 +1,8 @@
+// Check if Leaflet is available
+if (typeof L === 'undefined') {
+    console.error('CRITICAL: Leaflet library is not loaded! Map functionality will not work.');
+}
+
 // Lightweight map functionality for Connect for Peace platform (dashboard version)
 
 // Check if we have location parameters in the URL
@@ -151,32 +156,45 @@ window.updateModalContent = updateModalContent;
 function initMap() {
     if (!window.L) {
         console.error('Leaflet library not loaded');
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Map library failed to load. Please refresh the page.</p>';
+        }
         return;
     }
 
-    // Initialize the map
-    const map = L.map('map').setView([48.8566, 2.3522], 12);
+    try {
+        // Initialize the map
+        const map = L.map('map').setView([48.8566, 2.3522], 12);
 
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-    }).addTo(map);
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
 
-    // Store map instance globally
-    window.map = map;
+        // Store map instance globally
+        window.map = map;
 
-    // Check for URL parameters to show a specific location
-    const params = getURLParameters();
-    if (params) {
-        // Show the specific location marker
-        createCustomMarker(params.lat, params.lng, params.type, params.title, params.id, params.country);
+        // Check for URL parameters to show a specific location
+        const params = getURLParameters();
+        if (params) {
+            // Show the specific location marker
+            createCustomMarker(params.lat, params.lng, params.type, params.title, params.id, params.country);
 
-        // Center the map on the specific location with higher zoom
-        map.setView([params.lat, params.lng], 15);
+            // Center the map on the specific location with higher zoom
+            map.setView([params.lat, params.lng], 15);
+        }
+
+        return map;
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            mapContainer.innerHTML = '<p style="color: red; text-align: center; padding: 20px;">Failed to initialize map: ' + error.message + '</p>';
+        }
+        return null;
     }
-
-    return map;
 }
 
 // Expose functions globally
@@ -185,7 +203,10 @@ window.initMapWithParams = initMap;
 
 // Update map with markers for actions and resources
 function updateMap() {
-    if (!window.map) return;
+    if (!window.map) {
+        console.warn('Map not initialized, skipping update');
+        return;
+    }
 
     // Remove any existing markers
     window.map.eachLayer(layer => {

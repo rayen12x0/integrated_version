@@ -2,7 +2,7 @@
 // controllers/ActionParticipantController.php
 // Action Participant Controller to handle business logic for joining actions
 
-require_once "../config/config.php";
+require_once __DIR__ . "/../config/config.php";
 
 class ActionParticipantController
 {

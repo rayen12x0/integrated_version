@@ -35,6 +35,14 @@
             font-size: 0.9rem !important;
         }
     </style>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery failed to load! Loading fallback...');
+            document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
+        }
+    </script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -399,11 +407,18 @@
         </div>
     </footer>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof jQuery === 'undefined') {
+                alert('Critical Error: jQuery failed to load. Please refresh the page.');
+                return;
+            }
+            console.log('jQuery loaded successfully:', jQuery.fn.jquery);
+        });
+    </script>
     <script src="assets/js/map.js"></script>
     <script src="assets/js/script.js"></script>
     <script src="assets/js/fish.js"></script>

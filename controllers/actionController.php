@@ -2,10 +2,10 @@
 // controllers/ActionController.php
 // Simple Action Controller to handle business logic
 
-require_once "../config/config.php";
-require_once "../model/action.php";
-require_once "../utils/imageUpload.php";
-require_once "../utils/AuthHelper.php";
+require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../model/action.php";
+require_once __DIR__ . "/../utils/imageUpload.php";
+require_once __DIR__ . "/../utils/AuthHelper.php";
 
 class ActionController
 {
@@ -14,6 +14,11 @@ class ActionController
 
     // Constructor initializes database connection and action model
     public function __construct() {
+        // Add CORS headers
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
         $this->pdo = Config::getConnexion();
         $this->action = new Action($this->pdo);
     }

@@ -111,7 +111,7 @@ function createRipple(element, x, y) {
 // Set user session via API
 async function setUserSession(userId) {
     try {
-        const response = await fetch('../api/set_session.php', {
+        const response = await fetch('../api/users/set_session.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

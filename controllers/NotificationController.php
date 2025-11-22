@@ -2,8 +2,8 @@
 // controllers/NotificationController.php
 // Notification Controller to handle business logic for user notifications
 
-require_once "../config/config.php";
-require_once "../model/notification.php";
+require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../model/notification.php";
 
 class NotificationController
 {

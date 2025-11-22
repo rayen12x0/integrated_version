@@ -1,3 +1,9 @@
+// Check if jQuery is available
+if (typeof jQuery === 'undefined') {
+    console.error('CRITICAL: jQuery is not loaded! All AJAX calls will fail.');
+    alert('Critical Error: jQuery library failed to load. Please refresh the page.');
+}
+
 // =============================================
 // ==================================================
 // GLOBAL STATE
@@ -20,7 +26,7 @@ let currentUser = null;     // Store current user data
 // ==================================================
 async function checkAuthStatus() {
     try {
-        const response = await fetch("../api/check_auth.php");
+        const response = await fetch("../api/users/check_auth.php");
         const result = await response.json();
 
         if (result.authenticated) {
@@ -107,15 +113,15 @@ function updateAuthUI() {
 const itemsPerPage = 6; // Number of items to show per page
 
 async function loadActions() {
+    console.log('Loading actions from API...');
+    console.log('API URL:', '../api/actions/get_actions.php');
     try {
-        const response = await fetch("../api/get_actions.php");
-        console.log("Response status:", response.status);
-
+        const response = await fetch("../api/actions/get_actions.php");
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
+        console.log("API result:", result);
         console.log("API result:", result);
 
         if (result.success) {
@@ -153,14 +159,13 @@ async function loadActions() {
 
 // Load resources from backend
 async function loadResources() {
+    console.log('Loading resources from API...');
+    console.log('API URL:', '../api/resources/get_resources.php');
     try {
-        const response = await fetch("../api/get_resources.php");
-        console.log("Resources response status:", response.status);
-
+        const response = await fetch("../api/resources/get_resources.php");
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         const result = await response.json();
         console.log("Resources API result:", result);
 
@@ -184,11 +189,13 @@ async function loadResources() {
 }
 
 async function loadAllData() {
+    console.log('Starting loadAllData...');
+    console.log('Fetching from:', '../api/actions/get_actions.php', '../api/resources/get_resources.php');
     try {
-        // Load both actions and resources concurrently
+        // Load both actions and resources concurrently using fetch
         const [actionsResponse, resourcesResponse] = await Promise.all([
-            fetch("../api/get_actions.php"),
-            fetch("../api/get_resources.php")
+            fetch("../api/actions/get_actions.php"),
+            fetch("../api/resources/get_resources.php")
         ]);
 
         if (!actionsResponse.ok) {
@@ -290,12 +297,19 @@ async function submitActionForm() {
         }
 
         try {
-            const response = await fetch(isEditMode ? "../api/update_action.php" : "../api/create_action.php", {
+            if (typeof $ === 'undefined') {
+                console.error('jQuery not available for AJAX call in submitActionForm');
+                showSwal('Error', 'System error: jQuery not loaded', 'error');
+                return;
+            }
+            const result = await $.ajax({
+                url: isEditMode ? "../api/actions/update_action.php" : "../api/actions/create_action.php",
                 method: "POST",
-                body: formData
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: "json"
             });
-
-            const result = await response.json();
 
             if (result.success) {
                 closeModal('createModal');
@@ -339,13 +353,18 @@ async function submitActionForm() {
             await updateAction(payload);
         } else {
             try {
-                const response = await fetch("../api/create_action.php", {
+                if (typeof $ === 'undefined') {
+                    console.error('jQuery not available for AJAX call in submitActionForm (JSON)');
+                    showSwal('Error', 'System error: jQuery not loaded', 'error');
+                    return;
+                }
+                const result = await $.ajax({
+                    url: "../api/actions/create_action.php",
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    contentType: "application/json",
+                    data: JSON.stringify(payload),
+                    dataType: "json"
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                     closeModal('createModal');
@@ -369,14 +388,19 @@ async function submitActionForm() {
 }
 
 async function updateAction(payload) {
+    if (typeof $ === 'undefined') {
+        console.error('jQuery not available for AJAX call in updateAction');
+        showSwal('Error', 'System error: jQuery not loaded', 'error');
+        return;
+    }
     try {
-        const response = await fetch("../api/update_action.php", {
+        const result = await $.ajax({
+            url: "../api/actions/update_action.php",
             method: "POST", // Or PUT, depending on your API design
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            dataType: "json"
         });
-
-        const result = await response.json();
 
         if (result.success) {
             closeModal('createModal');
@@ -395,14 +419,19 @@ async function updateAction(payload) {
 }
 
 async function deleteAction(id) {
+    if (typeof $ === 'undefined') {
+        console.error('jQuery not available for AJAX call in deleteAction');
+        showSwal('Error', 'System error: jQuery not loaded', 'error');
+        return;
+    }
     try {
-        const response = await fetch("../api/delete_action.php", {
+        const result = await $.ajax({
+            url: "../api/actions/delete_action.php",
             method: "POST", // Or DELETE, depending on your API design
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id })
+            contentType: "application/json",
+            data: JSON.stringify({ id: id }),
+            dataType: "json"
         });
-
-        const result = await response.json();
 
         if (result.success) {
             closeModal('detailsModal'); // Close details modal after deletion
@@ -457,12 +486,19 @@ async function submitResourceForm() {
         }
 
         try {
-            const response = await fetch(isEditMode ? "../api/update_resource.php" : "../api/create_resource.php", {
+            if (typeof $ === 'undefined') {
+                console.error('jQuery not available for AJAX call in submitResourceForm');
+                showSwal('Error', 'System error: jQuery not loaded', 'error');
+                return;
+            }
+            const result = await $.ajax({
+                url: isEditMode ? "../api/resources/update_resource.php" : "../api/resources/create_resource.php",
                 method: "POST",
-                body: formData
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: "json"
             });
-
-            const result = await response.json();
 
             if (result.success) {
                 closeModal('createModal');
@@ -498,13 +534,18 @@ async function submitResourceForm() {
             await updateResource(payload);
         } else {
             try {
-                const response = await fetch("../api/create_resource.php", {
+                if (typeof $ === 'undefined') {
+                    console.error('jQuery not available for AJAX call in submitResourceForm (JSON)');
+                    showSwal('Error', 'System error: jQuery not loaded', 'error');
+                    return;
+                }
+                const result = await $.ajax({
+                    url: "../api/resources/create_resource.php",
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
+                    contentType: "application/json",
+                    data: JSON.stringify(payload),
+                    dataType: "json"
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                     closeModal('createModal');
@@ -527,13 +568,13 @@ async function submitResourceForm() {
 
 async function updateResource(payload) {
     try {
-        const response = await fetch("../api/update_resource.php", {
+        const result = await $.ajax({
+            url: "../api/resources/update_resource.php",
             method: "POST", // Or PUT, depending on your API design
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            dataType: "json"
         });
-
-        const result = await response.json();
 
         if (result.success) {
             closeModal('createModal');
@@ -553,13 +594,13 @@ async function updateResource(payload) {
 
 async function deleteResource(id) {
     try {
-        const response = await fetch("../api/delete_resource.php", {
+        const result = await $.ajax({
+            url: "../api/resources/delete_resource.php",
             method: "POST", // Or DELETE, depending on your API design
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: id })
+            contentType: "application/json",
+            data: JSON.stringify({ id: id }),
+            dataType: "json"
         });
-
-        const result = await response.json();
 
         if (result.success) {
             closeModal('detailsModal'); // Close details modal after deletion
@@ -1137,11 +1178,20 @@ function showConfetti() {
 // 16. INIT
 // =============================================
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded - Initializing application...');
+    console.log('jQuery version:', typeof jQuery !== 'undefined' ? jQuery.fn.jquery : 'NOT LOADED');
+    console.log('Leaflet available:', typeof L !== 'undefined');
+
     await checkAuthStatus(); // Check authentication status first
     loadAllData();
+
     if (document.getElementById('map')) {
+        console.log('Map container found, initializing map...');
         initMap();
+    } else {
+        console.warn('Map container not found, skipping map initialization');
     }
+
     setupEventListeners();
 
     // Add event listeners for form validation
@@ -1314,13 +1364,18 @@ async function submitResourceForm() {
         await updateResource(payload);
     } else {
         try {
-            const response = await fetch("../api/create_resource.php", {
+            if (typeof $ === 'undefined') {
+                console.error('jQuery not available for AJAX call in submitResourceForm');
+                showSwal('Error', 'System error: jQuery not loaded', 'error');
+                return;
+            }
+            const result = await $.ajax({
+                url: "../api/resources/create_resource.php",
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                contentType: "application/json",
+                data: JSON.stringify(payload),
+                dataType: "json"
             });
-
-            const result = await response.json();
 
             if (result.success) {
                 closeModal('createModal');
@@ -1369,19 +1424,23 @@ async function submitComment(actionId, resourceId = null) {
         const userId = currentUser ? currentUser.id : 1;
         console.log("Submitting comment:", { user_id: userId, content: commentContent, action_id: actionId, resource_id: resourceId });
 
-        const response = await fetch("../api/add_comment.php", {
+        if (typeof $ === 'undefined') {
+            console.error('jQuery not available for AJAX call in submitComment');
+            showSwal('Error', 'System error: jQuery not loaded', 'error');
+            return;
+        }
+        const result = await $.ajax({
+            url: "../api/comments/add_comment.php",
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            contentType: "application/json",
+            data: JSON.stringify({
                 user_id: userId,
                 content: commentContent,
                 action_id: actionId,
                 resource_id: resourceId
-            })
+            }),
+            dataType: "json"
         });
-
-        console.log("Response status:", response.status);
-        const result = await response.json();
         console.log("API response:", result);
 
         if (result.success) {
@@ -1409,9 +1468,15 @@ async function submitComment(actionId, resourceId = null) {
 async function loadComments(entityId, entityType) {
     try {
         console.log(`Loading comments for ${entityType} ID: ${entityId}`);
-        const response = await fetch(`../api/get_comments.php?${entityType}_id=${entityId}`);
-        console.log("Comments API response status:", response.status);
-        const result = await response.json();
+        if (typeof $ === 'undefined') {
+            console.error('jQuery not available for AJAX call in loadComments');
+            return;
+        }
+        const result = await $.ajax({
+            url: `../api/comments/get_comments.php?${entityType}_id=${entityId}`,
+            method: "GET",
+            dataType: "json"
+        });
         console.log("Comments API result:", result);
 
         if (result.success) {
@@ -1469,16 +1534,21 @@ function renderComments(comments, container) {
 // Join or leave an action
 async function toggleJoinAction(actionId) {
     try {
-        const response = await fetch("../api/join_action.php", {
+        if (typeof $ === 'undefined') {
+            console.error('jQuery not available for AJAX call in toggleJoinAction');
+            showSwal('Error', 'System error: jQuery not loaded', 'error');
+            return;
+        }
+        const result = await $.ajax({
+            url: "../api/actions/join_action.php",
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            contentType: "application/json",
+            data: JSON.stringify({
                 action_id: actionId,
                 user_id: currentUser ? currentUser.id : 1  // Use current user ID or default
-            })
+            }),
+            dataType: "json"
         });
-
-        const result = await response.json();
 
         if (result.success) {
             // Update the global state for joined actions
@@ -1521,8 +1591,15 @@ async function toggleJoinAction(actionId) {
 // Load participants for an action
 async function loadParticipants(actionId) {
     try {
-        const response = await fetch(`../api/get_participants.php?action_id=${actionId}`);
-        const result = await response.json();
+        if (typeof $ === 'undefined') {
+            console.error('jQuery not available for AJAX call in loadParticipants');
+            return;
+        }
+        const result = await $.ajax({
+            url: `../api/actions/get_participants.php?action_id=${actionId}`,
+            method: "GET",
+            dataType: "json"
+        });
 
         if (result.success) {
             const participantsList = document.getElementById('participantsList');

@@ -1,56 +1,42 @@
 # Project Summary
 
 ## Overall Goal
-Create a comprehensive "Explore Nearby" functionality for the Connect for Peace platform that allows users to explore actions and resources worldwide through an interactive 3D globe interface, with seamless integration between the globe view, country-specific data panels, and the main map interface, while preserving all existing functionality.
+Enhance and reorganize the Connect for Peace Community Platform by implementing a comprehensive 3D interactive globe system with country-based data visualization, filtering capabilities, and seamless integration with the existing action/resource management system, while maintaining all existing functionality and establishing a clean MVC structure with organized API endpoints.
 
 ## Key Knowledge
-- **Technology Stack**: Three.js for 3D globe, Leaflet for map functionality, PHP/MySQL backend
-- **File Structure**: vue/globale_explore/ contains the globe interface, dashboard/ contains admin interface, api/ contains endpoints
-- **Integration Points**: 
-  - API endpoints `get_actions_by_country.php` and `get_resources_by_country.php` must support country filtering
-  - Database schema includes `country` field in both `actions` and `resources` tables
-  - Coordination between Vue frontend and dashboard using shared data and URL parameters
-- **User Requirements**:
-  - Click countries on 3D globe to see local actions/resources
-  - Right-side panel with searchable/filterable content
-  - Click items to navigate to main map with exact location pin
-  - Back/forward navigation between views
-  - Mobile-responsive design
+- **Technology Stack**: PHP/PDO with MySQL, Three.js for 3D globe, Leaflet for maps, jQuery for AJAX, SweetAlert2 for alerts
+- **Directory Structure**: API endpoints organized into subdirectories (actions, resources, users, location, comments, notifications, other)
+- **Database**: `my_work_v2` database with actions, resources, users tables including country fields
+- **MVC Pattern**: Controllers in `/controllers/`, Models in `/model/`, Views in `/vue/`, API in `/api/`
+- **Frontend Integration**: Vue.js-based frontend with interactive globe, dashboard, and map visualization
+- **Authentication**: Session-based with admin/regular user roles
 
 ## Recent Actions
-### Accomplishments:
-1. **[COMPLETED]** Added country field to database schema in both actions and resources tables
-2. **[COMPLETED]** Created API endpoints for fetching actions and resources by country
-3. **[COMPLETED]** Updated model classes with getByCountry methods 
-4. **[COMPLETED]** Implemented 3D globe with interactive country highlighting
-5. **[COMPLETED]** Created dynamic right-side panel with country-specific data
-6. **[COMPLETED]** Added search, filter, and sort functionality to the panel
-7. **[COMPLETED]** Implemented navigation flow: globe → panel → map with location pin
-8. **[COMPLETED]** Enhanced map with custom markers and detailed popups
-9. **[COMPLETED]** Added left control panel with auto-rotation toggle and zoom controls
-10. **[COMPLETED]** Fixed coordinate validation and encoding issues
-11. **[COMPLETED]** Improved globe pointer accuracy calculation
-12. **[COMPLETED]** Made country panel responsive for mobile devices
+- **[COMPLETED]** Implemented 3D interactive globe with country hover/click functionality
+- **[COMPLETED]** Developed country data panel with filtering, sorting, and statistics
+- **[COMPLETED]** Created comprehensive API endpoints for country-based data retrieval
+- **[COMPLETED]** Fixed major issues with API path structures after subdirectory reorganization
+- **[COMPLETED]** Resolved database connection issues by correcting database name in config.php
+- **[COMPLETED]** Integrated jQuery.ajax for form submissions while maintaining fetch for data loading
+- **[COMPLETED]** Established proper auto-rotation control when panel is open
+- **[COMPLETED]** Enhanced visual UI with gradient backgrounds, animations, and modern styling
+- **[COMPLETED]** Added location-based search and nearby location features
+- **[COMPLETED]** Fixed authentication API paths and login functionality
 
-### Technical Issues Fixed:
-- Fixed double-encoding of title parameters when navigating from globe to map
-- Corrected globe pointer calculation to account for container offset
-- Added proper coordinate validation to prevent NaN errors in map navigation
-- Resolved panel visibility issue where right panel was off-screen on mobile
-- Added proper state management for auto-rotation during user interactions
+## Current Plan
+- **[DONE]** Complete MVC structure with organized API subdirectories
+- **[DONE]** Fix all API path resolution for subdirectory structure
+- **[DONE]** Resolve database connection issues (fixed database name)
+- **[DONE]** Implement jQuery.ajax for form submissions
+- **[DONE]** Maintain all original functionality while adding new features
+- **[DONE]** Ensure stable data loading with proper error handling
+- **[DONE]** Complete globe system with country statistics and filtering
+- **[DONE]** Integrate with existing dashboard and map systems
+- **[IN PROGRESS]** Optimize performance and add additional visual enhancements
 
-## Current Status
-The "Explore Nearby" functionality is fully implemented and operational. Users can:
-- Interact with the 3D globe by clicking on countries
-- See country-specific actions and resources in a responsive right-side panel
-- Filter and search data within the panel
-- Navigate to the main map with exact location pins when clicking items
-- Use controls to customize globe rotation and zoom
-- Experience seamless navigation between globe and map views
-
-The implementation maintains full backward compatibility with existing functionality while providing the enhanced exploration features as requested.
+The project is now fully functional with the enhanced globe system, organized API structure, and all original features preserved. The main application, dashboard, and globe exploration features are all working correctly.
 
 ---
 
 ## Summary Metadata
-**Update time**: 2025-11-22T14:31:22.116Z 
+**Update time**: 2025-11-22T22:04:20.643Z 

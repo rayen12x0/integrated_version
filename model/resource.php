@@ -243,7 +243,7 @@ class Resource
 
         // Delete old image if a new one was uploaded and the old one exists
         if ($success && isset($data['image_url']) && !empty($oldImageUrl) && $oldImageUrl !== $data['image_url']) {
-            require_once '../utils/imageUpload.php';
+            require_once __DIR__ . '/../utils/imageUpload.php';
             ImageUpload::deleteImage($oldImageUrl);
         }
 
@@ -267,7 +267,7 @@ class Resource
 
         // Delete the associated image file if it exists
         if ($success && !empty($imageUrl)) {
-            require_once '../utils/imageUpload.php';
+            require_once __DIR__ . '/../utils/imageUpload.php';
             ImageUpload::deleteImage($imageUrl);
         }
 

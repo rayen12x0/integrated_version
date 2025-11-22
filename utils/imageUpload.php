@@ -4,7 +4,7 @@
  */
 class ImageUpload {
     
-    private static $uploadDir = '../uploads/';
+    private static $uploadDir = __DIR__ . '/../uploads/';
     private static $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     private static $maxFileSize = 5 * 1024 * 1024; // 5MB
     
