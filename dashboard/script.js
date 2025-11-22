@@ -1,0 +1,1292 @@
+// Dashboard script with fixed functionality for all CRUD operations
+
+// DOM Elements for dashboard
+const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebarToggle");
+const headerToggle = document.getElementById("headerToggle");
+const navItems = document.querySelectorAll(".nav-item");
+const pages = document.querySelectorAll(".page");
+const notificationBtn = document.getElementById("notificationBtn");
+const notificationDropdown = document.getElementById("notificationDropdown");
+const userMenu = document.getElementById("userMenu");
+const userDropdown = document.getElementById("userDropdown");
+const createActionBtn = document.getElementById("createActionBtn");
+const createModal = document.getElementById("createModal");
+const closeModal = document.getElementById("closeModal");
+const contactForm = document.getElementById("contactForm");
+const faqQuestions = document.querySelectorAll(".faq-question");
+
+// Updated to use the new tab structure
+const tabBtns = document.querySelectorAll(".tab-btn:not(.nav-item)");
+const tabContents = document.querySelectorAll(".tab-content:not(.page)");
+
+// Authentication state
+let isAuthenticated = false;
+let currentUser = null;
+
+// Check authentication status on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    await checkAuthStatus();
+    initializeApp();
+
+    // Set up form submissions
+    document.getElementById('actionForm')?.addEventListener('submit', submitActionForm);
+    document.getElementById('resourceForm')?.addEventListener('submit', submitResourceForm);
+});
+
+// Check authentication status
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('../api/check_auth.php');
+        const result = await response.json();
+
+        if (result.success && result.authenticated) {
+            isAuthenticated = true;
+            currentUser = result.user;
+            window.currentUser = currentUser; // Make global for debugging
+
+            // Store in localStorage for persistence and fallback
+            localStorage.setItem('currentUser', JSON.stringify(result.user));
+            localStorage.setItem('userId', currentUser.id);
+            localStorage.setItem('userRole', currentUser.role);
+        } else {
+            isAuthenticated = false;
+            currentUser = null;
+            window.currentUser = null; // Clear global
+
+            // Redirect unauthenticated users to login
+            window.location.href = '../auth/login.html';
+            return; // Exit early to avoid initializing app
+        }
+    } catch (error) {
+        console.error('Error checking auth status:', error);
+
+        // Fallback: try to load user data from localStorage to hydrate UI
+        try {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                isAuthenticated = currentUser.id !== null;
+                window.currentUser = currentUser;
+
+                // Store in localStorage for persistence (for backward compatibility)
+                localStorage.setItem('userId', currentUser.id);
+                localStorage.setItem('userRole', currentUser.role);
+            } else {
+                isAuthenticated = false;
+                currentUser = null;
+                window.currentUser = null; // Clear global
+            }
+        } catch (localStorageError) {
+            console.error("Error reading from localStorage:", localStorageError);
+            isAuthenticated = false;
+            currentUser = null;
+            window.currentUser = null; // Clear global
+        }
+
+        // If still not authenticated after fallback, redirect
+        if (!isAuthenticated) {
+            window.location.href = '../auth/login.html';
+            return; // Exit early to avoid initializing app
+        }
+    }
+
+    // After all attempts, check authentication status
+    if (!isAuthenticated) {
+        // Redirect unauthenticated users to login
+        window.location.href = '../auth/login.html';
+        return; // Exit early to avoid initializing app
+    }
+}
+
+// Initialize the app after auth check
+function initializeApp() {
+    loadUserData();
+
+    // Setup event listeners after auth check
+    setupEventListeners();
+}
+
+// Set up event listeners
+function setupEventListeners() {
+    // Navigation
+    navItems.forEach((item) => {
+        item.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (item.classList.contains("logout")) {
+                handleLogout();
+                return;
+            }
+
+            const pageName = item.getAttribute("data-page");
+            if (pageName) {
+                showPage(pageName);
+                navItems.forEach((nav) => nav.classList.remove("active"));
+                item.classList.add("active");
+                sidebar.classList.remove("show");
+            }
+        });
+    });
+
+    // Sidebar Toggle
+    sidebarToggle?.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+    });
+
+    headerToggle?.addEventListener("click", () => {
+        sidebar.classList.toggle("show");
+    });
+
+    // Close sidebar on outside click
+    document.addEventListener("click", (e) => {
+        if (!sidebar.contains(e.target) && !headerToggle?.contains(e.target)) {
+            sidebar.classList.remove("show");
+        }
+    });
+
+    // Notifications
+    notificationBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        notificationDropdown.classList.toggle("show");
+        userDropdown.classList.remove("show");
+
+        // Load notifications when dropdown is opened
+        if (notificationDropdown.classList.contains("show")) {
+            loadNotifications();
+        }
+    });
+
+    // User Menu
+    userMenu?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle("show");
+        notificationDropdown.classList.remove("show");
+    });
+
+    document.addEventListener("click", () => {
+        notificationDropdown?.classList.remove("show");
+        userDropdown?.classList.remove("show");
+    });
+
+    // Modal
+    createActionBtn?.addEventListener("click", () => {
+        createModal.classList.add("show");
+    });
+
+    closeModal?.addEventListener("click", () => {
+        createModal.classList.remove("show");
+    });
+
+    createModal?.addEventListener("click", (e) => {
+        if (e.target === createModal) {
+            createModal.classList.remove("show");
+        }
+    });
+
+    // Tab Switching
+    tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const tabName = btn.getAttribute("data-tab");
+
+            tabBtns.forEach((b) => b.classList.remove("active"));
+            tabContents.forEach((c) => c.classList.remove("active"));
+
+            btn.classList.add("active");
+            const tab = document.getElementById(tabName);
+            if (tab) tab.classList.add("active");
+        });
+    });
+
+    // FAQ Accordion
+    faqQuestions.forEach((question) => {
+        question.addEventListener("click", () => {
+            const answer = question.nextElementSibling;
+            const isOpen = answer.style.display === "block";
+
+            document.querySelectorAll(".faq-answer").forEach((a) => (a.style.display = "none"));
+
+            if (!isOpen) {
+                answer.style.display = "block";
+            }
+        });
+    });
+}
+
+// Load user's data (own actions and resources)
+async function loadUserData() {
+    try {
+        if (!currentUser) {
+            console.error('User not authenticated, cannot load user data');
+            return;
+        }
+
+        let actionsResponse, resourcesResponse;
+
+        if (currentUser.role === 'admin') {
+            // Admin users see all actions and resources
+            actionsResponse = await fetch('../api/get_all_actions.php');
+            resourcesResponse = await fetch('../api/get_all_resources.php');
+        } else {
+            // Regular users see only their own actions and resources
+            actionsResponse = await fetch('../api/get_my_actions.php?user_id=' + currentUser.id);
+            resourcesResponse = await fetch('../api/get_my_resources.php?user_id=' + currentUser.id);
+        }
+
+        const actionsResult = await actionsResponse.json();
+        const resourcesResult = await resourcesResponse.json();
+
+        if (actionsResult.success) {
+            renderUserActions(actionsResult.actions);
+        }
+
+        if (resourcesResult.success) {
+            renderUserResources(resourcesResult.resources);
+        }
+
+        // Update dashboard stats
+        updateDashboardStats(
+            actionsResult.actions || [],
+            resourcesResult.resources || []
+        );
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
+
+// Update dashboard statistics
+function updateDashboardStats(actions, resources) {
+    // Update counts in the dashboard
+    document.getElementById('myActionsCount').textContent = actions.length;
+    document.getElementById('myResourcesCount').textContent = resources.length;
+
+    // Load participated and comments counts with additional API calls
+    loadParticipatedCount();
+    loadCommentsCount();
+
+    // Update recent activity list
+    updateRecentActivity(actions, resources);
+}
+
+// Load participated actions count
+async function loadParticipatedCount() {
+    try {
+        if (!currentUser) {
+            console.error('User not authenticated, cannot load participated count');
+            document.getElementById('participatedCount').textContent = '0';
+            return;
+        }
+
+        const response = await fetch(`../api/get_participated_actions.php?user_id=${currentUser.id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const count = result.count || result.actions?.length || 0;
+            document.getElementById('participatedCount').textContent = count;
+        } else {
+            document.getElementById('participatedCount').textContent = '0';
+        }
+    } catch (error) {
+        console.error('Error loading participated count:', error);
+        document.getElementById('participatedCount').textContent = '0';
+    }
+}
+
+// Load comments count
+async function loadCommentsCount() {
+    try {
+        if (!currentUser) {
+            console.error('User not authenticated, cannot load comments count');
+            document.getElementById('commentsCount').textContent = '0';
+            return;
+        }
+
+        const response = await fetch(`../api/get_my_comments.php?user_id=${currentUser.id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const count = result.comments?.length || 0;
+            document.getElementById('commentsCount').textContent = count;
+        } else {
+            document.getElementById('commentsCount').textContent = '0';
+        }
+    } catch (error) {
+        console.error('Error loading comments count:', error);
+        document.getElementById('commentsCount').textContent = '0';
+    }
+}
+
+// Load notifications for the user
+async function loadNotifications() {
+    // Guard: return if not authenticated
+    if (!currentUser || !isAuthenticated) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`../api/get_notifications.php?user_id=${currentUser.id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            renderNotifications(result.notifications);
+
+            // Update notification count
+            const unreadCount = result.notifications.filter(n => !n.is_read).length;
+            const countElement = document.querySelector('.badge');  // The HTML uses 'badge' class
+            if (countElement) {
+                if (unreadCount > 0) {
+                    countElement.textContent = unreadCount;
+                    countElement.style.display = 'inline-block';
+                } else {
+                    countElement.style.display = 'none';
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+    }
+}
+
+// Render notifications in the UI
+function renderNotifications(notifications) {
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    if (!notificationDropdown) return;
+
+    if (!notifications || notifications.length === 0) {
+        notificationDropdown.innerHTML = '<div class="notification-item">No notifications yet</div>';
+
+        // Update badge count to show 0 and hide it
+        const badgeElement = document.querySelector('.badge');
+        if (badgeElement) {
+            badgeElement.textContent = '0';
+            badgeElement.style.display = 'none';
+        }
+        return;
+    }
+
+    // Show all notifications (not just the latest 5)
+    const allNotifications = notifications;
+
+    // Create the "Mark all as read" button if there are unread notifications
+    let markAllButton = '';
+    const hasUnread = notifications.some(n => !n.is_read);
+    if (hasUnread) {
+        markAllButton = '<div class="notification-item" id="markAllAsRead" style="text-align: center; cursor: pointer; background-color: #f8f9fa; font-weight: bold;">Mark all as read</div>';
+    }
+
+    notificationDropdown.innerHTML = markAllButton + allNotifications.map(notification => `
+        <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.id}">
+            <div class="notification-content">
+                <div class="notification-message">${notification.message}</div>
+                <div class="notification-date">${notification.created_at ? new Date(notification.created_at).toLocaleString() : 'Just now'}</div>
+            </div>
+            <button class="delete-notification-btn" data-id="${notification.id}" title="Delete notification">✕</button>
+        </div>
+    `).join('');
+
+    // Add click event listeners to mark notifications as read
+    document.querySelectorAll('.notification-item:not(#markAllAsRead)').forEach(item => {
+        // Click on notification body (not delete button) to mark as read
+        const notificationContent = item.querySelector('.notification-content');
+        if (notificationContent) {
+            notificationContent.addEventListener('click', async function(event) {
+                event.stopPropagation(); // Prevent triggering parent click
+                const notificationId = item.getAttribute('data-id');
+                if (notificationId) {
+                    await markNotificationAsRead(notificationId);
+                    item.classList.remove('unread');
+
+                    // Update the badge count
+                    const badgeElement = document.querySelector('.badge');
+                    if (badgeElement && !isNaN(badgeElement.textContent) && badgeElement.textContent > 0) {
+                        const currentCount = parseInt(badgeElement.textContent);
+                        const newCount = Math.max(0, currentCount - 1);
+                        badgeElement.textContent = newCount;
+                        if (newCount === 0) {
+                            badgeElement.style.display = 'none';
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // Add click event listeners to delete notification buttons
+    document.querySelectorAll('.delete-notification-btn').forEach(button => {
+        button.addEventListener('click', async function(event) {
+            event.stopPropagation(); // Prevent triggering notification click
+            const notificationId = this.getAttribute('data-id');
+            if (notificationId) {
+                if (confirm('Are you sure you want to delete this notification?')) {
+                    await deleteNotification(notificationId);
+                    // Reload notifications to update the UI
+                    loadNotifications();
+                }
+            }
+        });
+    });
+
+    // Add click event for "Mark all as read" button
+    const markAllButtonElement = document.getElementById('markAllAsRead');
+    if (markAllButtonElement) {
+        markAllButtonElement.addEventListener('click', async function() {
+            await markAllNotificationsAsRead();
+        });
+    }
+
+    // Update badge count after rendering
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const badgeElement = document.querySelector('.badge');
+    if (badgeElement) {
+        if (unreadCount > 0) {
+            badgeElement.textContent = unreadCount;
+            badgeElement.style.display = 'inline-block';
+        } else {
+            badgeElement.textContent = '0';
+            badgeElement.style.display = 'none';
+        }
+    }
+}
+
+// Mark a specific notification as read
+async function markNotificationAsRead(notificationId) {
+    try {
+        const response = await fetch('../api/mark_notification_read.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: notificationId })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            console.error('Failed to mark notification as read:', result.message);
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+// Mark all notifications as read
+async function markAllNotificationsAsRead() {
+    // Guard: return if not authenticated
+    if (!currentUser || !isAuthenticated) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/mark_all_notifications_read.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ user_id: currentUser.id })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            // Reload notifications to update the UI with all read
+            loadNotifications();
+        } else {
+            console.error('Failed to mark all notifications as read:', result.message);
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+    }
+}
+
+// Delete a specific notification
+async function deleteNotification(notificationId) {
+    try {
+        const response = await fetch('../api/delete_notification.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: notificationId })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            console.error('Failed to delete notification:', result.message);
+        }
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+    }
+}
+
+// Update recent activity list
+function updateRecentActivity(actions, resources) {
+    const activityList = document.getElementById('recentActivityList');
+    if (!activityList) return;
+
+    // Try to fetch recent activity from the dedicated API
+    fetchRecentActivityFromAPI()
+        .then(apiActivities => {
+            if (apiActivities && apiActivities.length > 0) {
+                // Use API activities if available
+                renderRecentActivity(activityList, apiActivities);
+            } else {
+                // Fallback to synthesizing from actions/resources if API fails
+                const allItems = [
+                    ...actions.map(item => ({...item, type: 'action', timestamp: item.updated_at || item.created_at})),
+                    ...resources.map(item => ({...item, type: 'resource', timestamp: item.updated_at || item.created_at}))
+                ];
+
+                // Sort by most recent
+                allItems.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                // Take the 5 most recent items
+                const recentItems = allItems.slice(0, 5);
+                renderRecentActivity(activityList, recentItems);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching API recent activity:', error);
+
+            // Fallback to synthesizing from actions/resources
+            const allItems = [
+                ...actions.map(item => ({...item, type: 'action', timestamp: item.updated_at || item.created_at})),
+                ...resources.map(item => ({...item, type: 'resource', timestamp: item.updated_at || item.created_at}))
+            ];
+
+            // Sort by most recent
+            allItems.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            // Take the 5 most recent items
+            const recentItems = allItems.slice(0, 5);
+            renderRecentActivity(activityList, recentItems);
+        });
+}
+
+// Fetch recent activity from the dedicated API
+async function fetchRecentActivityFromAPI() {
+    // Guard: return if not authenticated
+    if (!currentUser || !isAuthenticated) {
+        return [];
+    }
+
+    try {
+        const response = await fetch(`../api/recent_activity.php?user_id=${currentUser.id}&role=${currentUser.role}`);
+        const result = await response.json();
+
+        if (result.success && result.recentItems) {
+            // Format API activities to match expected structure
+            return result.recentItems.map(item => {
+                return {
+                    type: item.type,
+                    title: item.title,
+                    description: item.description || item.title,
+                    timestamp: item.date,
+                    status: item.status
+                };
+            });
+        } else {
+            return [];
+        }
+    } catch (error) {
+        console.error('Error fetching recent activity API:', error);
+        return [];
+    }
+}
+
+// Render recent activity in the UI
+function renderRecentActivity(activityList, items) {
+    activityList.innerHTML = ''; // Clear existing activities
+
+    if (items.length === 0) {
+        activityList.innerHTML = '<p class="no-activity">No recent activity yet</p>';
+        return;
+    }
+
+    items.forEach(item => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+
+        // Determine icon based on type
+        const icon = item.type === 'action' ? '🤝' : '📦';
+
+        activityItem.innerHTML = `
+            <div class="activity-avatar">${icon}</div>
+            <div class="activity-content">
+                <strong>${item.title}</strong>
+                <p>${item.description?.substring(0, 50)}${item.description?.length > 50 ? '...' : ''}</p>
+                <time>${formatDateForActivity(item.timestamp)}</time>
+            </div>
+        `;
+
+        activityList.appendChild(activityItem);
+    });
+}
+
+// Format date for activity display
+function formatDateForActivity(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+        return 'Today';
+    } else if (diffDays === 1) {
+        return 'Yesterday';
+    } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+// Render user's actions in the dashboard
+function renderUserActions(actions) {
+    const tableBody = document.getElementById('my-actions-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    if (actions.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 20px;">No actions found</td>
+            </tr>
+        `;
+        return;
+    }
+
+    actions.forEach(action => {
+        const row = document.createElement('tr');
+
+        let actionsHtml = '';
+        if (currentUser && currentUser.role === 'admin') {
+            // Admin view: show approve/reject buttons and owner column
+            actionsHtml = `
+                <span class="owner">Owner: ${action.creator?.name || action.creator_id || 'N/A'}</span><br>
+                <button class="action-btn approve-btn" onclick="approveAction(${action.id})">Approve</button>
+                <button class="action-btn reject-btn" onclick="rejectAction(${action.id})">Reject</button><br>
+                <button class="action-btn edit-btn" onclick="openEditModal('action', ${action.id})">Edit</button>
+                <button class="action-btn delete-btn" onclick="confirmDeleteAction(${action.id})">Delete</button>
+            `;
+        } else {
+            // Regular user view: only show edit/delete for their own items
+            actionsHtml = `
+                <button class="action-btn edit-btn" onclick="openEditModal('action', ${action.id})">Edit</button>
+                <button class="action-btn delete-btn" onclick="confirmDeleteAction(${action.id})">Delete</button>
+            `;
+        }
+
+        row.innerHTML = `
+            <td>${action.id}</td>
+            <td>${action.title || 'N/A'}</td>
+            <td>${action.category || 'N/A'}</td>
+            <td><span class="status-badge status-${action.status || 'pending'}">${action.status || 'Pending'}</span></td>
+            <td>${action.participants || 0}</td>
+            <td>${formatDate(action.created_at)}</td>
+            <td>${actionsHtml}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Render user's resources in the dashboard
+function renderUserResources(resources) {
+    const tableBody = document.getElementById('my-resources-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    if (resources.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 20px;">No resources found</td>
+            </tr>
+        `;
+        return;
+    }
+
+    resources.forEach(resource => {
+        const row = document.createElement('tr');
+
+        let actionsHtml = '';
+        if (currentUser && currentUser.role === 'admin') {
+            // Admin view: show approve/reject buttons and owner column
+            actionsHtml = `
+                <span class="owner">Owner: ${resource.publisher?.name || resource.publisher_id || 'N/A'}</span><br>
+                <button class="action-btn approve-btn" onclick="approveResource(${resource.id})">Approve</button>
+                <button class="action-btn reject-btn" onclick="rejectResource(${resource.id})">Reject</button><br>
+                <button class="action-btn edit-btn" onclick="openEditModal('resource', ${resource.id})">Edit</button>
+                <button class="action-btn delete-btn" onclick="confirmDeleteResource(${resource.id})">Delete</button>
+            `;
+        } else {
+            // Regular user view: only show edit/delete for their own items
+            actionsHtml = `
+                <button class="action-btn edit-btn" onclick="openEditModal('resource', ${resource.id})">Edit</button>
+                <button class="action-btn delete-btn" onclick="confirmDeleteResource(${resource.id})">Delete</button>
+            `;
+        }
+
+        row.innerHTML = `
+            <td>${resource.id}</td>
+            <td>${resource.resource_name || 'N/A'}</td>
+            <td>${resource.category || 'N/A'}</td>
+            <td>${resource.type || 'N/A'}</td>
+            <td><span class="status-badge status-${resource.status || 'pending'}">${resource.status || 'Pending'}</span></td>
+            <td>${resource.location || 'N/A'}</td>
+            <td>${actionsHtml}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Format date for display
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+// Submit action form
+async function submitActionForm(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const fileInput = document.getElementById('actionImage');
+
+    // Check if there's a file to upload
+    const hasFile = fileInput && fileInput.files.length > 0 && fileInput.files[0].size > 0;
+
+    if (hasFile) {
+        // Add creator_id to formData if not already present
+        if (!formData.get('creator_id')) {
+            formData.append('creator_id', currentUser?.id || 1);
+        }
+
+        // Check if we're in edit mode
+        const editId = document.getElementById('editActionId')?.value;
+        if (editId) {
+            formData.append('id', editId); // Add ID for update
+        }
+
+        try {
+            const response = await fetch(editId ? '../api/update_action.php' : '../api/create_action.php', {
+                method: 'POST',
+                body: formData // Send as FormData to handle file uploads
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                e.target.reset(); // Reset form
+                document.getElementById('editActionId').value = ''; // Clear edit ID
+                createModal.classList.remove('show'); // Close modal
+                loadUserData(); // Reload user's data
+                showSuccessMessage(`${editId ? 'Updated' : 'Created'} action successfully!`);
+            } else {
+                showErrorMessage(result.message || `Failed to ${editId ? 'update' : 'create'} action`);
+            }
+        } catch (error) {
+            console.error('Error submitting action:', error);
+            showErrorMessage('Network error. Please try again.');
+        }
+    } else {
+        // No file to upload, convert to JSON
+        const data = Object.fromEntries(formData.entries());
+        data.creator_id = currentUser?.id || 1; // Add creator ID
+
+        // Check if we're in edit mode
+        const editId = document.getElementById('editActionId')?.value;
+        const endpoint = editId ? '../api/update_action.php' : '../api/create_action.php';
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                e.target.reset(); // Reset form
+                document.getElementById('editActionId').value = ''; // Clear edit ID
+                createModal.classList.remove('show'); // Close modal
+                loadUserData(); // Reload user's data
+                showSuccessMessage(`${editId ? 'Updated' : 'Created'} action successfully!`);
+            } else {
+                showErrorMessage(result.message || `Failed to ${editId ? 'update' : 'create'} action`);
+            }
+        } catch (error) {
+            console.error('Error submitting action:', error);
+            showErrorMessage('Network error. Please try again.');
+        }
+    }
+}
+
+// Submit resource form
+async function submitResourceForm(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const resourceImage = document.getElementById('resourceImage');
+
+    // Check if there's a file to upload
+    const hasFile = resourceImage && resourceImage.files.length > 0 && resourceImage.files[0].size > 0;
+
+    if (hasFile) {
+        // Add publisher_id to formData if not already present
+        if (!formData.get('publisher_id')) {
+            formData.append('publisher_id', currentUser?.id || 1);
+        }
+
+        // Check if we're in edit mode
+        const editId = document.getElementById('editResourceId')?.value;
+        if (editId) {
+            formData.append('id', editId); // Add ID for update
+        }
+
+        try {
+            const response = await fetch(editId ? '../api/update_resource.php' : '../api/create_resource.php', {
+                method: 'POST',
+                body: formData // Send as FormData to handle file uploads
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                e.target.reset(); // Reset form
+                document.getElementById('editResourceId').value = ''; // Clear edit ID
+                createModal.classList.remove('show'); // Close modal
+                loadUserData(); // Reload user's data
+                showSuccessMessage(`${editId ? 'Updated' : 'Created'} resource successfully!`);
+            } else {
+                showErrorMessage(result.message || `Failed to ${editId ? 'update' : 'create'} resource`);
+            }
+        } catch (error) {
+            console.error('Error submitting resource:', error);
+            showErrorMessage('Network error. Please try again.');
+        }
+    } else {
+        // No file to upload, convert to JSON
+        const data = Object.fromEntries(formData.entries());
+        data.publisher_id = currentUser?.id || 1; // Add publisher ID
+
+        // Check if we're in edit mode
+        const editId = document.getElementById('editResourceId')?.value;
+        const endpoint = editId ? '../api/update_resource.php' : '../api/create_resource.php';
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                e.target.reset(); // Reset form
+                document.getElementById('editResourceId').value = ''; // Clear edit ID
+                createModal.classList.remove('show'); // Close modal
+                loadUserData(); // Reload user's data
+                showSuccessMessage(`${editId ? 'Updated' : 'Created'} resource successfully!`);
+            } else {
+                showErrorMessage(result.message || `Failed to ${editId ? 'update' : 'create'} resource`);
+            }
+        } catch (error) {
+            console.error('Error submitting resource:', error);
+            showErrorMessage('Network error. Please try again.');
+        }
+    }
+}
+
+// Open edit modal for an action
+async function openEditModal(type, id) {
+    try {
+        let response;
+        let result;
+
+        if (type === 'action') {
+            response = await fetch(`../api/get_action.php?id=${id}`);
+            result = await response.json();
+
+            if (result.success) {
+                document.getElementById('editActionId').value = id;
+                document.getElementById('actionTitle').value = result.action.title || '';
+                document.getElementById('actionCategory').value = result.action.category || '';
+                document.getElementById('actionTheme').value = result.action.theme || '';
+                document.getElementById('actionDescription').value = result.action.description || '';
+
+                if (result.action.start_time) {
+                    // Format datetime for input field
+                    const formattedDateTime = new Date(result.action.start_time).toISOString().slice(0, 16);
+                    document.getElementById('actionDateTime').value = formattedDateTime;
+                }
+
+                document.getElementById('actionLocation').value = result.action.location || '';
+                document.getElementById('actionDuration').value = result.action.duration || '';
+
+                // Switch to action tab
+                switchTab('action-tab');
+            }
+        } else if (type === 'resource') {
+            response = await fetch(`../api/get_resource.php?id=${id}`);
+            result = await response.json();
+
+            if (result.success) {
+                document.getElementById('editResourceId').value = id;
+                document.getElementById('resourceName').value = result.resource.resource_name || '';
+
+                // Select the correct type radio button
+                const typeRadio = document.querySelector(`input[name="resourceType"][value="${result.resource.type}"]`);
+                if (typeRadio) {
+                    typeRadio.checked = true;
+                }
+
+                document.getElementById('resourceCategory').value = result.resource.category || '';
+                document.getElementById('resourceDescription').value = result.resource.description || '';
+                document.getElementById('resourceLocation').value = result.resource.location || '';
+
+                // Switch to resource tab
+                switchTab('resource-tab');
+            }
+        }
+
+        // Update modal title and button text
+        document.getElementById('modalTitle').textContent = `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        const submitBtn = type === 'action' ?
+            document.querySelector('#action-tab .btn-large') :
+            document.querySelector('#resource-tab .btn-large');
+
+        if (submitBtn) {
+            submitBtn.textContent = `Update ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        }
+
+        // Show the modal
+        createModal.classList.add('show');
+    } catch (error) {
+        console.error(`Error loading ${type} for edit:`, error);
+        showErrorMessage(`Error loading ${type}: ${error.message}`);
+    }
+}
+
+// Confirm delete for actions
+function confirmDeleteAction(id) {
+    if (confirm('Are you sure you want to delete this action?')) {
+        deleteAction(id);
+    }
+}
+
+// Confirm delete for resources
+function confirmDeleteResource(id) {
+    if (confirm('Are you sure you want to delete this resource?')) {
+        deleteResource(id);
+    }
+}
+
+// Delete an action
+async function deleteAction(id) {
+    try {
+        const response = await fetch('../api/delete_action.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            loadUserData(); // Reload user's data
+            showSuccessMessage('Action deleted successfully!');
+        } else {
+            showErrorMessage(result.message || 'Failed to delete action');
+        }
+    } catch (error) {
+        console.error('Error deleting action:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Delete a resource
+async function deleteResource(id) {
+    try {
+        const response = await fetch('../api/delete_resource.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            loadUserData(); // Reload user's data
+            showSuccessMessage('Resource deleted successfully!');
+        } else {
+            showErrorMessage(result.message || 'Failed to delete resource');
+        }
+    } catch (error) {
+        console.error('Error deleting resource:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Switch between action and resource tabs
+function switchTab(tabId) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+    });
+
+    // Update tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === tabId);
+    });
+}
+
+// Navigation
+function showPage(pageName) {
+    pages.forEach((page) => page.classList.remove("active"));
+    const page = document.getElementById(pageName);
+    if (page) page.classList.add("active");
+}
+
+// Handle logout
+async function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        try {
+            const response = await fetch("../api/logout.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Clear localStorage
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userRole');
+
+                // Update UI
+                isAuthenticated = false;
+                currentUser = null;
+                window.currentUser = null;
+
+                // Show success message
+                showSuccessMessage('You have been logged out successfully!');
+
+                // Redirect to login page
+                setTimeout(() => {
+                    window.location.href = '../auth/login.html';
+                }, 1000);
+            } else {
+                showErrorMessage('Failed to logout: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            showErrorMessage('An error occurred during logout.');
+        }
+    }
+}
+
+// Show success message with SweetAlert
+function showSuccessMessage(message) {
+    Swal.fire({
+        title: 'Success!',
+        text: message,
+        icon: 'success',
+        position: 'top-end',
+        toast: true,
+        showConfirmButton: false,
+        timer: 3000,
+        customClass: {
+            popup: 'swal2-popup-custom'
+        }
+    });
+}
+
+// Approve an action
+async function approveAction(id) {
+    try {
+        if (!confirm('Are you sure you want to approve this action?')) {
+            return;
+        }
+
+        const response = await fetch('../api/approve_action.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'approve' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccessMessage('Action approved successfully!');
+            // Reload data to reflect changes
+            loadUserData();
+        } else {
+            showErrorMessage(result.message || 'Failed to approve action');
+        }
+    } catch (error) {
+        console.error('Error approving action:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Reject an action
+async function rejectAction(id) {
+    try {
+        if (!confirm('Are you sure you want to reject this action?')) {
+            return;
+        }
+
+        const response = await fetch('../api/approve_action.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'reject' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccessMessage('Action rejected successfully!');
+            // Reload data to reflect changes
+            loadUserData();
+        } else {
+            showErrorMessage(result.message || 'Failed to reject action');
+        }
+    } catch (error) {
+        console.error('Error rejecting action:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Approve a resource
+async function approveResource(id) {
+    try {
+        if (!confirm('Are you sure you want to approve this resource?')) {
+            return;
+        }
+
+        const response = await fetch('../api/approve_resource.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'approve' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccessMessage('Resource approved successfully!');
+            // Reload data to reflect changes
+            loadUserData();
+        } else {
+            showErrorMessage(result.message || 'Failed to approve resource');
+        }
+    } catch (error) {
+        console.error('Error approving resource:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Reject a resource
+async function rejectResource(id) {
+    try {
+        if (!confirm('Are you sure you want to reject this resource?')) {
+            return;
+        }
+
+        const response = await fetch('../api/approve_resource.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'reject' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccessMessage('Resource rejected successfully!');
+            // Reload data to reflect changes
+            loadUserData();
+        } else {
+            showErrorMessage(result.message || 'Failed to reject resource');
+        }
+    } catch (error) {
+        console.error('Error rejecting resource:', error);
+        showErrorMessage('Network error. Please try again.');
+    }
+}
+
+// Show error message with SweetAlert
+function showErrorMessage(message) {
+    Swal.fire({
+        title: 'Error!',
+        text: message,
+        icon: 'error',
+        position: 'top-end',
+        toast: true,
+        showConfirmButton: false,
+        timer: 3000,
+        customClass: {
+            popup: 'swal2-popup-custom'
+        }
+    });
+}
+
+// Open create modal for action or resource
+function openCreateModal(type) {
+    // Clear any form errors
+    document.querySelectorAll('.error-message').forEach(el => el.remove());
+
+    // Reset form to create mode
+    const createModalElement = document.getElementById('createModal');
+    createModalElement.dataset.editMode = 'false'; // Reset to create mode
+    document.getElementById('editActionId').value = ''; // Clear action ID
+    document.getElementById('editResourceId').value = ''; // Clear resource ID
+
+    // Reset forms
+    document.getElementById('actionForm')?.reset();
+    document.getElementById('resourceForm')?.reset();
+
+    // Update modal title
+    document.getElementById('modalTitle').textContent = 'Create New';
+    const submitBtnAction = document.querySelector('#action-tab .btn-large');
+    const submitBtnResource = document.querySelector('#resource-tab .btn-large');
+
+    if (submitBtnAction) {
+        submitBtnAction.textContent = 'Create Action';
+    }
+    if (submitBtnResource) {
+        submitBtnResource.textContent = 'Create Resource';
+    }
+
+    // Switch to appropriate tab
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (type === 'action') {
+        document.querySelector('.tab-btn[data-tab="action-tab"]').classList.add('active');
+        document.getElementById('action-tab').classList.add('active');
+    } else {
+        document.querySelector('.tab-btn[data-tab="resource-tab"]').classList.add('active');
+        document.getElementById('resource-tab').classList.add('active');
+    }
+
+    // Show the modal
+    createModal.classList.add('show');
+}

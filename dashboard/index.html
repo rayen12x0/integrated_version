@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect for Peace - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="brand">Connect for Peace</h1>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="overview">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="actions">
+                    <span class="nav-icon">🤝</span>
+                    <span class="nav-label">Actions & Resources</span>
+                </a>
+                <a href="#" class="nav-item" data-page="stories">
+                    <span class="nav-icon">📖</span>
+                    <span class="nav-label">Stories</span>
+                </a>
+                <a href="#" class="nav-item" data-page="challenges">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Challenges</span>
+                </a>
+                <a href="#" class="nav-item" data-page="contact">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-label">Contact & Help</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </a>
+                <a href="#" class="nav-item logout">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-label">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="header-toggle" id="headerToggle">☰</button>
+                    <div class="search-bar">
+                        <input type="text" placeholder="Search actions, stories...">
+                        <span>🔍</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="notification-bell">
+                        <button id="notificationBtn">🔔</button>
+                        <span class="badge" style="display: none;">0</span>
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <!-- Notifications will be populated dynamically by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="user-avatar" id="userMenu">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=felix" alt="User">
+                        <div class="user-dropdown" id="userDropdown">
+                            <div class="user-info">
+                                <strong>Alex Johnson</strong>
+                                <small>alex@example.com</small>
+                            </div>
+                            <button>Profile Settings</button>
+                            <button>Preferences</button>
+                            <button>Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Overview Page -->
+                <section id="overview" class="page active">
+                    <h2 class="page-title">Dashboard Overview</h2>
+                    <p class="page-subtitle">Manage your contributions and community engagement</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">🤝</div>
+                            <div class="stat-content">
+                                <span class="stat-label">My Actions</span>
+                                <span class="stat-number" id="myActionsCount">0</span>
+                                <span class="stat-change">Manage your initiatives</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-content">
+                                <span class="stat-label">My Resources</span>
+                                <span class="stat-number" id="myResourcesCount">0</span>
+                                <span class="stat-change">Track your offerings</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-content">
+                                <span class="stat-label">Participated</span>
+                                <span class="stat-number" id="participatedCount">0</span>
+                                <span class="stat-change">Actions joined</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💬</div>
+                            <div class="stat-content">
+                                <span class="stat-label">Comments</span>
+                                <span class="stat-number" id="commentsCount">0</span>
+                                <span class="stat-change">Engagements today</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-container">
+                            <h3>Activity Overview</h3>
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="activity-section">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-list" id="recentActivityList">
+                            <!-- Recent activity will be populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Actions & Resources Page -->
+                <section id="actions" class="page">
+                    <h2 class="page-title">My Actions & Resources</h2>
+                    <p class="page-subtitle">Manage your contributed actions and offered/requested resources</p>
+
+                    <div class="section-header">
+                        <div class="section-controls">
+                            <h3>My Actions</h3>
+                            <button class="btn btn-primary" onclick="openCreateModal('action')">+ Create Action</button>
+                        </div>
+                        <div class="filter-group">
+                            <input type="text" id="my-actions-search" placeholder="Search my actions...">
+                            <select id="my-actions-status-filter">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Participants</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-actions-table-body">
+                                <!-- User's actions will be loaded here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section-header" style="margin-top: 30px;">
+                        <div class="section-controls">
+                            <h3>My Resources</h3>
+                            <button class="btn btn-primary" onclick="openCreateModal('resource')">+ Create Resource</button>
+                        </div>
+                        <div class="filter-group">
+                            <input type="text" id="my-resources-search" placeholder="Search my resources...">
+                            <select id="my-resources-status-filter">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="open">Open</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-resources-table-body">
+                                <!-- User's resources will be loaded here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Stories Page -->
+                <section id="stories" class="page">
+                    <h2 class="page-title">Community Stories</h2>
+                    <p class="page-subtitle">Read inspiring stories from our community</p>
+
+                    <div class="stories-grid">
+                        <div class="story-card">
+                            <img src="/placeholder.svg?height=250&width=400" alt="Story 1">
+                            <div class="story-content">
+                                <h3>How Volunteering Changed My Life</h3>
+                                <p class="story-excerpt">After joining, I discovered a passion for helping others...</p>
+                                <div class="story-meta">
+                                    <span>By Sarah Johnson</span>
+                                    <span>❤️ 45 likes</span>
+                                </div>
+                                <button class="btn btn-outline">Read More</button>
+                            </div>
+                        </div>
+
+                        <div class="story-card">
+                            <img src="/placeholder.svg?height=250&width=400" alt="Story 2">
+                            <div class="story-content">
+                                <h3>From Stranger to Friend</h3>
+                                <p class="story-excerpt">A community action led to lifelong friendships...</p>
+                                <div class="story-meta">
+                                    <span>By Michael Chen</span>
+                                    <span>❤️ 32 likes</span>
+                                </div>
+                                <button class="btn btn-outline">Read More</button>
+                            </div>
+                        </div>
+
+                        <div class="story-card">
+                            <img src="/placeholder.svg?height=250&width=400" alt="Story 3">
+                            <div class="story-content">
+                                <h3>Making a Real Difference</h3>
+                                <p class="story-excerpt">Our collective efforts helped 50+ families...</p>
+                                <div class="story-meta">
+                                    <span>By Emma Rodriguez</span>
+                                    <span>❤️ 58 likes</span>
+                                </div>
+                                <button class="btn btn-outline">Read More</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Challenges Page -->
+                <section id="challenges" class="page">
+                    <h2 class="page-title">Community Challenges</h2>
+                    <p class="page-subtitle">Accept challenges and make an impact</p>
+
+                    <div class="challenges-grid">
+                        <div class="challenge-card">
+                            <div class="challenge-header">
+                                <h3>Help a Neighbor</h3>
+                                <span class="difficulty">Easy</span>
+                            </div>
+                            <p>Do one small act of kindness for a neighbor this week</p>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 65%"></div>
+                            </div>
+                            <span class="progress-text">65% (234 / 360 completed)</span>
+                            <button class="btn btn-secondary">Join Challenge</button>
+                        </div>
+
+                        <div class="challenge-card">
+                            <div class="challenge-header">
+                                <h3>Plant a Tree</h3>
+                                <span class="difficulty">Medium</span>
+                            </div>
+                            <p>Plant at least one tree in your community</p>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 45%"></div>
+                            </div>
+                            <span class="progress-text">45% (178 / 400 completed)</span>
+                            <button class="btn btn-secondary">Join Challenge</button>
+                        </div>
+
+                        <div class="challenge-card">
+                            <div class="challenge-header">
+                                <h3>Teach Someone New</h3>
+                                <span class="difficulty">Hard</span>
+                            </div>
+                            <p>Teach a valuable skill to someone in need</p>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 32%"></div>
+                            </div>
+                            <span class="progress-text">32% (89 / 280 completed)</span>
+                            <button class="btn btn-secondary">Join Challenge</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Contact & Help Page -->
+                <section id="contact" class="page">
+                    <h2 class="page-title">Contact & Help</h2>
+                    <p class="page-subtitle">We'd love to hear from you</p>
+
+                    <div class="contact-container">
+                        <div class="contact-form">
+                            <h3>Send us a Message</h3>
+                            <form id="contactForm">
+                                <input type="text" placeholder="Your Name" >
+                                <input type="email" placeholder="Your Email" >
+                                <select >
+                                    <option value="">Select Topic</option>
+                                    <option value="feedback">Feedback</option>
+                                    <option value="bug">Report a Bug</option>
+                                    <option value="feature">Feature Request</option>
+                                </select>
+                                <textarea placeholder="Your Message" rows="6" ></textarea>
+                                <button type="submit" class="btn btn-primary">Send Message</button>
+                            </form>
+                        </div>
+
+                        <div class="faq-section">
+                            <h3>Frequently Asked Questions</h3>
+                            <div class="faq-item">
+                                <button class="faq-question">How can I join an action?</button>
+                                <div class="faq-answer" style="display: none;">
+                                    <p>Simply browse our Actions page, find an activity that interests you, and click "Join Now"!</p>
+                                </div>
+                            </div>
+                            <div class="faq-item">
+                                <button class="faq-question">How are stories moderated?</button>
+                                <div class="faq-answer" style="display: none;">
+                                    <p>All stories are reviewed within 24 hours to ensure they align with our community values.</p>
+                                </div>
+                            </div>
+                            <div class="faq-item">
+                                <button class="faq-question">Can I create my own action?</button>
+                                <div class="faq-answer" style="display: none;">
+                                    <p>Yes! Click "Create Action" to describe your initiative and invite others to join.</p>
+                                </div>
+                            </div>
+                            <div class="faq-item">
+                                <button class="faq-question">Is there a minimum time commitment?</button>
+                                <div class="faq-answer" style="display: none;">
+                                    <p>No! Participate as much as your schedule allows. Every contribution matters!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Page -->
+                <section id="settings" class="page">
+                    <h2 class="page-title">Settings</h2>
+                    <p class="page-subtitle">Manage your preferences</p>
+
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>Notifications</h3>
+                            <label class="setting-item">
+                                <input type="checkbox" checked>
+                                <span>Email notifications for new actions</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="checkbox" checked>
+                                <span>Weekly community digest</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="checkbox">
+                                <span>Challenge reminders</span>
+                            </label>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Privacy</h3>
+                            <label class="setting-item">
+                                <input type="checkbox" checked>
+                                <span>Show my profile to other members</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="checkbox" checked>
+                                <span>Display my activity in community feed</span>
+                            </label>
+                        </div>
+
+                        <div class="settings-section">
+                            <h3>Theme</h3>
+                            <label class="setting-item">
+                                <input type="radio" name="theme" value="light" checked>
+                                <span>Light Mode</span>
+                            </label>
+                            <label class="setting-item">
+                                <input type="radio" name="theme" value="dark">
+                                <span>Dark Mode</span>
+                            </label>
+                        </div>
+
+                        <button class="btn btn-primary">Save Settings</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <h2 id="modalTitle" class="modal-title">Create New</h2>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('action-tab')" data-tab="action-tab">Action</button>
+                <button class="tab-btn" onclick="switchTab('resource-tab')" data-tab="resource-tab">Resource</button>
+            </div>
+
+            <!-- Action Tab -->
+            <div id="action-tab" class="tab-content active">
+                <form id="actionForm" class="create-form">
+                    <input type="hidden" id="editActionId" value="">
+                    <div class="form-group">
+                        <label for="actionTitle">Title</label>
+                        <input type="text" id="actionTitle" name="title" placeholder="Give your action a title..." >
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actionCategory">Category</label>
+                            <select id="actionCategory" name="category" >
+                                <option value="environment">🪴 Environment</option>
+                                <option value="education">📚 Education</option>
+                                <option value="social">🤲 Social Help</option>
+                                <option value="culture">🎨 Art & Culture</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="actionTheme">Theme</label>
+                            <input type="text" id="actionTheme" name="theme" placeholder="e.g., Cleanup, Workshop..." >
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="actionDescription">Description</label>
+                        <textarea id="actionDescription" name="description" placeholder="Describe your action in detail..." rows="4" ></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actionDateTime">Date & Time</label>
+                            <input type="datetime-local" id="actionDateTime" name="start_time" >
+                        </div>
+                        <div class="form-group">
+                            <label for="actionDuration">Duration (hours)</label>
+                            <input type="number" id="actionDuration" name="actionDuration" placeholder="2" >
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="actionLocation">Location</label>
+                        <input type="text" id="actionLocation" name="location" placeholder="Enter location..." >
+                    </div>
+                    <div class="form-group">
+                        <label for="actionImage">Image</label>
+                        <input type="file" id="actionImage" name="image" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large">Create Action</button>
+                </form>
+            </div>
+
+            <!-- Resource Tab -->
+            <div id="resource-tab" class="tab-content">
+                <form id="resourceForm" class="create-form">
+                    <input type="hidden" id="editResourceId" value="">
+                    <div class="form-group">
+                        <label for="resourceName">Resource Name</label>
+                        <input type="text" id="resourceName" name="resource_name" placeholder="e.g., Books, Furniture..." >
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="resourceType">Type</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="type" value="offer" checked> Offer</label>
+                                <label><input type="radio" name="type" value="request"> Request</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="resourceCategory">Category</label>
+                            <select id="resourceCategory" name="category" >
+                                <option value="books">Books</option>
+                                <option value="furniture">Furniture</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="food">Food</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="resourceDescription">Description</label>
+                        <textarea id="resourceDescription" name="description" placeholder="Describe the resource..." rows="4" ></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="resourceLocation">Location</label>
+                        <input type="text" id="resourceLocation" name="location" placeholder="Enter location..." >
+                    </div>
+                    <div class="form-group">
+                        <label for="resourceImage">Image</label>
+                        <input type="file" id="resourceImage" name="image" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-large">Create Resource</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../vue/assets/js/map.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard API Test</title>
+</head>
+<body>
+    <h1>Dashboard API Test (to compare with Vue)</h1>
+    <p>Current page URL: <span id="currentPageUrl"></span></p>
+    <button onclick="testApi()">Test API Access</button>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('currentPageUrl').textContent = window.location.href;
+
+        async function testApi() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing API access from dashboard directory...</p>';
+            
+            try {
+                // Test the same paths that work in dashboard
+                const response = await fetch('../api/get_actions.php');
+                resultsDiv.innerHTML += `<p>Response Status: ${response.status}</p>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultsDiv.innerHTML += `<p style="color: green;">SUCCESS: Got ${data.actions.length} actions</p>`;
+                    resultsDiv.innerHTML += `<p>First action: ${data.actions[0]?.title || 'N/A'}</p>`;
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: red;">FAILED: Status ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">ERROR: ${error.message}</p>`;
+                console.error('API test error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

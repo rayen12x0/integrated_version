@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect for Peace - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div id="particleCanvas" class="particle-bg"></div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-container">
+                <h1 class="brand">Connect for Peace</h1>
+                <p class="subtitle">Join our community of changemakers</p>
+            </div>
+            
+            <div class="role-selection">
+                <h2>Choose Your Role</h2>
+                <p class="description">Select how you'd like to contribute to our community</p>
+                
+                <div class="role-buttons">
+                    <button class="role-btn admin-btn" id="adminBtn">
+                        <div class="role-icon">👑</div>
+                        <h3>Admin</h3>
+                        <p>Manage content, approve submissions, and oversee community</p>
+                        <div class="btn-bg"></div>
+                    </button>
+                    
+                    <button class="role-btn user-btn" id="userBtn">
+                        <div class="role-icon">👤</div>
+                        <h3>Community Member</h3>
+                        <p>Create actions, offer resources, and participate in initiatives</p>
+                        <div class="btn-bg"></div>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="guest-access">
+                <p>Or continue as guest to browse public content</p>
+                <a href="../vue/index.html" class="guest-btn">Continue as Guest</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <p>Logging in...</p>
+    </div>
+    
+    <script src="login.js"></script>
+</body>
+</html>
