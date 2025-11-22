@@ -170,3 +170,84 @@ We have successfully implemented and fixed the complete CRUD (Create, Read, Upda
       - Vue frontend checks auth status via api/check_auth.php
       - Dashboard checks auth on page load
       - Auth state is stored in localStorage as fallback
+
+## Global Explore Functionality
+
+### Overview
+The Global Explore feature provides an interactive 3D globe experience that allows users to discover actions and resources worldwide. The system includes country-level data visualization, filtering capabilities, and seamless integration with the main map interface.
+
+### Key Features
+
+#### 1. Interactive 3D Globe (globale_explore/index.html)
+* **Three.js Integration**: Utilizes Three.js for a visually appealing rotating 3D globe
+* **Country Hover Detection**: Displays country names when users hover over them
+* **Country Click Functionality**: Clicking a country loads associated actions and resources
+* **Auto-rotation Control**: Globe rotation automatically stops when user interacts or opens the country panel
+* **Responsive Design**: Adapts to different screen sizes and touch devices
+
+#### 2. Country Data Panel (Right-side)
+* **Dynamic Content Loading**: Shows all approved actions and resources for selected country
+* **Filtering & Sorting**: Users can filter by type (actions/resources), search by keywords, and sort by date, name, or category
+* **Detailed Statistics**: Shows counts of actions and resources per country
+* **Visual Indicators**: Enhanced UI with badges, date displays, and participant counts
+
+#### 3. Enhanced API Endpoints
+* **Country-based Queries**: `/api/get_actions_by_country.php` and `/api/get_resources_by_country.php`
+* **Comprehensive Country Data**: `/api/get_country_statistics.php` for detailed statistics
+* **All Countries List**: `/api/get_countries_with_data.php` to get countries with available content
+* **Location-based Queries**: `/api/get_country_locations.php`, `/api/search_by_location.php`
+* **Nearby Location Search**: `/api/get_nearby_locations.php` for proximity-based discovery
+* **Unified Location Endpoint**: `/api/get_location_data.php` combining country and nearby features
+
+#### 4. Database Integration
+* **Country Field Support**: Actions and resources tables include country fields for location-based queries
+* **Indexing**: Database indexes on country fields for optimized query performance
+* **Case-insensitive Matching**: Proper handling of various capitalization formats (France, france, FRANCE)
+
+#### 5. Map Integration
+* **Seamless Navigation**: Clicking items in the country panel navigates to precise locations on the main map
+* **Marker Customization**: Different markers for actions (green) and resources (blue) with appropriate labels
+* **Popup Information**: Detailed information displayed when clicking map markers
+
+#### 6. User Experience Enhancements
+* **Loading States**: Visual feedback during data loading operations
+* **Error Handling**: Clear error messages when data is unavailable
+* **Keyboard Navigation**: Support for keyboard controls when possible
+* **Accessibility**: Proper contrast and screen reader support
+
+### How It Works
+
+1. **Globe Interaction**: Users interact with the rotating 3D globe using mouse/trackpad or touch
+2. **Country Selection**: Clicking a country triggers an API call to fetch related data
+3. **Data Display**: Results are shown in the right-side panel with filtering options
+4. **Navigation**: Clicking items navigates to the main map interface at the exact location
+5. **Integration**: Works seamlessly with existing authentication and data management systems
+
+### API Design
+* **RESTful Endpoints**: Consistent API structure with proper error handling
+* **JSON Response Format**: Standardized response format with success/error indicators
+* **Security**: Proper authentication checks where required
+* **Performance**: Optimized queries with indexing and caching where applicable
+
+### File Structure
+```
+vue/globale_explore/
+├── index.html          # Main globe interface
+├── script.js           # Globe interaction logic, API calls, panel management
+├── style.css           # Enhanced UI styling, animations, responsive design
+├── # Globe uses Three.js for 3D rendering
+```
+
+### Integration Points
+* **Database**: Uses existing actions/resources tables with country fields
+* **Authentication**: Works with the existing auth system
+* **Map System**: Connects to the main Leaflet.js map interface
+* **User Dashboard**: Maintains consistency with existing UI/UX patterns
+
+### Future Enhancements
+* **Heat Map Visualization**: Color countries based on activity density
+* **Comparison Tool**: Compare multiple countries side-by-side
+* **Timeline View**: Show upcoming actions chronologically
+* **Category Visualization**: Pie charts for resource/action categories
+* **Real-time Updates**: WebSocket integration for live updates
+* **Multi-language Support**: Country names in local languages

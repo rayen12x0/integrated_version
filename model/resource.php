@@ -7,8 +7,16 @@ class Resource
     private $pdo;
 
     // Constructor receives database connection
-    public function __construct($pdo) {
-        $this->pdo = $pdo;
+    public function __construct($pdo = null) {
+        if ($pdo === null) {
+            // Check if Config class is available, if not, include config
+            if (!class_exists('Config')) {
+                require_once __DIR__ . '/../config/config.php';
+            }
+            $this->pdo = Config::getConnexion();
+        } else {
+            $this->pdo = $pdo;
+        }
     }
 
     // Create a new resource in the database
@@ -444,7 +452,7 @@ class Resource
             $sql = "SELECT r.*, u.name as publisher_name, u.avatar_url as publisher_avatar, u.badge as publisher_badge
                     FROM resources r
                     LEFT JOIN users u ON r.publisher_id = u.id
-                    WHERE r.country = :country
+                    WHERE (r.country = :country OR LOWER(r.country) = LOWER(:country))
                     AND r.status = 'approved'
                     ORDER BY r.created_at DESC";
 
@@ -473,7 +481,7 @@ class Resource
                 $commentStmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM comments WHERE resource_id = :id");
                 $commentStmt->execute([':id' => $resource['id']]);
                 $commentCount = $commentStmt->fetch(PDO::FETCH_ASSOC);
-                $resource['comment_count'] = $commentCount['count'];
+                $resource['comment_count'] = (int)($commentCount['count'] ?? 0);
 
                 // Resources don't have start_time or end_time
                 $resource['date'] = (new DateTime($resource['created_at']))->format('M d, Y H:i'); // Use created_at as date

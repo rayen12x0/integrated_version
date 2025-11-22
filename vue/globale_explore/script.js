@@ -26,10 +26,13 @@ const params = {
     lowResScalingFactor: .7
 }
 
+// Auto-rotation configuration
+let autoRotation = true;
 
 let hoveredCountryIdx = 6;
 let isTouchScreen = false;
 let isHoverable = true;
+let isPanelOpen = false; // Track if the country panel is open
 
 const textureLoader = new THREE.TextureLoader();
 let staticMapUri;
@@ -68,8 +71,32 @@ function handleCountryClick() {
     // This function is safe to run after the existing functionality
     if (typeof isHoverable !== 'undefined' && typeof hoveredCountryIdx !== 'undefined' &&
         isHoverable && hoveredCountryIdx !== -1) {
-        const countryName = svgCountries[hoveredCountryIdx].getAttribute("data-name");
+        let countryName = svgCountries[hoveredCountryIdx].getAttribute("data-name");
         if (countryName) {
+            // Clean up country name to handle potential formatting differences
+            countryName = countryName.trim();
+
+            // Normalize the country name to match common database formats
+            // Capitalize first letter and lowercase the rest, or handle special cases
+            if (countryName.toLowerCase() === 'uk' || countryName.toLowerCase() === 'u.k.') {
+                countryName = 'United Kingdom';
+            } else if (countryName.toLowerCase() === 'usa' || countryName.toLowerCase() === 'u.s.a.' || countryName.toLowerCase() === 'us') {
+                countryName = 'United States';
+            } else if (countryName.toLowerCase() === 'uae' || countryName.toLowerCase() === 'u.a.e.') {
+                countryName = 'United Arab Emirates';
+            }
+            // For most countries, just ensure proper capitalization
+            else {
+                countryName = countryName.replace(/\w\S*/g, function(txt) {
+                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+                });
+            }
+
+            // Temporarily disable auto-rotation when clicking a country
+            if (controls) {
+                controls.autoRotate = false;
+            }
+            console.log('Normalized country name:', countryName);
             loadCountryData(countryName);
         }
     }
@@ -78,27 +105,47 @@ function handleCountryClick() {
 // Load data for the selected country
 async function loadCountryData(country) {
     try {
+        console.log('Loading data for country:', country); // Debug log
+
         // Show loading state
         showCountryPanel();
         showLoadingState();
 
         // Fetch data from both APIs
-        const [actionsResponse, resourcesResponse] = await Promise.all([
+        const [actionsResponse, resourcesResponse] = await Promise.allSettled([
             fetch(`../../api/get_actions_by_country.php?country=${encodeURIComponent(country)}`),
             fetch(`../../api/get_resources_by_country.php?country=${encodeURIComponent(country)}`)
         ]);
 
-        const actionsData = await actionsResponse.json();
-        const resourcesData = await resourcesResponse.json();
+        // Check each response for errors
+        let actionsData = { success: false, actions: [], message: 'No response', debug: {} };
+        let resourcesData = { success: false, resources: [], message: 'No response', debug: {} };
+
+        if (actionsResponse.status === 'fulfilled') {
+            actionsData = await actionsResponse.value.json();
+            console.log('Actions response:', actionsData); // Debug log
+        } else {
+            console.error('Actions API error:', actionsResponse.reason);
+        }
+
+        if (resourcesResponse.status === 'fulfilled') {
+            resourcesData = await resourcesResponse.value.json();
+            console.log('Resources response:', resourcesData); // Debug log
+        } else {
+            console.error('Resources API error:', resourcesResponse.reason);
+        }
+
+        // Check for success before processing
+        const actions = actionsData.success ? actionsData.actions : [];
+        const resources = resourcesData.success ? resourcesData.resources : [];
+
+        console.log(`Loaded ${actions.length} actions and ${resources.length} resources for ${country}`); // Debug log
 
         // Render the data
-        renderCountryData(country,
-            actionsData.success ? actionsData.actions : [],
-            resourcesData.success ? resourcesData.resources : []
-        );
+        renderCountryData(country, actions, resources);
     } catch (error) {
         console.error('Error loading country data:', error);
-        showErrorMessage('Failed to load data for ' + country);
+        showErrorMessage(`Failed to load data for "${country}". Error: ${error.message}`);
     }
 }
 
@@ -116,6 +163,14 @@ function showCountryPanel() {
         if (panel) {
             panel.classList.remove('hidden');
         }
+    }
+
+    // Update the panel state
+    isPanelOpen = true;
+
+    // Temporarily disable auto-rotation when panel is open
+    if (controls) {
+        controls.autoRotate = false;
     }
 }
 
@@ -204,40 +259,97 @@ function filterAndSortItems() {
     const filterValue = document.getElementById('filterSelect')?.value || 'all';
     const sortValue = document.getElementById('sortBy')?.value || 'date_desc';
 
-    // Get the current data and filter/sort it
-    const country = document.getElementById('panelCountryName').textContent;
+    // Apply filters and sorting to the currently stored data
+    applyFiltersAndSorting(searchTerm, filterValue, sortValue);
+}
 
-    // For simplicity, we'll reload and immediately filter/sort
-    // In a production environment, you might want to cache the data locally
-    loadCountryData(country).then(() => {
-        // Actually apply filtering after data is loaded
-        applyFiltersAndSorting(searchTerm, filterValue, sortValue);
+// Global variables to store the current data
+let currentCountry = '';
+let currentActions = [];
+let currentResources = [];
+
+// Apply filtering and sorting to existing data
+function applyFiltersAndSorting(searchTerm = '', filterValue = 'all', sortValue = 'date_desc') {
+    // Filter actions
+    let filteredActions = [...currentActions];
+    if (searchTerm) {
+        filteredActions = filteredActions.filter(action =>
+            action.title.toLowerCase().includes(searchTerm) ||
+            (action.location && action.location.toLowerCase().includes(searchTerm)) ||
+            (action.category && action.category.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    // Filter resources
+    let filteredResources = [...currentResources];
+    if (searchTerm) {
+        filteredResources = filteredResources.filter(resource =>
+            resource.resource_name.toLowerCase().includes(searchTerm) ||
+            (resource.location && resource.location.toLowerCase().includes(searchTerm)) ||
+            (resource.category && resource.category.toLowerCase().includes(searchTerm)) ||
+            (resource.type && resource.type.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    // Apply type filter
+    if (filterValue === 'action') {
+        filteredResources = [];
+    } else if (filterValue === 'resource') {
+        filteredActions = [];
+    }
+
+    // Apply sorting
+    filteredActions = sortItems(filteredActions, sortValue, 'action');
+    filteredResources = sortItems(filteredResources, sortValue, 'resource');
+
+    // Render the filtered and sorted results
+    renderFilteredData(currentCountry, filteredActions, filteredResources);
+}
+
+// Sort items based on the selected sort option
+function sortItems(items, sortValue, type) {
+    return items.sort((a, b) => {
+        switch (sortValue) {
+            case 'date_desc':
+                // Sort by date descending (newest first)
+                const dateA = type === 'action' && a.start_time ? new Date(a.start_time) :
+                             type === 'resource' && a.created_at ? new Date(a.created_at) :
+                             new Date(0);
+                const dateB = type === 'action' && b.start_time ? new Date(b.start_time) :
+                             type === 'resource' && b.created_at ? new Date(b.created_at) :
+                             new Date(0);
+                return dateB - dateA;
+
+            case 'date_asc':
+                // Sort by date ascending (oldest first)
+                const dateA1 = type === 'action' && a.start_time ? new Date(a.start_time) :
+                              type === 'resource' && a.created_at ? new Date(a.created_at) :
+                              new Date(0);
+                const dateB1 = type === 'action' && b.start_time ? new Date(b.start_time) :
+                              type === 'resource' && b.created_at ? new Date(b.created_at) :
+                              new Date(0);
+                return dateA1 - dateB1;
+
+            case 'name':
+                // Sort by name alphabetically
+                const nameA = type === 'action' ? a.title || '' : a.resource_name || '';
+                const nameB = type === 'action' ? b.title || '' : b.resource_name || '';
+                return nameA.localeCompare(nameB);
+
+            case 'category':
+                // Sort by category
+                const catA = a.category || '';
+                const catB = b.category || '';
+                return catA.localeCompare(catB);
+
+            default:
+                return 0;
+        }
     });
 }
 
-// Apply filtering and sorting to existing data
-function applyFiltersAndSorting(searchTerm, filterValue, sortValue) {
-    // This would be called with actual data after it's loaded
-    // Implementation would depend on how data is cached in the UI
-}
-
-// Show loading state in the panel
-function showLoadingState() {
-    document.getElementById('actionsList').innerHTML = '<div class="loading">Loading actions...</div>';
-    document.getElementById('resourcesList').innerHTML = '<div class="loading">Loading resources...</div>';
-}
-
-// Show error message in the panel
-function showErrorMessage(message) {
-    document.getElementById('actionsList').innerHTML = `<div class="error">${message}</div>`;
-    document.getElementById('resourcesList').innerHTML = `<div class="error">${message}</div>`;
-}
-
-// Render country data in the panel
-function renderCountryData(country, actions, resources) {
-    // Update panel header
-    document.getElementById('panelCountryName').textContent = country;
-
+// Render filtered and sorted data
+function renderFilteredData(country, actions, resources) {
     // Update statistics
     document.getElementById('actionsCount').textContent = actions.length;
     document.getElementById('resourcesCount').textContent = resources.length;
@@ -252,8 +364,10 @@ function renderCountryData(country, actions, resources) {
             itemCard.innerHTML = `
                 <h3>${action.title}</h3>
                 <div class="location">📍 ${action.location || 'Location not specified'}</div>
-                <div class="category">${action.category || 'Uncategorized'}</div>
+                <div class="category">🏷️ ${action.category || 'Uncategorized'}</div>
+                ${action.start_time ? `<div class="date">📅 ${new Date(action.start_time).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge action-badge">Action</div>
+                ${action.participants ? `<div class="participants">👥 ${action.participants} participants</div>` : ''}
             `;
             itemCard.setAttribute('data-type', 'action');
             itemCard.setAttribute('data-latitude', action.latitude || '');
@@ -275,8 +389,90 @@ function renderCountryData(country, actions, resources) {
             itemCard.innerHTML = `
                 <h3>${resource.resource_name}</h3>
                 <div class="location">📍 ${resource.location || 'Location not specified'}</div>
-                <div class="category">${resource.type} - ${resource.category}</div>
+                <div class="category">🏷️ ${resource.type} - ${resource.category}</div>
+                ${resource.created_at ? `<div class="date">📅 ${new Date(resource.created_at).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge resource-badge">Resource</div>
+                ${resource.comment_count ? `<div class="comments">💬 ${resource.comment_count} comments</div>` : ''}
+            `;
+            itemCard.setAttribute('data-type', 'resource');
+            itemCard.setAttribute('data-latitude', resource.latitude || '');
+            itemCard.setAttribute('data-longitude', resource.longitude || '');
+            itemCard.addEventListener('click', () => navigateToMap(resource, 'resource'));
+            resourcesList.appendChild(itemCard);
+        });
+    } else {
+        resourcesList.innerHTML = '<div class="no-items">No resources found</div>';
+    }
+}
+
+// Show loading state in the panel
+function showLoadingState() {
+    document.getElementById('actionsList').innerHTML = '<div class="loading">Loading actions...</div>';
+    document.getElementById('resourcesList').innerHTML = '<div class="loading">Loading resources...</div>';
+}
+
+// Show error message in the panel
+function showErrorMessage(message) {
+    document.getElementById('actionsList').innerHTML = `<div class="error">${message}</div>`;
+    document.getElementById('resourcesList').innerHTML = `<div class="error">${message}</div>`;
+}
+
+// Render country data in the panel
+function renderCountryData(country, actions, resources) {
+    // Store the data in global variables for filtering/sorting
+    currentCountry = country;
+    currentActions = [...actions];  // Create a copy to avoid reference issues
+    currentResources = [...resources];
+
+    // Update panel header
+    document.getElementById('panelCountryName').textContent = country;
+
+    // Update statistics
+    document.getElementById('actionsCount').textContent = actions.length;
+    document.getElementById('resourcesCount').textContent = resources.length;
+
+    // Load and display country statistics
+    loadCountryStatistics(country);
+
+    // Render actions list
+    const actionsList = document.getElementById('actionsList');
+    if (actions.length > 0) {
+        actionsList.innerHTML = '';
+        actions.forEach(action => {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'item-card';
+            itemCard.innerHTML = `
+                <h3>${action.title}</h3>
+                <div class="location">📍 ${action.location || 'Location not specified'}</div>
+                <div class="category">🏷️ ${action.category || 'Uncategorized'}</div>
+                ${action.start_time ? `<div class="date">📅 ${new Date(action.start_time).toLocaleDateString()}</div>` : ''}
+                <div class="type-badge action-badge">Action</div>
+                ${action.participants ? `<div class="participants">👥 ${action.participants} participants</div>` : ''}
+            `;
+            itemCard.setAttribute('data-type', 'action');
+            itemCard.setAttribute('data-latitude', action.latitude || '');
+            itemCard.setAttribute('data-longitude', action.longitude || '');
+            itemCard.addEventListener('click', () => navigateToMap(action, 'action'));
+            actionsList.appendChild(itemCard);
+        });
+    } else {
+        actionsList.innerHTML = '<div class="no-items">No actions found</div>';
+    }
+
+    // Render resources list
+    const resourcesList = document.getElementById('resourcesList');
+    if (resources.length > 0) {
+        resourcesList.innerHTML = '';
+        resources.forEach(resource => {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'item-card';
+            itemCard.innerHTML = `
+                <h3>${resource.resource_name}</h3>
+                <div class="location">📍 ${resource.location || 'Location not specified'}</div>
+                <div class="category">🏷️ ${resource.type} - ${resource.category}</div>
+                ${resource.created_at ? `<div class="date">📅 ${new Date(resource.created_at).toLocaleDateString()}</div>` : ''}
+                <div class="type-badge resource-badge">Resource</div>
+                ${resource.comment_count ? `<div class="comments">💬 ${resource.comment_count} comments</div>` : ''}
             `;
             itemCard.setAttribute('data-type', 'resource');
             itemCard.setAttribute('data-latitude', resource.latitude || '');
@@ -292,11 +488,42 @@ function renderCountryData(country, actions, resources) {
     setupPanelControls();
 }
 
+// Load and display country statistics
+async function loadCountryStatistics(country) {
+    try {
+        const response = await fetch(`../../api/get_country_statistics.php?country=${encodeURIComponent(country)}`);
+        const data = await response.json();
+
+        if (data.success && data.statistics) {
+            const stats = data.statistics;
+
+            // Update main statistics with accurate counts
+            document.getElementById('actionsCount').textContent = stats.actions.approved || 0;
+            document.getElementById('resourcesCount').textContent = stats.resources.approved || 0;
+
+            console.log('Country statistics loaded:', stats); // Debug log
+        } else {
+            console.warn('No statistics found for country:', country, data);
+        }
+    } catch (error) {
+        console.error('Error loading country statistics:', error);
+        // Continue without detailed statistics if API fails
+    }
+}
+
 // Close the country panel
 function closeCountryPanel() {
     const panel = document.getElementById('countryPanel');
     if (panel) {
         panel.classList.add('hidden');
+    }
+
+    // Update panel state
+    isPanelOpen = false;
+
+    // Re-enable auto-rotation when panel is closed (only if it should be enabled)
+    if (controls && autoRotation) {
+        controls.autoRotate = true;
     }
 }
 
@@ -318,7 +545,7 @@ function navigateToMap(item, type) {
             title: item.title || item.resource_name,
             type: type,
             id: item.id,
-            country: item.country || ''
+            country: item.country || item.location?.split(',')[1]?.trim() || currentCountry || ''
         }).toString();
 
         // Navigate to main page with parameters
@@ -330,6 +557,27 @@ function navigateToMap(item, type) {
 
 // Expose closeCountryPanel globally to make it accessible to the onclick handler in the HTML
 window.closeCountryPanel = closeCountryPanel;
+
+// Function to initialize country highlighting based on activity
+async function initCountryActivityHighlights() {
+    try {
+        const response = await fetch('../../api/get_countries_with_data.php');
+        const data = await response.json();
+
+        if (data.success && data.countries) {
+            // Store country activity data for reference
+            window.countryActivityData = data.countries;
+
+            // This could be used to color countries based on activity level
+            // For now, we're just storing the data for potential use
+        }
+    } catch (error) {
+        console.error('Error loading country activity data:', error);
+    }
+}
+
+// Initialize with a small delay to ensure everything is loaded
+setTimeout(initCountryActivityHighlights, 1000);
 
 
 
@@ -395,8 +643,8 @@ function createOrbitControls() {
             ease: "back(1.7).out",
             onComplete: () => {
                 isHoverable = true;
-                // Re-enable auto-rotation when user stops interacting
-                controls.autoRotate = true;
+                // Only re-enable auto-rotation if panel is not open
+                controls.autoRotate = autoRotation && !isPanelOpen;
             }
         })
     });
@@ -569,3 +817,4 @@ function createControls() {
         .name("fog distance");
 }
 
+    

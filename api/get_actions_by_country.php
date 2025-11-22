@@ -1,5 +1,6 @@
 <?php
 // API endpoint to get actions by country
+require_once '../config/config.php'; // Need this first to ensure Config class is available
 require_once '../model/action.php';
 require_once '../utils/AuthHelper.php';
 
@@ -26,21 +27,31 @@ if (empty($country)) {
 
 try {
     $action = new Action();
-    
+
     // Get actions by country
     $actions = $action->getByCountry($country);
-    
+
     echo json_encode([
         'success' => true,
         'actions' => $actions,
-        'count' => count($actions)
+        'count' => count($actions),
+        'country' => $country,
+        'debug' => [
+            'input_country' => $country,
+            'actions_found' => count($actions)
+        ]
     ]);
 } catch (Exception $e) {
     error_log('Error getting actions by country: ' . $e->getMessage());
+    error_log('Country parameter was: ' . $country);
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error retrieving actions: ' . $e->getMessage()
+        'message' => 'Error retrieving actions: ' . $e->getMessage(),
+        'country' => $country,
+        'debug' => [
+            'input_country' => $country
+        ]
     ]);
 }
 ?>

@@ -7,8 +7,16 @@ class Action
     private $pdo;
 
     // Constructor receives database connection
-    public function __construct($pdo) {
-        $this->pdo = $pdo;
+    public function __construct($pdo = null) {
+        if ($pdo === null) {
+            // Check if Config class is available, if not, include config
+            if (!class_exists('Config')) {
+                require_once __DIR__ . '/../config/config.php';
+            }
+            $this->pdo = Config::getConnexion();
+        } else {
+            $this->pdo = $pdo;
+        }
     }
 
     // Create a new action in the database
@@ -553,7 +561,7 @@ class Action
             $sql = "SELECT a.*, u.name as creator_name, u.avatar_url as creator_avatar, u.badge as creator_badge
                     FROM actions a
                     LEFT JOIN users u ON a.creator_id = u.id
-                    WHERE a.country = :country
+                    WHERE (a.country = :country OR LOWER(a.country) = LOWER(:country))
                     AND a.status = 'approved'
                     ORDER BY a.created_at DESC";
 
@@ -579,13 +587,13 @@ class Action
                 $participantStmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM action_participants WHERE action_id = :id");
                 $participantStmt->execute([':id' => $action['id']]);
                 $participantCount = $participantStmt->fetch(PDO::FETCH_ASSOC);
-                $action['participants'] = $participantCount['count'];
+                $action['participants'] = (int)($participantCount['count'] ?? 0);
 
                 // Get actual comment count
                 $commentStmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM comments WHERE action_id = :id");
                 $commentStmt->execute([':id' => $action['id']]);
                 $commentCount = $commentStmt->fetch(PDO::FETCH_ASSOC);
-                $action['comment_count'] = $commentCount['count'];
+                $action['comment_count'] = (int)($commentCount['count'] ?? 0);
 
                 // Format date for display
                 if (isset($action['start_time'])) {

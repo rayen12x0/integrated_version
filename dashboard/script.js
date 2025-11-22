@@ -32,6 +32,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Set up form submissions
     document.getElementById('actionForm')?.addEventListener('submit', submitActionForm);
     document.getElementById('resourceForm')?.addEventListener('submit', submitResourceForm);
+
+    // Add event listeners for location picker buttons
+    document.querySelectorAll('.pick-location-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const formType = this.getAttribute('data-form');
+            openLocationPicker(formType);
+        });
+    });
+
+    // Add event listener for location input blur to trigger geocoding
+    document.getElementById('actionLocation')?.addEventListener('blur', async function() {
+        if (this.value.trim() !== '' && this.getAttribute('data-geocoded') !== 'true') {
+            const geoResult = await geocodeLocation(this.value);
+            if (geoResult) {
+                document.getElementById('actionLatitude').value = geoResult.latitude;
+                document.getElementById('actionLongitude').value = geoResult.longitude;
+                document.getElementById('actionCountry').value = geoResult.country;
+                this.setAttribute('data-geocoded', 'true');
+            }
+        }
+    });
+
+    document.getElementById('resourceLocation')?.addEventListener('blur', async function() {
+        if (this.value.trim() !== '' && this.getAttribute('data-geocoded') !== 'true') {
+            const geoResult = await geocodeLocation(this.value);
+            if (geoResult) {
+                document.getElementById('resourceLatitude').value = geoResult.latitude;
+                document.getElementById('resourceLongitude').value = geoResult.longitude;
+                document.getElementById('resourceCountry').value = geoResult.country;
+                this.setAttribute('data-geocoded', 'true');
+            }
+        }
+    });
+
+    // Add event listeners for modal controls
+    document.getElementById('confirmLocationBtn')?.addEventListener('click', confirmLocationSelection);
+    document.getElementById('cancelLocationBtn')?.addEventListener('click', function() {
+        document.getElementById('locationPickerModal').classList.remove('active');
+        document.body.style.overflow = '';
+    });
+    document.getElementById('closeLocationPicker')?.addEventListener('click', function() {
+        document.getElementById('locationPickerModal').classList.remove('active');
+        document.body.style.overflow = '';
+    });
 });
 
 // Check authentication status
@@ -744,12 +788,221 @@ function formatDate(dateString) {
     return date.toLocaleDateString();
 }
 
+// Geocoding and Location Functions
+
+// Geocode a location string to get coordinates and country
+async function geocodeLocation(locationText) {
+    if (!locationText) return null;
+
+    try {
+        // Using Nominatim API (free OpenStreetMap geocoder) - include address details
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationText)}&format=json&limit=1&addressdetails=1`);
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            const result = data[0];
+
+            // Extract country from address details if available
+            let country = 'Unknown';
+            if (result.address?.country) {
+                country = result.address.country;
+            } else if (result.address?.state) {
+                country = result.address.state; // Fallback to state/province if country not available
+            } else if (result.display_name) {
+                // Fallback to extract country from display_name if address is missing
+                // This is a simple heuristic - in practice you might want a more robust solution
+                const parts = result.display_name.split(',');
+                if (parts.length > 0) {
+                    const lastPart = parts[parts.length - 1].trim();
+                    // If last part seems to be a country (not a city/town)
+                    if (['USA', 'UK', 'Canada', 'France', 'Germany', 'Italy', 'Spain', 'Japan', 'China', 'Brazil', 'Australia', 'India', 'Russia'].some(c =>
+                        lastPart.toLowerCase().includes(c.toLowerCase()))) {
+                        country = lastPart;
+                    }
+                }
+            }
+
+            return {
+                latitude: parseFloat(result.lat),
+                longitude: parseFloat(result.lon),
+                country: country
+            };
+        }
+        return null;
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        return null;
+    }
+}
+
+// Reverse geocode to get country from coordinates
+async function reverseGeocode(lat, lng) {
+    try {
+        // Using Nominatim reverse geocoding API
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        const data = await response.json();
+
+        return {
+            country: data.address?.country || 'Unknown',
+            countryCode: data.address?.country_code || 'unknown'
+        };
+    } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        return null;
+    }
+}
+
+// Initialize the location picker map
+function initLocationPickerMap(lat = 48.8566, lng = 2.3522) {
+    if (!window.L) {
+        console.error('Leaflet not loaded for location picker');
+        return;
+    }
+
+    if (window.locationPickerMap) {
+        window.locationPickerMap.remove();
+    }
+
+    const mapContainer = document.getElementById('locationPickerMap');
+    if (!mapContainer) return;
+
+    window.locationPickerMap = L.map('locationPickerMap').setView([lat, lng], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(window.locationPickerMap);
+
+    // Add click event to select location
+    window.locationPickerMap.on('click', async function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Update UI with selected coordinates
+        document.getElementById('selectedCoords').textContent = `(${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+
+        // Get country from coordinates
+        const countryData = await reverseGeocode(lat, lng);
+        if (countryData) {
+            document.getElementById('detectedCountry').textContent = countryData.country;
+            window.selectedLocation = { lat, lng, country: countryData.country };
+        }
+    });
+
+    // Add a marker at the initial location
+    window.selectedLocationMarker = L.marker([lat, lng]).addTo(window.locationPickerMap);
+    window.selectedLocation = { lat, lng, country: 'Unknown' };
+}
+
+// Open the location picker modal
+function openLocationPicker(formType) {
+    const modal = document.getElementById('locationPickerModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Initialize map with a default location or current location if available
+        const locationInput = document.getElementById(`${formType}Location`);
+        const latInput = document.getElementById(`${formType}Latitude`);
+        const lngInput = document.getElementById(`${formType}Longitude`);
+
+        let lat = 48.8566; // Default to Paris
+        let lng = 2.3522;
+
+        // If current location values exist, use them
+        if (latInput.value && lngInput.value) {
+            lat = parseFloat(latInput.value);
+            lng = parseFloat(lngInput.value);
+        } else if (locationInput.value.trim() !== '') {
+            // If location text is provided but coordinates aren't, try to geocode
+            geocodeLocation(locationInput.value).then(result => {
+                if (result) {
+                    lat = result.latitude;
+                    lng = result.longitude;
+                    initLocationPickerMap(lat, lng);
+                } else {
+                    initLocationPickerMap(); // Use default coordinates
+                }
+            });
+            return; // Wait for geocoding before initializing
+        }
+
+        initLocationPickerMap(lat, lng);
+    }
+}
+
+// Confirm location selection
+function confirmLocationSelection() {
+    if (window.selectedLocation) {
+        // Get the form type from the active tab
+        const activeTab = document.querySelector('.tab-btn.active');
+        let formType = 'action';
+        if (activeTab) {
+            const tabId = activeTab.getAttribute('data-tab');
+            formType = tabId.includes('action') ? 'action' : 'resource';
+        } else {
+            // Fallback: try to determine form type from context
+            formType = window.currentlyEditingForm || 'action';
+        }
+
+        // Update form fields with selected location
+        const locationInput = document.getElementById(`${formType}Location`);
+        const latInput = document.getElementById(`${formType}Latitude`);
+        const lngInput = document.getElementById(`${formType}Longitude`);
+        const countryInput = document.getElementById(`${formType}Country`);
+
+        if (locationInput) {
+            locationInput.value = `${window.selectedLocation.lat.toFixed(6)}, ${window.selectedLocation.lng.toFixed(6)}`;
+            locationInput.setAttribute('data-geocoded', 'true');
+        }
+        if (latInput) latInput.value = window.selectedLocation.lat;
+        if (lngInput) lngInput.value = window.selectedLocation.lng;
+        if (countryInput) countryInput.value = window.selectedLocation.country;
+
+        // Close the modal
+        document.getElementById('locationPickerModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
 // Submit action form
 async function submitActionForm(e) {
     e.preventDefault();
 
     const formData = new FormData(e.target);
     const fileInput = document.getElementById('actionImage');
+    const locationInput = document.getElementById('actionLocation');
+    const latInput = document.getElementById('actionLatitude');
+    const lngInput = document.getElementById('actionLongitude');
+    const countryInput = document.getElementById('actionCountry');
+
+    // Check if location has coordinates, if not, geocode the location
+    if (!latInput.value || !lngInput.value) {
+        // Try to geocode the location
+        const locationText = locationInput.value.trim();
+        if (locationText) {
+            showLoadingMessage('Geocoding location...');
+            const geoResult = await geocodeLocation(locationText);
+            if (geoResult) {
+                // Update the hidden fields with geocoded data
+                latInput.value = geoResult.latitude;
+                lngInput.value = geoResult.longitude;
+                countryInput.value = geoResult.country;
+
+                // Also update the formData with the new values
+                formData.set('latitude', geoResult.latitude);
+                formData.set('longitude', geoResult.longitude);
+                formData.set('country', geoResult.country);
+
+                showSuccessMessage('Location geocoded successfully');
+            } else {
+                showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
+                return; // Stop the submission if geocoding failed
+            }
+        } else {
+            showErrorMessage('Please provide a location before submitting');
+            return;
+        }
+    }
 
     // Check if there's a file to upload
     const hasFile = fileInput && fileInput.files.length > 0 && fileInput.files[0].size > 0;
@@ -758,6 +1011,16 @@ async function submitActionForm(e) {
         // Add creator_id to formData if not already present
         if (!formData.get('creator_id')) {
             formData.append('creator_id', currentUser?.id || 1);
+        }
+        // Add location coordinates and country
+        if (!formData.get('latitude')) {
+            formData.append('latitude', latInput.value);
+        }
+        if (!formData.get('longitude')) {
+            formData.append('longitude', lngInput.value);
+        }
+        if (!formData.get('country')) {
+            formData.append('country', countryInput.value);
         }
 
         // Check if we're in edit mode
@@ -791,6 +1054,11 @@ async function submitActionForm(e) {
         // No file to upload, convert to JSON
         const data = Object.fromEntries(formData.entries());
         data.creator_id = currentUser?.id || 1; // Add creator ID
+
+        // Ensure location coordinates and country are included
+        if (!data.latitude) data.latitude = latInput.value;
+        if (!data.longitude) data.longitude = lngInput.value;
+        if (!data.country) data.country = countryInput.value;
 
         // Check if we're in edit mode
         const editId = document.getElementById('editActionId')?.value;
@@ -829,6 +1097,39 @@ async function submitResourceForm(e) {
 
     const formData = new FormData(e.target);
     const resourceImage = document.getElementById('resourceImage');
+    const locationInput = document.getElementById('resourceLocation');
+    const latInput = document.getElementById('resourceLatitude');
+    const lngInput = document.getElementById('resourceLongitude');
+    const countryInput = document.getElementById('resourceCountry');
+
+    // Check if location has coordinates, if not, geocode the location
+    if (!latInput.value || !lngInput.value) {
+        // Try to geocode the location
+        const locationText = locationInput.value.trim();
+        if (locationText) {
+            showLoadingMessage('Geocoding location...');
+            const geoResult = await geocodeLocation(locationText);
+            if (geoResult) {
+                // Update the hidden fields with geocoded data
+                latInput.value = geoResult.latitude;
+                lngInput.value = geoResult.longitude;
+                countryInput.value = geoResult.country;
+
+                // Also update the formData with the new values
+                formData.set('latitude', geoResult.latitude);
+                formData.set('longitude', geoResult.longitude);
+                formData.set('country', geoResult.country);
+
+                showSuccessMessage('Location geocoded successfully');
+            } else {
+                showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
+                return; // Stop the submission if geocoding failed
+            }
+        } else {
+            showErrorMessage('Please provide a location before submitting');
+            return;
+        }
+    }
 
     // Check if there's a file to upload
     const hasFile = resourceImage && resourceImage.files.length > 0 && resourceImage.files[0].size > 0;
@@ -837,6 +1138,16 @@ async function submitResourceForm(e) {
         // Add publisher_id to formData if not already present
         if (!formData.get('publisher_id')) {
             formData.append('publisher_id', currentUser?.id || 1);
+        }
+        // Add location coordinates and country
+        if (!formData.get('latitude')) {
+            formData.append('latitude', latInput.value);
+        }
+        if (!formData.get('longitude')) {
+            formData.append('longitude', lngInput.value);
+        }
+        if (!formData.get('country')) {
+            formData.append('country', countryInput.value);
         }
 
         // Check if we're in edit mode
@@ -870,6 +1181,11 @@ async function submitResourceForm(e) {
         // No file to upload, convert to JSON
         const data = Object.fromEntries(formData.entries());
         data.publisher_id = currentUser?.id || 1; // Add publisher ID
+
+        // Ensure location coordinates and country are included
+        if (!data.latitude) data.latitude = latInput.value;
+        if (!data.longitude) data.longitude = lngInput.value;
+        if (!data.country) data.country = countryInput.value;
 
         // Check if we're in edit mode
         const editId = document.getElementById('editResourceId')?.value;

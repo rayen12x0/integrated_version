@@ -471,7 +471,13 @@
                     </div>
                     <div class="form-group">
                         <label for="actionLocation">Location</label>
-                        <input type="text" id="actionLocation" name="location" placeholder="Enter location..." >
+                        <div class="location-input-container">
+                            <input type="text" id="actionLocation" name="location" placeholder="Enter location..." data-geocoded="false">
+                            <button type="button" class="btn btn-outline pick-location-btn" data-form="action">📍 Pick on Map</button>
+                        </div>
+                        <input type="hidden" id="actionLatitude" name="latitude">
+                        <input type="hidden" id="actionLongitude" name="longitude">
+                        <input type="hidden" id="actionCountry" name="country">
                     </div>
                     <div class="form-group">
                         <label for="actionImage">Image</label>
@@ -514,7 +520,13 @@
                     </div>
                     <div class="form-group">
                         <label for="resourceLocation">Location</label>
-                        <input type="text" id="resourceLocation" name="location" placeholder="Enter location..." >
+                        <div class="location-input-container">
+                            <input type="text" id="resourceLocation" name="location" placeholder="Enter location..." data-geocoded="false">
+                            <button type="button" class="btn btn-outline pick-location-btn" data-form="resource">📍 Pick on Map</button>
+                        </div>
+                        <input type="hidden" id="resourceLatitude" name="latitude">
+                        <input type="hidden" id="resourceLongitude" name="longitude">
+                        <input type="hidden" id="resourceCountry" name="country">
                     </div>
                     <div class="form-group">
                         <label for="resourceImage">Image</label>
@@ -522,6 +534,27 @@
                     </div>
                     <button type="submit" class="btn btn-primary btn-large">Create Resource</button>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Picker Modal -->
+    <div id="locationPickerModal" class="modal location-picker-modal">
+        <div class="modal-content location-picker-content">
+            <span class="modal-close" id="closeLocationPicker">&times;</span>
+            <h2>Select Location</h2>
+            <div class="location-search-container">
+                <input type="text" id="locationSearch" placeholder="Search for a location..." class="search-input">
+                <button id="searchLocationBtn" class="btn btn-primary">Search</button>
+            </div>
+            <div id="locationPickerMap" class="location-picker-map"></div>
+            <div class="location-info">
+                <p>Selected Coordinates: <span id="selectedCoords">(Not selected)</span></p>
+                <p>Detected Country: <span id="detectedCountry">N/A</span></p>
+            </div>
+            <div class="modal-actions">
+                <button id="confirmLocationBtn" class="btn btn-primary">Confirm Location</button>
+                <button id="cancelLocationBtn" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>

@@ -71,10 +71,10 @@ class ResourceController
             $input = $this->getResourceData();
             error_log("Received input: " . print_r($input, true));
 
-            // Required fields for resource creation
+            // Define required fields (excluding country as it may be auto-detected from coordinates)
             $required = ["publisher_id", "description", "category", "type", "location"];
 
-            // Check if required fields are present
+            // Check required fields but allow empty country
             foreach ($required as $field) {
                 if (empty($input[$field])) {
                     error_log("Missing required field: $field");
@@ -84,6 +84,13 @@ class ResourceController
                     ]);
                     return;
                 }
+            }
+
+            // Handle country field if provided in input
+            if (isset($input['country'])) {
+                error_log("Country provided: " . $input['country']);
+            } else {
+                error_log("No country provided, coordinates may be used for reverse geocoding later");
             }
 
             // Handle resource name field - it might be called differently in various forms
@@ -219,7 +226,7 @@ class ResourceController
                 return;
             }
 
-            // Required fields for resource update (can be adjusted based on partial updates)
+            // Required fields for resource update (excluding country as it can be updated separately)
             $required = ["publisher_id", "resource_name", "description", "category", "type", "location"];
             foreach ($required as $field) {
                 if (!isset($input[$field])) { // Use isset for updates, as fields might be intentionally empty
@@ -234,6 +241,11 @@ class ResourceController
                         return;
                     }
                 }
+            }
+
+            // Handle country field if provided in input
+            if (isset($input['country'])) {
+                error_log("Updating country field: " . $input['country']);
             }
 
             // Set image_url if not provided (for backward compatibility)

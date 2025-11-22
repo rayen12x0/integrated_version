@@ -69,9 +69,10 @@ class ActionController
             }
 
             
+            // Define required fields (excluding country as it may be auto-detected from coordinates)
             $required = ["creator_id", "title", "description", "category", "theme", "location", "start_time", "end_time"];
 
-            
+            // Check required fields but allow empty country
             foreach ($required as $field) {
                 if (empty($input[$field])) {
                     error_log("Missing required field: $field");
@@ -81,6 +82,13 @@ class ActionController
                     ]);
                     return;
                 }
+            }
+
+            // Ensure country is provided in input data (may come from frontend with geocoding)
+            if (isset($input['country'])) {
+                error_log("Country provided: " . $input['country']);
+            } else {
+                error_log("No country provided, coordinates may be used for reverse geocoding later");
             }
 
             // Create record in database
@@ -234,7 +242,7 @@ class ActionController
                 return;
             }
 
-            // Required fields for action update (can be adjusted based on partial updates)
+            // Required fields for action update (excluding country as it can be updated separately)
             // For now, let's assume all fields are required for a full update
             $required = ["creator_id", "title", "description", "category", "location", "start_time", "end_time"];
             foreach ($required as $field) {
@@ -250,6 +258,11 @@ class ActionController
                         return;
                     }
                 }
+            }
+
+            // Handle country field if provided in input
+            if (isset($input['country'])) {
+                error_log("Updating country field: " . $input['country']);
             }
 
             $result = $this->action->update($id, $input);

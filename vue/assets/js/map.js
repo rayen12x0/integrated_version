@@ -10,8 +10,16 @@ function getURLParameters() {
     const id = params.get('id');
     const country = params.get('country');
 
-    if (!isNaN(lat) && !isNaN(lng) && title && type && id) {
-        return { lat, lng, title, type, id, country };
+    // Check if we have at least coordinates
+    if (!isNaN(lat) && !isNaN(lng)) {
+        return {
+            lat,
+            lng,
+            title: title || 'Location from Globe',
+            type: type || 'globe-location',
+            id: id || null,
+            country: country || ''
+        };
     }
     return null;
 }
@@ -21,8 +29,18 @@ window.getURLParameters = getURLParameters;
 
 // Create custom marker based on type
 function createCustomMarker(lat, lng, type, title, id, country) {
-    // Different colors for actions vs resources
-    const markerColor = type === 'action' ? '#4CAF50' : '#2196F3'; // Green for actions, blue for resources
+    // Different colors for actions vs resources vs general locations
+    let markerColor, markerLabel;
+    if (type === 'action') {
+        markerColor = '#4CAF50'; // Green for actions
+        markerLabel = 'A';
+    } else if (type === 'resource') {
+        markerColor = '#2196F3'; // Blue for resources
+        markerLabel = 'R';
+    } else {
+        markerColor = '#FF9800'; // Orange for general globe locations
+        markerLabel = '📍';
+    }
 
     // Create a custom icon
     const customIcon = L.divIcon({
@@ -41,7 +59,7 @@ function createCustomMarker(lat, lng, type, title, id, country) {
             color: white;
             font-size: 16px;
             text-align: center;
-        ">${type === 'action' ? 'A' : 'R'}</div>`,
+        ">${markerLabel}</div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16]
     });
@@ -52,13 +70,13 @@ function createCustomMarker(lat, lng, type, title, id, country) {
     const popupContent = `
         <div style="min-width: 200px;">
             <h4 style="margin-top: 0; color: ${markerColor};">${title}</h4>
-            <p><strong>Type:</strong> ${type === 'action' ? 'Action' : 'Resource'}</p>
+            <p><strong>Type:</strong> ${type === 'action' ? 'Action' : type === 'resource' ? 'Resource' : 'Location'}</p>
             <p><strong>Country:</strong> ${country || 'N/A'}</p>
             <p><strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
-            <button onclick="openDetailsModalFromGlobe(${JSON.stringify({id, title, type, country, latitude: lat, longitude: lng, location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`, description: 'Location from globe navigation'}).replace(/"/g, '&quot;')})"
+            ${id ? `<button onclick="openDetailsModalFromGlobe(${JSON.stringify({id, title, type, country, latitude: lat, longitude: lng, location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`, description: 'Location from globe navigation'}).replace(/"/g, '&quot;')})"
                     style="padding: 8px 12px; background: ${markerColor}; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
                 View Details
-            </button>
+            </button>` : ''}
         </div>
     `;
 
