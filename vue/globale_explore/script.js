@@ -27,7 +27,7 @@ const params = {
 }
 
 // Auto-rotation configuration
-let autoRotation = true;
+let autoRotation = false;
 
 let hoveredCountryIdx = 6;
 let isTouchScreen = false;
@@ -617,7 +617,7 @@ function createOrbitControls() {
     controls.enableDamping = true;
     controls.minPolarAngle = .46 * Math.PI;
     controls.maxPolarAngle = .46 * Math.PI;
-    controls.autoRotate = true; // Default to auto-rotate enabled
+    controls.autoRotate = false; // Default to auto-rotate disabled
     controls.autoRotateSpeed *= 1.2;
 
     controls.addEventListener("start", () => {
@@ -747,10 +747,8 @@ function updateMap(uv = {x: 0, y: 0}) {
     for (let i = 0; i < svgCountries.length; i++) {
         const boundingBox = bBoxes[i];
         if (
-            pointObj.x > boundingBox.x ||
-            pointObj.x < boundingBox.x + boundingBox.width ||
-            pointObj.y > boundingBox.y ||
-            pointObj.y < boundingBox.y + boundingBox.height
+            pointObj.x >= boundingBox.x && pointObj.x <= boundingBox.x + boundingBox.width &&
+            pointObj.y >= boundingBox.y && pointObj.y <= boundingBox.y + boundingBox.height
         ) {
             const isHovering = svgCountries[i].isPointInFill(pointObj);
             if (isHovering) {

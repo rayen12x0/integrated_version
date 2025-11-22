@@ -22,48 +22,41 @@ try {
     $resource = new Resource();
     
     // Get PDO connection from config
-    require_once '../../config/config.php';
-    $pdo = new PDO($dsn, $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = Config::getConnexion();
     
-    // Get all countries with approved actions
-    $actionSql = "SELECT DISTINCT country FROM actions WHERE country IS NOT NULL AND country != '' AND status = 'approved'";
-    $actionStmt = $pdo->prepare($actionSql);
-    $actionStmt->execute();
-    $actionCountries = $actionStmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Get all countries with approved resources
-    $resourceSql = "SELECT DISTINCT country FROM resources WHERE country IS NOT NULL AND country != '' AND status = 'approved'";
-    $resourceStmt = $pdo->prepare($resourceSql);
-    $resourceStmt->execute();
-    $resourceCountries = $resourceStmt->fetchAll(PDO::FETCH_COLUMN);
-    
-    // Merge and get unique countries
-    $allCountries = array_unique(array_merge($actionCountries, $resourceCountries));
-    
-    // Count actions and resources for each country
+    // Get aggregated action counts by country
+    $actionCountSql = "SELECT country, COUNT(*) AS count FROM actions WHERE country IS NOT NULL AND country != '' AND status = 'approved' GROUP BY country";
+    $actionCountStmt = $pdo->prepare($actionCountSql);
+    $actionCountStmt->execute();
+    $actionCounts = [];
+    while ($row = $actionCountStmt->fetch(PDO::FETCH_ASSOC)) {
+        $actionCounts[$row['country']] = (int)$row['count'];
+    }
+
+    // Get aggregated resource counts by country
+    $resourceCountSql = "SELECT country, COUNT(*) AS count FROM resources WHERE country IS NOT NULL AND country != '' AND status = 'approved' GROUP BY country";
+    $resourceCountStmt = $pdo->prepare($resourceCountSql);
+    $resourceCountStmt->execute();
+    $resourceCounts = [];
+    while ($row = $resourceCountStmt->fetch(PDO::FETCH_ASSOC)) {
+        $resourceCounts[$row['country']] = (int)$row['count'];
+    }
+
+    // Get all unique countries from both arrays
+    $allCountries = array_unique(array_merge(array_keys($actionCounts), array_keys($resourceCounts)));
+
+    // Build countries data using precomputed counts
     $countriesData = [];
     foreach ($allCountries as $country) {
         if (!empty($country)) {
-            // Count actions in this country
-            $actionCountSql = "SELECT COUNT(*) as count FROM actions WHERE country = :country AND status = 'approved'";
-            $actionCountStmt = $pdo->prepare($actionCountSql);
-            $actionCountStmt->bindParam(':country', $country, PDO::PARAM_STR);
-            $actionCountStmt->execute();
-            $actionCount = $actionCountStmt->fetch(PDO::FETCH_ASSOC)['count'];
-            
-            // Count resources in this country
-            $resourceCountSql = "SELECT COUNT(*) as count FROM resources WHERE country = :country AND status = 'approved'";
-            $resourceCountStmt = $pdo->prepare($resourceCountSql);
-            $resourceCountStmt->bindParam(':country', $country, PDO::PARAM_STR);
-            $resourceCountStmt->execute();
-            $resourceCount = $resourceCountStmt->fetch(PDO::FETCH_ASSOC)['count'];
-            
+            $actionCount = isset($actionCounts[$country]) ? $actionCounts[$country] : 0;
+            $resourceCount = isset($resourceCounts[$country]) ? $resourceCounts[$country] : 0;
+
             $countriesData[] = [
                 'name' => $country,
-                'actions' => (int)$actionCount,
-                'resources' => (int)$resourceCount,
-                'total' => (int)$actionCount + (int)$resourceCount
+                'actions' => $actionCount,
+                'resources' => $resourceCount,
+                'total' => $actionCount + $resourceCount
             ];
         }
     }
