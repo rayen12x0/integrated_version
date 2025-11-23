@@ -1457,6 +1457,100 @@ ul {
     }
 }
 
+/* Location Picker Modal Styles */
+#locationPickerModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    max-height: 80vh;
+}
+
+#locationPickerModal .modal-header {
+    padding: 15px 20px;
+}
+
+#locationPickerModal .modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+#locationPickerMap {
+    flex: 1;
+    min-height: 500px;
+}
+
+.location-info {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.location-info p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.location-info strong {
+    color: #495057;
+}
+
+#locationPickerModal .modal-footer {
+    padding: 15px 20px;
+}
+
+#locationPickerModal .modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    z-index: 1000;
+}
+
+#locationPickerModal.modal-fullscreen .modal-content {
+    width: 95%;
+    height: 85vh;
+    margin: 2.5vh auto;
+}
+
+.leaflet-container {
+    cursor: pointer;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.pick-location-btn {
+    transition: all 0.3s ease;
+}
+
+.pick-location-btn:hover {
+    transform: scale(1.02);
+    background-color: #007bff !important;
+    color: white !important;
+}
+
+.pick-location-btn.selected {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.shake {
+    animation: shake 0.5s;
+    animation-iteration-count: 1;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
 @media (max-width: 480px) {
     .navbar-logo span {
         display: none;

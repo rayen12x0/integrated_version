@@ -309,7 +309,7 @@ function showCountryPanel() {
 
     // Temporarily disable auto-rotation when panel is open
     if (controls) {
-        controls.autoRotate = false;
+        controls.autoRotate = true;
     }
 }
 
@@ -498,15 +498,30 @@ function renderFilteredData(country, actions, resources) {
     if (actions.length > 0) {
         actionsList.innerHTML = '';
         actions.forEach(action => {
+            // Determine if the item has coordinates
+            const hasCoordinates = !!(action.latitude && action.longitude);
+            const locationClass = hasCoordinates ? 'location has-coordinates' : 'location no-coordinates';
+
+            // Format location display
+            let locationDisplay = action.location || 'Location not specified';
+            if (action.location_details && action.country) {
+                locationDisplay = `${action.location_details}, ${action.country}`;
+            } else if (action.location_details && !action.country) {
+                locationDisplay = action.location_details;
+            } else if (!action.location_details && action.country) {
+                locationDisplay = action.country;
+            }
+
             const itemCard = document.createElement('div');
-            itemCard.className = 'item-card';
+            itemCard.className = `item-card ${hasCoordinates ? 'has-coordinates' : 'no-coordinates'}`;
             itemCard.innerHTML = `
                 <h3>${action.title}</h3>
-                <div class="location">📍 ${action.location || 'Location not specified'}</div>
+                <div class="${locationClass}">📍 ${locationDisplay}</div>
                 <div class="category">🏷️ ${action.category || 'Uncategorized'}</div>
                 ${action.start_time ? `<div class="date">📅 ${new Date(action.start_time).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge action-badge">Action</div>
                 ${action.participants ? `<div class="participants">👥 ${action.participants} participants</div>` : ''}
+                ${!hasCoordinates ? '<div class="location-indicator">📍 Location details only (coordinates not available)</div>' : ''}
             `;
             itemCard.setAttribute('data-type', 'action');
             itemCard.setAttribute('data-latitude', action.latitude || '');
@@ -523,15 +538,30 @@ function renderFilteredData(country, actions, resources) {
     if (resources.length > 0) {
         resourcesList.innerHTML = '';
         resources.forEach(resource => {
+            // Determine if the item has coordinates
+            const hasCoordinates = !!(resource.latitude && resource.longitude);
+            const locationClass = hasCoordinates ? 'location has-coordinates' : 'location no-coordinates';
+
+            // Format location display
+            let locationDisplay = resource.location || 'Location not specified';
+            if (resource.location_details && resource.country) {
+                locationDisplay = `${resource.location_details}, ${resource.country}`;
+            } else if (resource.location_details && !resource.country) {
+                locationDisplay = resource.location_details;
+            } else if (!resource.location_details && resource.country) {
+                locationDisplay = resource.country;
+            }
+
             const itemCard = document.createElement('div');
-            itemCard.className = 'item-card';
+            itemCard.className = `item-card ${hasCoordinates ? 'has-coordinates' : 'no-coordinates'}`;
             itemCard.innerHTML = `
                 <h3>${resource.resource_name}</h3>
-                <div class="location">📍 ${resource.location || 'Location not specified'}</div>
+                <div class="${locationClass}">📍 ${locationDisplay}</div>
                 <div class="category">🏷️ ${resource.type} - ${resource.category}</div>
                 ${resource.created_at ? `<div class="date">📅 ${new Date(resource.created_at).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge resource-badge">Resource</div>
                 ${resource.comment_count ? `<div class="comments">💬 ${resource.comment_count} comments</div>` : ''}
+                ${!hasCoordinates ? '<div class="location-indicator">📍 Location details only (coordinates not available)</div>' : ''}
             `;
             itemCard.setAttribute('data-type', 'resource');
             itemCard.setAttribute('data-latitude', resource.latitude || '');
@@ -578,15 +608,30 @@ function renderCountryData(country, actions, resources) {
     if (actions.length > 0) {
         actionsList.innerHTML = '';
         actions.forEach(action => {
+            // Determine if the item has coordinates
+            const hasCoordinates = !!(action.latitude && action.longitude);
+            const locationClass = hasCoordinates ? 'location has-coordinates' : 'location no-coordinates';
+
+            // Format location display
+            let locationDisplay = action.location || 'Location not specified';
+            if (action.location_details && action.country) {
+                locationDisplay = `${action.location_details}, ${action.country}`;
+            } else if (action.location_details && !action.country) {
+                locationDisplay = action.location_details;
+            } else if (!action.location_details && action.country) {
+                locationDisplay = action.country;
+            }
+
             const itemCard = document.createElement('div');
-            itemCard.className = 'item-card';
+            itemCard.className = `item-card ${hasCoordinates ? 'has-coordinates' : 'no-coordinates'}`;
             itemCard.innerHTML = `
                 <h3>${action.title}</h3>
-                <div class="location">📍 ${action.location || 'Location not specified'}</div>
+                <div class="${locationClass}">📍 ${locationDisplay}</div>
                 <div class="category">🏷️ ${action.category || 'Uncategorized'}</div>
                 ${action.start_time ? `<div class="date">📅 ${new Date(action.start_time).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge action-badge">Action</div>
                 ${action.participants ? `<div class="participants">👥 ${action.participants} participants</div>` : ''}
+                ${!hasCoordinates ? '<div class="location-indicator">📍 Location details only (coordinates not available)</div>' : ''}
             `;
             itemCard.setAttribute('data-type', 'action');
             itemCard.setAttribute('data-latitude', action.latitude || '');
@@ -603,15 +648,30 @@ function renderCountryData(country, actions, resources) {
     if (resources.length > 0) {
         resourcesList.innerHTML = '';
         resources.forEach(resource => {
+            // Determine if the item has coordinates
+            const hasCoordinates = !!(resource.latitude && resource.longitude);
+            const locationClass = hasCoordinates ? 'location has-coordinates' : 'location no-coordinates';
+
+            // Format location display
+            let locationDisplay = resource.location || 'Location not specified';
+            if (resource.location_details && resource.country) {
+                locationDisplay = `${resource.location_details}, ${resource.country}`;
+            } else if (resource.location_details && !resource.country) {
+                locationDisplay = resource.location_details;
+            } else if (!resource.location_details && resource.country) {
+                locationDisplay = resource.country;
+            }
+
             const itemCard = document.createElement('div');
-            itemCard.className = 'item-card';
+            itemCard.className = `item-card ${hasCoordinates ? 'has-coordinates' : 'no-coordinates'}`;
             itemCard.innerHTML = `
                 <h3>${resource.resource_name}</h3>
-                <div class="location">📍 ${resource.location || 'Location not specified'}</div>
+                <div class="${locationClass}">📍 ${locationDisplay}</div>
                 <div class="category">🏷️ ${resource.type} - ${resource.category}</div>
                 ${resource.created_at ? `<div class="date">📅 ${new Date(resource.created_at).toLocaleDateString()}</div>` : ''}
                 <div class="type-badge resource-badge">Resource</div>
                 ${resource.comment_count ? `<div class="comments">💬 ${resource.comment_count} comments</div>` : ''}
+                ${!hasCoordinates ? '<div class="location-indicator">📍 Location details only (coordinates not available)</div>' : ''}
             `;
             itemCard.setAttribute('data-type', 'resource');
             itemCard.setAttribute('data-latitude', resource.latitude || '');
@@ -662,41 +722,38 @@ function closeCountryPanel() {
 
     // Re-enable auto-rotation when panel is closed (only if it should be enabled)
     if (controls && autoRotation) {
-        controls.autoRotate = true;
+        controls.autoRotate = flase;
     }
 }
 
 // Navigate to the main map with the selected item's coordinates
 function navigateToMap(item, type) {
-    if (item.latitude && item.longitude) {
-        // Set the panel state as open before navigating
-        isPanelOpen = true;
+    // Always navigate to the main page, even if coordinates are missing
+    // Set the panel state as open before navigating
+    isPanelOpen = true;
 
-        // Update auto-rotation based on panel state
-        if (controls) {
-            controls.autoRotate = autoRotation && !isPanelOpen;
-        }
-
-        // Construct URL with parameters - avoid double encoding by using raw values
-        const params = new URLSearchParams({
-            lat: item.latitude,
-            lng: item.longitude,
-            title: item.title || item.resource_name,
-            type: type,
-            id: item.id,
-            country: item.country || item.location?.split(',')[1]?.trim() || currentCountry || ''
-        }).toString();
-
-        // Navigate to main page with parameters
-        window.location.href = `../index.html?${params}`;
-    } else {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Location Not Available',
-            text: 'This item does not have location coordinates available.',
-            confirmButtonText: 'OK'
-        });
+    // Update auto-rotation based on panel state
+    if (controls) {
+        controls.autoRotate = autoRotation && !isPanelOpen;
     }
+
+    // Construct URL with parameters - include coordinates if available
+    const params = new URLSearchParams({
+        title: item.title || item.resource_name,
+        type: type,
+        id: item.id,
+        country: item.country || currentCountry || '',
+        hasCoordinates: !!(item.latitude && item.longitude)  // Add flag if coordinates exist
+    });
+
+    // Add coordinates only if they exist
+    if (item.latitude && item.longitude) {
+        params.append('lat', item.latitude);
+        params.append('lng', item.longitude);
+    }
+
+    // Navigate to main page with parameters
+    window.location.href = `../index.html?${params.toString()}`;
 }
 
 // Expose closeCountryPanel globally to make it accessible to the onclick handler in the HTML
@@ -761,7 +818,7 @@ function createOrbitControls() {
     controls.enableDamping = true;
     controls.minPolarAngle = .46 * Math.PI;
     controls.maxPolarAngle = .46 * Math.PI;
-    controls.autoRotate = false; // Default to auto-rotate disabled
+    controls.autoRotate = true; // Default to auto-rotate disabled
     controls.autoRotateSpeed *= 1.2;
 
     controls.addEventListener("start", () => {

@@ -201,6 +201,96 @@ function initMap() {
 window.createCustomMarker = createCustomMarker;
 window.initMapWithParams = initMap;
 
+// Store markers in a global array for easy management
+window.customMarkers = [];
+
+// Function to add a marker to the existing map from external call
+function addMarkerToMap(item, type) {
+    // If map is not initialized, log an error and return
+    if (!window.map) {
+        console.error('Map not initialized, cannot add marker');
+        return;
+    }
+
+    // Check if the item has coordinates before creating a marker
+    if (!item.latitude || !item.longitude) {
+        console.warn('Item has no coordinates, cannot create marker');
+        return;
+    }
+
+    // Clear existing markers before adding a new one
+    clearAllMarkers();
+
+    // Create a custom marker for the item
+    const marker = createCustomMarker(
+        item.latitude,
+        item.longitude,
+        type || item.type || 'globe-location',
+        item.title || item.resource_name || 'Untitled',
+        item.id,
+        item.country || ''
+    );
+
+    // Add marker to global array for future reference
+    window.customMarkers.push(marker);
+
+    // Center map on the new marker with zoom level 15
+    window.map.setView([item.latitude, item.longitude], 15);
+
+    // Open popup automatically
+    setTimeout(() => {
+        if (marker && marker.openPopup) {
+            marker.openPopup();
+        }
+    }, 500);
+
+    return marker;
+}
+
+// Function to clear all custom markers from the map
+function clearAllMarkers() {
+    if (!window.map) {
+        console.error('Map not initialized, cannot clear markers');
+        return;
+    }
+
+    // Remove all markers in the customMarkers array
+    window.customMarkers.forEach(marker => {
+        if (marker && window.map.hasLayer(marker)) {
+            window.map.removeLayer(marker);
+        }
+    });
+
+    // Clear the array
+    window.customMarkers = [];
+}
+
+// Function to remove a specific marker by ID
+function removeMarker(markerId) {
+    if (!window.map) {
+        console.error('Map not initialized, cannot remove marker');
+        return;
+    }
+
+    // Find the marker in the array by matching associated data
+    const markerIndex = window.customMarkers.findIndex(marker => {
+        // This is a simple implementation - you may need to store ID in marker options for a more robust approach
+        return marker.options && marker.options.id === markerId;
+    });
+
+    if (markerIndex !== -1) {
+        const marker = window.customMarkers[markerIndex];
+
+        // Remove marker from map if it exists and is still on the map
+        if (window.map.hasLayer(marker)) {
+            window.map.removeLayer(marker);
+        }
+
+        // Remove from the array
+        window.customMarkers.splice(markerIndex, 1);
+    }
+}
+
 // Update map with markers for actions and resources
 function updateMap() {
     if (!window.map) {
@@ -208,12 +298,15 @@ function updateMap() {
         return;
     }
 
-    // Remove any existing markers
+    // Remove any existing markers except the custom ones (if any)
     window.map.eachLayer(layer => {
         if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
             window.map.removeLayer(layer);
         }
     });
+
+    // Clear our custom markers array as we're updating the whole map
+    window.customMarkers = [];
 
     const colors = { action: '#C3E6CB', resource: '#AEE1F9' };
 
@@ -228,6 +321,9 @@ function updateMap() {
 
         const marker = L.marker([item.latitude, item.longitude])
             .addTo(window.map);
+
+        // Store marker reference in our array
+        window.customMarkers.push(marker);
 
         // Construct location display based on new structure
         let locationDisplay = item.location || 'Location not specified';
@@ -253,3 +349,8 @@ function updateMap() {
         `);
     });
 }
+
+// Expose marker functions globally
+window.addMarkerToMap = addMarkerToMap;
+window.clearAllMarkers = clearAllMarkers;
+window.removeMarker = removeMarker;

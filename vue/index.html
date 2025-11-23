@@ -54,7 +54,7 @@
                 </div>
                 <ul class="nav-menu">
                     <li><a href="#" class="nav-link">Home</a></li>
-                    <li><a href="#" class="nav-link active">Actions & Aide</a></li>
+                    <li><a href="#" class="nav-link ">Actions & Aide</a></li>
                     <li><a href="#" class="nav-link">Stories</a></li>
                     <li><a href="#" class="nav-link">Défis</a></li>
                     <li><a href="about.html" class="nav-link">about</a></li>
@@ -71,12 +71,12 @@
         </div>
     </nav>
 
-   
+
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            
+
             <h1 class="hero-title">Small Acts, Big Impact </h1>
             <p class="hero-subtitle">Join a community action or lend a helping hand near you.</p>
             <spline-viewer url="https://prod.spline.design/8G96X9jnSxc0lqWr/scene.splinecode" class="global"></spline-viewer>
@@ -91,9 +91,9 @@
                     <span class="material-symbols-outlined">near_me</span> Explore Nearby
                 </button>
             </div>
-      
+
         </div>
-       
+
     </section>
 
     <!-- Filter & Search Section -->
@@ -332,7 +332,7 @@
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea placeholder="Describe the resource..." rows="4" required></textarea>
+                        <textarea id="resourceDescription" placeholder="Describe the resource..." rows="4" required></textarea>
                     </div>
                     <div class="form-group">
                         <label>Country</label>
@@ -359,7 +359,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Image Gallery Section -->
     <section class="image-gallery">
         <div class="wrapper">
@@ -380,7 +380,7 @@
             </div>
         </div>
     </section>
-    
+
     <!-- Map Section -->
     <section class="map-section">
         <div class="container">
@@ -396,9 +396,9 @@
                 <h2 class="section-title">Saving Lives, One Drop at a Time</h2>
                 <p class="section-subtitle">Just as we save the fish by refilling its bowl, we can all take small actions to support peace, inclusion, and community aid. Every act of kindness helps keep our community thriving.(refresh page if the fish died)</p>
             </div>
-            
+
             <div class="fish-container">
-            
+
             <div id="fishbowl" class="fishbowl">
             <div class="fishbowl__pool"></div>
             <div class="fishbowl__background"></div>
@@ -427,6 +427,29 @@
             </div> <!-- Close fish-container -->
             </div> <!-- Close container -->
     </section> <!-- Close save-the-fish-section -->
+
+    <!-- Location Picker Modal -->
+    <div id="locationPickerModal" class="modal">
+        <div class="modal-content modal-fullscreen">
+            <button class="modal-close" id="closeLocationPickerBtn">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="modal-header">
+                <h2 class="modal-title">Select Location on Map</h2>
+            </div>
+            <div class="modal-body">
+                <div id="locationPickerMap" style="height: 600px; width: 100%;"></div>
+                <div class="location-info p-3 bg-light">
+                    <p><strong>Selected Coordinates:</strong> <span id="selectedCoordinates">Click on map to select</span></p>
+                    <p><strong>Selected Address:</strong> <span id="selectedAddress">-</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelLocationPicker">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmLocationBtn" disabled>Confirm Location</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">

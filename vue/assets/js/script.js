@@ -1772,3 +1772,441 @@ document.addEventListener('change', function(e) {
         document.querySelector('.radio-group').style.border = '';
     }
 });
+
+// =============================================
+// 18. LOCATION PICKER MODAL FUNCTIONALITY
+// =============================================
+
+// Initialize variables for location picker
+let locationPickerMap = null;
+let selectedMarker = null;
+let selectedCoordinates = null;
+
+// Add event listeners for "Pick Location" buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up location picker event listeners after DOM is loaded
+    setTimeout(setupLocationPickerEventListeners, 1000); // Delay to ensure DOM is fully loaded
+});
+
+function setupLocationPickerEventListeners() {
+    // Add event listeners to all "Pick on Map" buttons
+    const pickLocationButtons = document.querySelectorAll('.pick-location-btn');
+    pickLocationButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const formType = this.getAttribute('data-form');
+            openLocationPicker(formType);
+        });
+    });
+
+    // Add event listeners for location picker modal buttons
+    document.getElementById('closeLocationPickerBtn').addEventListener('click', closeLocationPicker);
+    document.getElementById('cancelLocationPicker').addEventListener('click', closeLocationPicker);
+    document.getElementById('confirmLocationBtn').addEventListener('click', function() {
+        const formType = this.getAttribute('data-form-type');
+        if (formType) {
+            confirmLocation(formType);
+        }
+    });
+}
+
+function openLocationPicker(formType) {
+    // Show the location picker modal
+    openModal('locationPickerModal');
+
+    // Store form type in the confirm button for later use
+    document.getElementById('confirmLocationBtn').setAttribute('data-form-type', formType);
+
+    // Initialize the location picker map
+    initLocationPickerMap(formType);
+}
+
+function initLocationPickerMap(formType) {
+    // Create or get the map container
+    const mapContainer = document.getElementById('locationPickerMap');
+
+    // Initialize Leaflet map
+    locationPickerMap = L.map('locationPickerMap').setView([20, 0], 2); // Default to world view
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(locationPickerMap);
+
+    // Try to get user's location for better initial view
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                locationPickerMap.setView([lat, lng], 13);
+            },
+            function(error) {
+                console.log("Could not get user's location, using default view");
+                // Use default view if geolocation fails
+                locationPickerMap.setView([20, 0], 2);
+            }
+        );
+    }
+
+    // Add click event to map for location selection
+    locationPickerMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Remove existing marker if present
+        if (selectedMarker) {
+            locationPickerMap.removeLayer(selectedMarker);
+        }
+
+        // Add new marker at clicked location
+        selectedMarker = L.marker([lat, lng]).addTo(locationPickerMap);
+        selectedCoordinates = { lat, lng };
+
+        // Update UI with selected coordinates
+        document.getElementById('selectedCoordinates').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+
+        // Enable confirm button
+        document.getElementById('confirmLocationBtn').disabled = false;
+
+        // Perform reverse geocoding to get address
+        reverseGeocode(lat, lng);
+    });
+
+    // If coordinates are already set in the form, show them on the map
+    let existingLat, existingLng;
+    if (formType === 'action') {
+        existingLat = document.getElementById('actionLat').value;
+        existingLng = document.getElementById('actionLng').value;
+    } else {
+        existingLat = document.getElementById('resourceLat').value;
+        existingLng = document.getElementById('resourceLng').value;
+    }
+
+    if (existingLat && existingLng) {
+        // Show existing location on map
+        const lat = parseFloat(existingLat);
+        const lng = parseFloat(existingLng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            locationPickerMap.setView([lat, lng], 13);
+
+            // Add marker for existing location
+            selectedMarker = L.marker([lat, lng]).addTo(locationPickerMap);
+            selectedCoordinates = { lat, lng };
+
+            // Update UI with existing coordinates
+            document.getElementById('selectedCoordinates').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+
+            // Enable confirm button
+            document.getElementById('confirmLocationBtn').disabled = false;
+
+            // Perform reverse geocoding for existing location
+            reverseGeocode(lat, lng);
+        }
+    }
+}
+
+function reverseGeocode(lat, lng) {
+    // Use Nominatim API for reverse geocoding
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            let address = 'Address not found';
+            if (data.display_name) {
+                address = data.display_name;
+            } else if (data.address) {
+                const addr = data.address;
+                address = [
+                    addr.road || addr.pedestrian || '',
+                    addr.city || addr.town || addr.village || '',
+                    addr.country || ''
+                ].filter(part => part !== '').join(', ');
+            }
+
+            document.getElementById('selectedAddress').textContent = address;
+        })
+        .catch(error => {
+            console.error('Reverse geocoding error:', error);
+            document.getElementById('selectedAddress').textContent = 'Unable to retrieve address';
+        });
+}
+
+function confirmLocation(formType) {
+    if (!selectedCoordinates) {
+        showSwal('Error', 'Please select a location on the map first.', 'error');
+        return;
+    }
+
+    // Update the appropriate form fields based on form type
+    if (formType === 'action') {
+        document.getElementById('actionLat').value = selectedCoordinates.lat;
+        document.getElementById('actionLng').value = selectedCoordinates.lng;
+
+        // Update location details field if it's empty
+        const locationDetailsField = document.getElementById('actionLocationDetails');
+        if (!locationDetailsField.value.trim()) {
+            locationDetailsField.value = document.getElementById('selectedAddress').textContent;
+        }
+
+        // Mark the pick location button as selected
+        const pickBtn = document.querySelector('.pick-location-btn[data-form="action"]');
+        if (pickBtn) {
+            pickBtn.classList.add('selected');
+        }
+    } else {
+        document.getElementById('resourceLat').value = selectedCoordinates.lat;
+        document.getElementById('resourceLng').value = selectedCoordinates.lng;
+
+        // Update location details field if it's empty
+        const locationDetailsField = document.getElementById('resourceLocationDetails');
+        if (!locationDetailsField.value.trim()) {
+            locationDetailsField.value = document.getElementById('selectedAddress').textContent;
+        }
+
+        // Mark the pick location button as selected
+        const pickBtn = document.querySelector('.pick-location-btn[data-form="resource"]');
+        if (pickBtn) {
+            pickBtn.classList.add('selected');
+        }
+    }
+
+    // Close the location picker modal
+    closeLocationPicker();
+
+    // Show success message
+    showSwal('Location Selected', 'Coordinates have been added to the form.', 'success');
+}
+
+function closeLocationPicker() {
+    // Close the modal
+    closeModal('locationPickerModal');
+
+    // Clean up the map if it exists
+    if (locationPickerMap) {
+        locationPickerMap.remove();
+        locationPickerMap = null;
+    }
+
+    // Reset selected marker and coordinates
+    selectedMarker = null;
+    selectedCoordinates = null;
+
+    // Reset UI elements
+    document.getElementById('selectedCoordinates').textContent = 'Click on map to select';
+    document.getElementById('selectedAddress').textContent = '-';
+    document.getElementById('confirmLocationBtn').disabled = true;
+    document.getElementById('confirmLocationBtn').removeAttribute('data-form-type');
+}
+
+// =============================================
+// 19. ENHANCED FORM VALIDATION
+// =============================================
+
+// Enhanced action form validation
+function validateActionForm(e) {
+    e.preventDefault();
+
+    // Get form fields
+    const title = document.getElementById('actionTitle');
+    const category = document.getElementById('actionCategory');
+    const description = document.getElementById('actionDescription');
+    const duration = document.getElementById('actionDuration');
+    const locationDetails = document.getElementById('actionLocationDetails');
+    const country = document.getElementById('actionCountry');
+
+    let isValid = true;
+    const errors = [];
+
+    // Clear previous error styles
+    clearErrorStyles();
+
+    // Validate title
+    if (!title.value.trim()) {
+        title.classList.add('error-border');
+        errors.push('Title is required');
+        isValid = false;
+    }
+
+    // Validate category
+    if (!category.value) {
+        category.classList.add('error-border');
+        errors.push('Category is required');
+        isValid = false;
+    }
+
+    // Validate description
+    if (!description.value.trim()) {
+        description.classList.add('error-border');
+        errors.push('Description is required');
+        isValid = false;
+    }
+
+    // Validate duration if provided (should be positive number)
+    if (duration.value && (isNaN(duration.value) || parseInt(duration.value) <= 0)) {
+        duration.classList.add('error-border');
+        errors.push('Duration must be a positive number');
+        isValid = false;
+    }
+
+    // Validate location details
+    if (!locationDetails.value.trim()) {
+        locationDetails.classList.add('error-border');
+        errors.push('Location details are required');
+        isValid = false;
+    }
+
+    // Validate country
+    if (!country.value) {
+        country.classList.add('error-border');
+        errors.push('Country is required');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        // Show error message with all issues
+        showSwal('Validation Error', errors.join('<br>'), 'error');
+
+        // Add shake animation to form to draw attention
+        const form = document.querySelector('#action-tab .create-form');
+        form.classList.add('shake');
+        setTimeout(() => {
+            form.classList.remove('shake');
+        }, 500);
+
+        return false;
+    }
+
+    // Check coordinates validation after basic validation passes
+    const coordValidation = validateCoordinates('action');
+    if (!coordValidation.valid) {
+        showSwal('Location Validation', coordValidation.message, 'warning');
+        return false;
+    }
+
+    // Submit the action form using the main submission function
+    submitActionForm();
+}
+
+// Enhanced resource form validation
+function validateResourceForm(e) {
+    e.preventDefault();
+
+    // Get resource form fields
+    const resourceName = document.getElementById('resourceName');
+    const resourceType = document.querySelector('#resource-tab input[name="type"]:checked');
+    const resourceCategory = document.getElementById('resourceCategory');
+    const resourceDescription = document.getElementById('resourceDescription'); // Fixed to use proper ID
+    const resourceLocationDetails = document.getElementById('resourceLocationDetails');
+    const resourceCountry = document.getElementById('resourceCountry');
+
+    let isValid = true;
+    const errors = [];
+
+    // Clear previous error styles
+    clearErrorStyles();
+
+    // Validate resource name
+    if (!resourceName.value.trim()) {
+        resourceName.classList.add('error-border');
+        errors.push('Resource name is required');
+        isValid = false;
+    }
+
+    // Validate resource type
+    if (!resourceType) {
+        const radioGroup = document.querySelector('.radio-group');
+        radioGroup.classList.add('error-border');
+        errors.push('Resource type (Offer/Request/Knowledge) is required');
+        isValid = false;
+    }
+
+    // Validate resource category
+    if (!resourceCategory.value) {
+        resourceCategory.classList.add('error-border');
+        errors.push('Category is required');
+        isValid = false;
+    }
+
+    // Validate resource description
+    if (!resourceDescription.value.trim()) {
+        resourceDescription.classList.add('error-border');
+        errors.push('Description is required');
+        isValid = false;
+    }
+
+    // Validate resource location details
+    if (!resourceLocationDetails.value.trim()) {
+        resourceLocationDetails.classList.add('error-border');
+        errors.push('Location details are required');
+        isValid = false;
+    }
+
+    // Validate resource country
+    if (!resourceCountry.value) {
+        resourceCountry.classList.add('error-border');
+        errors.push('Country is required');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        // Show error message with all issues
+        showSwal('Validation Error', errors.join('<br>'), 'error');
+
+        // Add shake animation to form to draw attention
+        const form = document.querySelector('#resource-tab .create-form');
+        form.classList.add('shake');
+        setTimeout(() => {
+            form.classList.remove('shake');
+        }, 500);
+
+        return false;
+    }
+
+    // Check coordinates validation after basic validation passes
+    const coordValidation = validateCoordinates('resource');
+    if (!coordValidation.valid) {
+        showSwal('Location Validation', coordValidation.message, 'warning');
+        return false;
+    }
+
+    // Submit the resource form
+    submitResourceForm();
+}
+
+// Improved validation that checks coordinates when location is provided
+function validateCoordinates(formType) {
+    let hasLocation = false;
+    let hasCoordinates = false;
+
+    if (formType === 'action') {
+        const locationDetails = document.getElementById('actionLocationDetails').value.trim();
+        const lat = document.getElementById('actionLat').value.trim();
+        const lng = document.getElementById('actionLng').value.trim();
+
+        hasLocation = locationDetails !== '';
+        hasCoordinates = lat !== '' && lng !== '';
+    } else {
+        const locationDetails = document.getElementById('resourceLocationDetails').value.trim();
+        const lat = document.getElementById('resourceLat').value.trim();
+        const lng = document.getElementById('resourceLng').value.trim();
+
+        hasLocation = locationDetails !== '';
+        hasCoordinates = lat !== '' && lng !== '';
+    }
+
+    // If location is provided but coordinates are missing, prompt user to use map picker
+    if (hasLocation && !hasCoordinates) {
+        return {
+            valid: false,
+            message: "Please use 'Pick on Map' to select exact location coordinates for better accuracy."
+        };
+    }
+
+    return {
+        valid: true,
+        message: "Coordinates are valid."
+    };
+}

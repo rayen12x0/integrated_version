@@ -307,6 +307,43 @@ svg {
     margin-bottom: 5px;
 }
 
+.item-card.has-coordinates {
+    border-left: 3px solid #4CAF50; /* Green left border for items with coordinates */
+    background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.item-card.no-coordinates {
+    opacity: 0.7; /* Less prominent look for items without coordinates */
+    background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+}
+
+.item-card.no-coordinates:hover {
+    border-color: #FF9800; /* Orange border on hover */
+    opacity: 1; /* Full opacity on hover */
+    background: linear-gradient(135deg, #ffffff 0%, #fff8e1 100%);
+}
+
+.location.has-coordinates {
+    color: #2E7D32; /* Darker green for locations with coordinates */
+    font-weight: 500;
+}
+
+.location.no-coordinates {
+    color: #FF8F00; /* Orange for locations without coordinates */
+    font-weight: 500;
+}
+
+.location-indicator {
+    font-size: 0.8rem;
+    color: #FF8F00; /* Orange for the location note */
+    font-style: italic;
+    margin-top: 5px;
+    padding: 5px;
+    background: rgba(255, 152, 0, 0.1);
+    border-radius: 4px;
+    border-left: 2px solid #FF8F00;
+}
+
 .item-card .category {
     display: inline-block;
     padding: 2px 8px;
