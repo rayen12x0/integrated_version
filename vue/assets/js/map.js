@@ -14,16 +14,31 @@ function getURLParameters() {
     const type = params.get('type');
     const id = params.get('id');
     const country = params.get('country');
+    const hasCoordinatesParam = params.get('hasCoordinates');
+    const hasCoordinates = hasCoordinatesParam === 'true';
 
-    // Check if we have at least coordinates
+    // Check if we have at least some identifying parameters (coordinates, id, or title)
     if (!isNaN(lat) && !isNaN(lng)) {
+        // We have coordinates
         return {
             lat,
             lng,
             title: title || 'Location from Globe',
             type: type || 'globe-location',
             id: id || null,
-            country: country || ''
+            country: country || '',
+            hasCoordinates: true
+        };
+    } else if (id || title) {
+        // We have at least an id or title, even without coordinates
+        return {
+            lat: lat && !isNaN(lat) ? lat : null,
+            lng: lng && !isNaN(lng) ? lng : null,
+            title: title || 'Location from Globe',
+            type: type || 'globe-location',
+            id: id || null,
+            country: country || '',
+            hasCoordinates: hasCoordinates
         };
     }
     return null;
@@ -179,11 +194,38 @@ function initMap() {
         // Check for URL parameters to show a specific location
         const params = getURLParameters();
         if (params) {
-            // Show the specific location marker
-            createCustomMarker(params.lat, params.lng, params.type, params.title, params.id, params.country);
+            if (params.hasCoordinates && params.lat && params.lng) {
+                // Show the specific location marker only if coordinates are available
+                createCustomMarker(params.lat, params.lng, params.type, params.title, params.id, params.country);
 
-            // Center the map on the specific location with higher zoom
-            map.setView([params.lat, params.lng], 15);
+                // Center the map on the specific location with higher zoom
+                map.setView([params.lat, params.lng], 15);
+            } else {
+                // If no coordinates but we have an ID or title, show the details modal instead
+                // Create a minimal object to pass to the details modal
+                const itemForModal = {
+                    id: params.id,
+                    title: params.title,
+                    resource_name: params.title,
+                    type: params.type,
+                    country: params.country,
+                    description: params.hasCoordinates ? 'Location details with coordinates' : 'Location details only (coordinates not available)',
+                    location: params.country || 'Location details only',
+                    latitude: params.lat,
+                    longitude: params.lng
+                };
+
+                // Attempt to open the details modal
+                setTimeout(() => {
+                    if (typeof window.openDetailsModalFromGlobe === 'function') {
+                        window.openDetailsModalFromGlobe(itemForModal);
+                    } else if (typeof window.openDetailsModal === 'function') {
+                        window.openDetailsModal(itemForModal);
+                    } else {
+                        console.warn('Could not open details modal - function not available');
+                    }
+                }, 500); // Small delay to ensure everything is loaded
+            }
         }
 
         return map;

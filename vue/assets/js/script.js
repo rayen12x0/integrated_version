@@ -1303,125 +1303,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // Add event listeners for form validation
-    document.querySelector('#action-tab .btn-large').addEventListener('click', validateActionForm);
-    document.querySelector('#resource-tab .btn-large').addEventListener('click', validateResourceForm);
+    document.getElementById('createActionBtn').addEventListener('click', validateActionForm);
+    document.getElementById('createResourceBtn').addEventListener('click', validateResourceForm);
 
     // Populate country dropdowns after page loads
     populateCountryDropdowns();
 });
 
-// =============================================
-// 17. FORM VALIDATION
-// =============================================
-function validateActionForm(e) {
-    e.preventDefault();
-
-    // Get form fields
-    const title = document.getElementById('actionTitle');
-    const category = document.getElementById('actionCategory');
-    const description = document.getElementById('actionDescription');
-    const start_time = document.getElementById('actionDateTime');
-    const location = document.getElementById('actionLocation');
-
-    let isValid = true;
-
-    // Clear previous error styles
-    clearErrorStyles();
-
-    // Validate title
-    if (!title.value.trim()) {
-        title.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate category
-    if (!category.value) {
-        category.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate description
-    if (!description.value.trim()) {
-        description.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate start time
-    if (!start_time.value) {
-        start_time.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate location
-    if (!location.value.trim()) {
-        location.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    if (!isValid) {
-        showSwal('Validation Error', 'Please fill in all required fields.', 'error');
-        return false;
-    }
-
-    // Submit the action form using the main submission function
-    submitActionForm();
-}
-
-function validateResourceForm(e) {
-    e.preventDefault();
-
-    // Get resource form fields
-    const resourceName = document.querySelector('#resource-tab input[placeholder="e.g., Books, Furniture..."]');
-    const resourceType = document.querySelector('#resource-tab input[name="type"]:checked');
-    const resourceCategory = document.querySelector('#resource-tab select');
-    const resourceDescription = document.querySelector('#resource-tab textarea[placeholder="Describe the resource..."]');
-    const resourceLocation = document.querySelector('#resource-tab input[placeholder="Enter location..."]');
-
-    let isValid = true;
-
-    // Clear previous error styles
-    clearErrorStyles();
-
-    // Validate resource name
-    if (!resourceName.value.trim()) {
-        resourceName.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate resource type
-    if (!resourceType) {
-        const radioGroup = document.querySelector('.radio-group');
-        radioGroup.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate resource category
-    if (!resourceCategory.value) {
-        resourceCategory.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate resource description
-    if (!resourceDescription.value.trim()) {
-        resourceDescription.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    // Validate resource location
-    if (!resourceLocation.value.trim()) {
-        resourceLocation.style.border = '2px solid red';
-        isValid = false;
-    }
-
-    if (!isValid) {
-        showSwal('Validation Error', 'Please fill in all required fields.', 'error');
-        return false;
-    }
-
-    // Submit the resource form
-    submitResourceForm();
-}
-
+// Function to clear error styles used by validation functions
 function clearErrorStyles() {
     // Remove red borders from all inputs
     const inputs = document.querySelectorAll('input, textarea, select');
@@ -1435,6 +1324,7 @@ function clearErrorStyles() {
         group.style.border = '';
     });
 }
+
 
 
 // Function to submit resource form
@@ -1823,6 +1713,19 @@ function openLocationPicker(formType) {
 function initLocationPickerMap(formType) {
     // Create or get the map container
     const mapContainer = document.getElementById('locationPickerMap');
+
+    // Guard against multiple initializations: if locationPickerMap already exists, remove it first
+    if (locationPickerMap) {
+        try {
+            locationPickerMap.remove();
+        } catch (e) {
+            console.warn('Could not remove existing map:', e);
+        }
+        locationPickerMap = null;
+    }
+
+    // Clear any existing Leaflet content in the container
+    mapContainer.innerHTML = '';
 
     // Initialize Leaflet map
     locationPickerMap = L.map('locationPickerMap').setView([20, 0], 2); // Default to world view
