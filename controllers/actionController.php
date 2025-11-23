@@ -120,9 +120,16 @@ class ActionController
             $result = $this->action->create($input);
 
             if ($result) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
                 // Success response
                 $lastId = $this->pdo->lastInsertId();
                 error_log("Action created successfully with ID: " . $lastId);
+
+                // Create notification for action creation
+                $notification->createActionCreatedNotification($input['creator_id'], $lastId, $input['title']);
+
                 echo json_encode([
                     "success" => true,
                     "message" => "Action created successfully",
@@ -308,9 +315,21 @@ class ActionController
                 }
             }
 
+            // Get the existing action before update to get the title
+            $existingAction = $this->action->findById($id);
+
             $result = $this->action->update($id, $input);
 
             if ($result) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for action update (only for the creator)
+                $currentUser = AuthHelper::getCurrentUser();
+                if ($existingAction && $existingAction['creator_id'] == $currentUser['id']) {
+                    $notification->createActionUpdatedNotification($existingAction['creator_id'], $id, $input['title'] ?? $existingAction['title']);
+                }
+
                 echo json_encode([
                     "success" => true,
                     "message" => "Action updated successfully"
@@ -347,11 +366,33 @@ class ActionController
         $action = $input['action']; // 'approve' or 'reject'
 
         if ($action === 'approve') {
+            // Get the existing action before approve to get the title and creator_id
+            $existingAction = $this->action->findById($id);
+
             $result = $this->action->approve($id);
             $message = $result ? "Action approved successfully" : "Failed to approve action";
+
+            if ($result && $existingAction) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for action approval
+                $notification->createActionApprovedNotification($existingAction['creator_id'], $existingAction['id'], $existingAction['title']);
+            }
         } elseif ($action === 'reject') {
+            // Get the existing action before reject to get the title and creator_id
+            $existingAction = $this->action->findById($id);
+
             $result = $this->action->reject($id);
             $message = $result ? "Action rejected successfully" : "Failed to reject action";
+
+            if ($result && $existingAction) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for action rejection
+                $notification->createActionRejectedNotification($existingAction['creator_id'], $existingAction['id'], $existingAction['title']);
+            }
         } else {
             echo json_encode([
                 "success" => false,
@@ -403,9 +444,20 @@ class ActionController
             return;
         }
 
+        // Get the existing action before deletion to get the title and creator_id
+        $existingAction = $this->action->findById($id);
+
         $result = $this->action->delete($id);
 
         if ($result) {
+            require_once __DIR__ . "/../model/notification.php"; // Include notification model
+            $notification = new Notification($this->pdo); // Initialize notification model
+
+            // Create notification for action deletion
+            if ($existingAction) {
+                $notification->createActionDeletedNotification($existingAction['creator_id'], $existingAction['title']);
+            }
+
             echo json_encode([
                 "success" => true,
                 "message" => "Action deleted successfully"

@@ -66,9 +66,58 @@ class CommentController
         $result = $this->comment->create($input);
 
         if ($result) {
+            require_once __DIR__ . "/../model/notification.php"; // Include notification model
+            $notification = new Notification($this->pdo); // Initialize notification model
+
             // Success response
             $lastId = $this->pdo->lastInsertId();
             error_log("Comment created successfully with ID: " . $lastId);
+
+            // Get item title and creator for notification
+            $itemId = null;
+            $itemTitle = '';
+            $creatorId = null;
+            $itemType = '';
+
+            if (!empty($input['action_id'])) {
+                $itemType = 'action';
+                $itemId = $input['action_id'];
+
+                // Get action title and creator
+                $stmt = $this->pdo->prepare("SELECT title, creator_id FROM actions WHERE id = :id");
+                $stmt->execute([':id' => $itemId]);
+                $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($item) {
+                    $itemTitle = $item['title'];
+                    $creatorId = $item['creator_id'];
+                }
+            } elseif (!empty($input['resource_id'])) {
+                $itemType = 'resource';
+                $itemId = $input['resource_id'];
+
+                // Get resource title and publisher
+                $stmt = $this->pdo->prepare("SELECT resource_name, publisher_id FROM resources WHERE id = :id");
+                $stmt->execute([':id' => $itemId]);
+                $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($item) {
+                    $itemTitle = $item['resource_name'];
+                    $creatorId = $item['publisher_id'];
+                }
+            }
+
+            // Get user name who commented
+            $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+            $userStmt->execute([':user_id' => $input['user_id']]);
+            $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+            $commenterName = $user['name'] ?? 'A user';
+
+            // Create notification for comment (only if the commenter is not the creator)
+            if ($creatorId && $creatorId != $input['user_id']) {
+                $notification->createCommentAddedNotification($creatorId, $itemId, $itemTitle, $commenterName, $itemType);
+            }
+
             echo json_encode([
                 "success" => true,
                 "message" => "Comment created successfully",

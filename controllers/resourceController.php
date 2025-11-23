@@ -148,9 +148,16 @@ class ResourceController
             $result = $this->resource->create($input);
 
             if ($result) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
                 // Success response
                 $lastId = $this->pdo->lastInsertId();
                 error_log("resource created successfully with ID: " . $lastId);
+
+                // Create notification for resource creation
+                $notification->createResourceCreatedNotification($input['publisher_id'], $lastId, $input['resource_name']);
+
                 echo json_encode([
                     "success" => true,
                     "message" => "resource created successfully",
@@ -296,9 +303,22 @@ class ResourceController
                 $input['image_url'] = 'https://via.placeholder.com/400x200?text=Resource+Image';
             }
 
+            // Get the existing resource before update to get the resource_name
+            $existingResource = $this->resource->findById($id);
+
             $result = $this->resource->update($id, $input);
 
             if ($result) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for resource update (only for the publisher)
+                $currentUser = AuthHelper::getCurrentUser();
+                if ($existingResource && $existingResource['publisher_id'] == $currentUser['id']) {
+                    $resourceName = $input['resource_name'] ?? $existingResource['resource_name'];
+                    $notification->createResourceUpdatedNotification($existingResource['publisher_id'], $id, $resourceName);
+                }
+
                 echo json_encode([
                     "success" => true,
                     "message" => "resource updated successfully"
@@ -371,11 +391,33 @@ class ResourceController
         $action = $input['action']; // 'approve' or 'reject'
 
         if ($action === 'approve') {
+            // Get the existing resource before approve to get the resource_name and publisher_id
+            $existingResource = $this->resource->findById($id);
+
             $result = $this->resource->approve($id);
             $message = $result ? "Resource approved successfully" : "Failed to approve resource";
+
+            if ($result && $existingResource) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for resource approval
+                $notification->createResourceApprovedNotification($existingResource['publisher_id'], $existingResource['id'], $existingResource['resource_name']);
+            }
         } elseif ($action === 'reject') {
+            // Get the existing resource before reject to get the resource_name and publisher_id
+            $existingResource = $this->resource->findById($id);
+
             $result = $this->resource->reject($id);
             $message = $result ? "Resource rejected successfully" : "Failed to reject resource";
+
+            if ($result && $existingResource) {
+                require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                $notification = new Notification($this->pdo); // Initialize notification model
+
+                // Create notification for resource rejection
+                $notification->createResourceRejectedNotification($existingResource['publisher_id'], $existingResource['id'], $existingResource['resource_name']);
+            }
         } else {
             echo json_encode([
                 "success" => false,
@@ -427,9 +469,20 @@ class ResourceController
             return;
         }
 
+        // Get the existing resource before deletion to get the resource_name and publisher_id
+        $existingResource = $this->resource->findById($id);
+
         $result = $this->resource->delete($id);
 
         if ($result) {
+            require_once __DIR__ . "/../model/notification.php"; // Include notification model
+            $notification = new Notification($this->pdo); // Initialize notification model
+
+            // Create notification for resource deletion
+            if ($existingResource) {
+                $notification->createResourceDeletedNotification($existingResource['publisher_id'], $existingResource['resource_name']);
+            }
+
             echo json_encode([
                 "success" => true,
                 "message" => "resource deleted successfully"

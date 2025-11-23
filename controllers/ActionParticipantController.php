@@ -68,6 +68,24 @@ class ActionParticipantController
                 $insertStmt = $this->pdo->prepare("INSERT INTO action_participants (action_id, user_id) VALUES (:action_id, :user_id)");
                 $insertStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
 
+                // Add notification for joining action
+                require_once __DIR__ . "/../model/notification.php";
+                $notification = new Notification($this->pdo);
+
+                // Get action creator ID and title
+                $actionStmt = $this->pdo->prepare("SELECT creator_id, title FROM actions WHERE id = :action_id");
+                $actionStmt->execute([':action_id' => $actionId]);
+                $action = $actionStmt->fetch(PDO::FETCH_ASSOC);
+
+                // Get user name
+                $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+                $userStmt->execute([':user_id' => $userId]);
+                $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($action && $user && $action['creator_id'] != $userId) { // Don't notify the user if they're joining their own action
+                    $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
+                }
+
                 echo json_encode([
                     "success" => true,
                     "message" => "Successfully joined action",

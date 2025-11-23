@@ -81,7 +81,7 @@ window.COUNTRIES = [
     {name: "Iran, Islamic Republic of", code: "IR", aliases: ["IRN", "Islamic Republic of Iran"]},
     {name: "Iraq", code: "IQ", aliases: ["IRQ"]},
     {name: "Ireland", code: "IE", aliases: ["IRL"]},
-    {name: "Israel", code: "IL", aliases: ["ISR"]},
+    {name: "Palestine", code: "PS", aliases: ["PSE", "PS"]},
     {name: "Italy", code: "IT", aliases: ["ITA"]},
     {name: "Jamaica", code: "JM", aliases: ["JAM"]},
     {name: "Japan", code: "JP", aliases: ["JPN"]},

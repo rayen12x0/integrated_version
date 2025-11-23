@@ -1769,6 +1769,9 @@ function initLocationPickerMap(formType) {
         // Update UI with selected coordinates
         document.getElementById('selectedCoordinates').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
 
+        // Show pin placement feedback
+        showSwal('Pin Placed', 'Location marker added. Click Confirm to save.', 'success', 'bottom-end');
+
         // Enable confirm button
         document.getElementById('confirmLocationBtn').disabled = false;
 

@@ -140,6 +140,9 @@ function initializeApp() {
 
     // Populate country dropdowns after DOM is loaded
     populateCountryDropdowns();
+
+    // Set up notification polling for real-time updates
+    setupNotificationPolling();
 }
 
 // Populate country dropdowns with country options from COUNTRIES array
@@ -515,6 +518,29 @@ async function loadCommentsCount() {
     }
 }
 
+// Module-level variable to track last notification count for animation
+let lastUnreadCount = 0;
+
+// Set up notification polling for real-time updates
+function setupNotificationPolling() {
+    // Clear any existing intervals
+    if (window.notificationPollingInterval) {
+        clearInterval(window.notificationPollingInterval);
+    }
+
+    // Set up polling every 30 seconds
+    window.notificationPollingInterval = setInterval(() => {
+        if (currentUser && isAuthenticated) {
+            loadNotifications();
+        } else {
+            // If user is not authenticated, clear the interval
+            clearInterval(window.notificationPollingInterval);
+        }
+    }, 30000); // 30 seconds
+
+    console.log("Notification polling started");
+}
+
 // Load notifications for the user
 async function loadNotifications() {
     // Guard: return if not authenticated
@@ -536,10 +562,31 @@ async function loadNotifications() {
                 if (unreadCount > 0) {
                     countElement.textContent = unreadCount;
                     countElement.style.display = 'inline-block';
+
+                    // Apply animation if there are new notifications compared to last time
+                    if (unreadCount > lastUnreadCount) {
+                        // Add pulse animation class to notification bell/badge
+                        const notificationBtn = document.querySelector('.notification-btn');
+                        if (notificationBtn) {
+                            notificationBtn.classList.add('pulse-animation');
+                            setTimeout(() => {
+                                notificationBtn.classList.remove('pulse-animation');
+                            }, 1000); // Remove class after animation completes
+                        }
+
+                        // Also add animation to count element itself
+                        countElement.classList.add('pulse-animation');
+                        setTimeout(() => {
+                            countElement.classList.remove('pulse-animation');
+                        }, 1000);
+                    }
                 } else {
                     countElement.style.display = 'none';
                 }
             }
+
+            // Update the last unread count
+            lastUnreadCount = unreadCount;
         }
     } catch (error) {
         console.error('Error loading notifications:', error);
@@ -1673,6 +1720,15 @@ async function handleLogout() {
                 // Clear localStorage
                 localStorage.removeItem('userId');
                 localStorage.removeItem('userRole');
+
+                // Clear notification polling interval
+                if (window.notificationPollingInterval) {
+                    clearInterval(window.notificationPollingInterval);
+                    window.notificationPollingInterval = null;
+                }
+
+                // Reset last unread count tracking variable
+                lastUnreadCount = 0;
 
                 // Update UI
                 isAuthenticated = false;

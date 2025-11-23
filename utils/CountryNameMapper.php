@@ -139,6 +139,8 @@ class CountryNameMapper {
         'Palestinian Territories' => 'Palestine',
         'Palestine' => 'Palestinian Territories',
         'State of Palestine' => 'Palestine',
+        'Palestine' => 'Palestine',
+        'Palestine, State of' => 'qodes',
         'Holy See' => 'Vatican City',
         'Vatican City' => 'Holy See',
         'Saint Helena' => 'Saint Helena, Ascension and Tristan da Cunha',
