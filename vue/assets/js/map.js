@@ -229,10 +229,22 @@ function updateMap() {
         const marker = L.marker([item.latitude, item.longitude])
             .addTo(window.map);
 
+        // Construct location display based on new structure
+        let locationDisplay = item.location || 'Location not specified';
+
+        // If we have separate country and location details, combine them
+        if (item.country && item.location_details) {
+            locationDisplay = `${item.location_details}, ${item.country}`;
+        } else if (item.country && !item.location_details) {
+            locationDisplay = item.country;
+        } else if (item.location_details && !item.country) {
+            locationDisplay = item.location_details;
+        }
+
         marker.bindPopup(`
             <div style="min-width: 200px;">
-                <h4>${item.title}</h4>
-                <p>${item.location}</p>
+                <h4>${item.title || item.resource_name || 'Untitled'}</h4>
+                <p>${locationDisplay}</p>
                 <button onclick="openDetailsModal(${JSON.stringify(item).replace(/"/g, '&quot;')})"
                         style="padding: 6px 12px; margin-top: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     View Details

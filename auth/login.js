@@ -154,7 +154,12 @@ document.getElementById('adminBtn')?.addEventListener('click', async function(e)
         window.location.href = '../dashboard/index.html';
     } else {
         hideLoading();
-        alert('Login failed. Please try again.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: 'Please try again.',
+            confirmButtonText: 'OK'
+        });
     }
 });
 
@@ -175,7 +180,12 @@ document.getElementById('userBtn')?.addEventListener('click', async function(e) 
         window.location.href = '../dashboard/index.html';
     } else {
         hideLoading();
-        alert('Login failed. Please try again.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Failed',
+            text: 'Please try again.',
+            confirmButtonText: 'OK'
+        });
     }
 });
 

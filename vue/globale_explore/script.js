@@ -45,6 +45,156 @@ createControls();
 
 window.addEventListener("resize", updateSize);
 
+// Country name normalization function
+function normalizeCountryName(name) {
+    if (!name) return name;
+
+    // Common abbreviation mappings
+    const mappings = {
+        'uk': 'United Kingdom',
+        'u.k.': 'United Kingdom',
+        'britain': 'United Kingdom',
+        'great britain': 'United Kingdom',
+        'england': 'United Kingdom',
+
+        'usa': 'United States',
+        'u.s.a.': 'United States',
+        'us': 'United States',
+        'u.s.': 'United States',
+        'america': 'United States',
+
+        'uae': 'United Arab Emirates',
+        'u.a.e.': 'United Arab Emirates',
+        'u. a. e.': 'United Arab Emirates',
+
+        'russia': 'Russian Federation',
+        'ussr': 'Russian Federation',
+        'russian federation': 'Russia',
+
+        'czech republic': 'Czechia',
+        'czechia': 'Czech Republic',
+
+        'macedonia': 'North Macedonia',
+        'north macedonia': 'Macedonia',
+        'fyrom': 'North Macedonia',
+
+        'bahamas': 'The Bahamas',
+        'the bahamas': 'Bahamas',
+
+        'gambia': 'The Gambia',
+        'the gambia': 'Gambia',
+
+        'congo, democratic republic': 'Democratic Republic of the Congo',
+        'democratic republic of the congo': 'Democratic Republic of the Congo',
+        'drc': 'Democratic Republic of the Congo',
+        'congo-kinshasa': 'Democratic Republic of the Congo',
+
+        'congo, republic': 'Republic of the Congo',
+        'republic of the congo': 'Republic of the Congo',
+        'congo-brazzaville': 'Republic of the Congo',
+        'republic of congo': 'Republic of the Congo',
+
+        'ivory coast': 'Côte d\'Ivoire',
+        'côte d\'ivoire': 'Ivory Coast',
+        'cote d\'ivoire': 'Ivory Coast',
+
+        'south korea': 'South Korea',
+        'korea, republic of': 'South Korea',
+        'republic of korea': 'South Korea',
+
+        'north korea': 'North Korea',
+        'korea, democratic people\'s republic of': 'North Korea',
+        'democratic people\'s republic of korea': 'North Korea',
+
+        'taiwan': 'Taiwan, Province of China',
+        'taiwan, province of china': 'Taiwan',
+
+        'laos': 'Lao People\'s Democratic Republic',
+        'lao people\'s democratic republic': 'Laos',
+        'lao pdr': 'Laos',
+
+        'burma': 'Myanmar',
+        'myanmar': 'Burma',
+
+        'swaziland': 'Eswatini',
+        'eswatini': 'Swaziland',
+        'kingdom of eswatini': 'Eswatini',
+
+        'netherlands': 'Netherlands',
+        'the netherlands': 'Netherlands',
+        'holland': 'Netherlands',
+
+        'moldova': 'Moldova, Republic of',
+        'moldova, republic of': 'Moldova',
+
+        'syria': 'Syrian Arab Republic',
+        'syrian arab republic': 'Syria',
+
+        'iran': 'Iran, Islamic Republic of',
+        'iran, islamic republic of': 'Iran',
+        'islamic republic of iran': 'Iran',
+
+        'vietnam': 'Viet Nam',
+        'viet nam': 'Vietnam',
+
+        'tanzania': 'Tanzania, United Republic of',
+        'tanzania, united republic of': 'Tanzania',
+        'united republic of tanzania': 'Tanzania',
+
+        'venezuela': 'Venezuela, Bolivarian Republic of',
+        'venezuela, bolivarian republic of': 'Venezuela',
+        'bolivarian republic of venezuela': 'Venezuela',
+
+        'bolivia': 'Bolivia, Plurinational State of',
+        'bolivia, plurinational state of': 'Bolivia',
+        'plurinational state of bolivia': 'Bolivia',
+
+        'brunei': 'Brunei Darussalam',
+        'brunei darussalam': 'Brunei',
+
+        'cape verde': 'Cabo Verde',
+        'cabo verde': 'Cape Verde',
+
+        'east timor': 'Timor-Leste',
+        'timor-leste': 'East Timor',
+
+        'macedonia': 'North Macedonia',
+        'north macedonia': 'Macedonia',
+        'the former yugoslav republic of macedonia': 'North Macedonia',
+        'fyrom': 'North Macedonia',
+
+        'macao': 'Macao SAR',
+        'macao sar': 'Macao',
+        'macau': 'Macao',
+
+        'reunion': 'Réunion',
+        'réunion': 'Reunion',
+
+        // Additional mappings from the globe SVG country codes
+        'c?te d\'ivoire': 'Côte d\'Ivoire',
+        'faeroe islands': 'Faroe Islands',
+        'falkland islands': 'Falkland Islands (Malvinas)',
+        'virgin islands, british': 'British Virgin Islands',
+        'virgin islands, u.s.': 'U.S. Virgin Islands',
+        'saint kitts and nevis': 'St. Kitts and Nevis',
+        'saint vincent and the grenadines': 'St. Vincent and the Grenadines',
+        'saint lucia': 'St. Lucia',
+        's?o tom? and pr?ncipe': 'São Tomé and Príncipe',
+        's?o tom? and pr?ncipe': 'Sao Tome and Principe',
+    };
+
+    const cleanName = name.trim().toLowerCase();
+
+    // Check if the name exists in our mappings
+    if (mappings[cleanName]) {
+        return mappings[cleanName];
+    }
+
+    // If not found in mappings, apply proper case formatting
+    return name.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}
 
 containerEl.addEventListener("touchstart", (e) => {
     isTouchScreen = true;
@@ -76,21 +226,10 @@ function handleCountryClick() {
             // Clean up country name to handle potential formatting differences
             countryName = countryName.trim();
 
-            // Normalize the country name to match common database formats
-            // Capitalize first letter and lowercase the rest, or handle special cases
-            if (countryName.toLowerCase() === 'uk' || countryName.toLowerCase() === 'u.k.') {
-                countryName = 'United Kingdom';
-            } else if (countryName.toLowerCase() === 'usa' || countryName.toLowerCase() === 'u.s.a.' || countryName.toLowerCase() === 'us') {
-                countryName = 'United States';
-            } else if (countryName.toLowerCase() === 'uae' || countryName.toLowerCase() === 'u.a.e.') {
-                countryName = 'United Arab Emirates';
-            }
-            // For most countries, just ensure proper capitalization
-            else {
-                countryName = countryName.replace(/\w\S*/g, function(txt) {
-                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-                });
-            }
+            // Normalize the country name using comprehensive mappings
+            countryName = normalizeCountryName(countryName);
+
+            // Temporarily disable auto-rotation when clicking a country
 
             // Temporarily disable auto-rotation when clicking a country
             if (controls) {
@@ -551,7 +690,12 @@ function navigateToMap(item, type) {
         // Navigate to main page with parameters
         window.location.href = `../index.html?${params}`;
     } else {
-        alert('This item does not have location coordinates available.');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Location Not Available',
+            text: 'This item does not have location coordinates available.',
+            confirmButtonText: 'OK'
+        });
     }
 }
 

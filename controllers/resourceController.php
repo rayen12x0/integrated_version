@@ -6,6 +6,7 @@ require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../model/resource.php";
 require_once __DIR__ . "/../utils/imageUpload.php";
 require_once __DIR__ . "/../utils/AuthHelper.php";
+require_once __DIR__ . "/../utils/CountryNameMapper.php";
 
 class ResourceController
 {
@@ -91,11 +92,29 @@ class ResourceController
                 }
             }
 
-            // Handle country field if provided in input
-            if (isset($input['country'])) {
-                error_log("Country provided: " . $input['country']);
+            // Normalize and validate country if provided
+            if (isset($input['country']) && !empty(trim($input['country']))) {
+                $input['country'] = CountryNameMapper::normalizeCountryName($input['country']);
+                error_log("Normalized country for resource: " . $input['country']);
+
+                // Validate that when coordinates are provided, country is not empty after normalization
+                if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Country field is required when coordinates are provided"
+                    ]);
+                    return;
+                }
             } else {
-                error_log("No country provided, coordinates may be used for reverse geocoding later");
+                // If no country provided but coordinates exist, return error
+                if (!empty($input['latitude']) && !empty($input['longitude'])) {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Country field is required when coordinates are provided"
+                    ]);
+                    return;
+                }
+                error_log("No country provided for resource");
             }
 
             // Handle resource name field - it might be called differently in various forms
@@ -248,9 +267,28 @@ class ResourceController
                 }
             }
 
-            // Handle country field if provided in input
-            if (isset($input['country'])) {
-                error_log("Updating country field: " . $input['country']);
+            // Normalize and validate country if provided in input
+            if (isset($input['country']) && !empty(trim($input['country']))) {
+                $input['country'] = CountryNameMapper::normalizeCountryName($input['country']);
+                error_log("Normalized country for resource update: " . $input['country']);
+
+                // Validate that when coordinates are provided, country is not empty after normalization
+                if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Country field is required when coordinates are provided"
+                    ]);
+                    return;
+                }
+            } else {
+                // If no country provided but coordinates exist, return error
+                if (!empty($input['latitude']) && !empty($input['longitude'])) {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Country field is required when coordinates are provided"
+                    ]);
+                    return;
+                }
             }
 
             // Set image_url if not provided (for backward compatibility)

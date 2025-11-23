@@ -471,15 +471,21 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="actionLocation">Location</label>
-                        <div class="location-input-container">
-                            <input type="text" id="actionLocation" name="location" placeholder="Enter location..." data-geocoded="false">
-                            <button type="button" class="btn btn-outline pick-location-btn" data-form="action">📍 Pick on Map</button>
-                        </div>
-                        <input type="hidden" id="actionLatitude" name="latitude">
-                        <input type="hidden" id="actionLongitude" name="longitude">
-                        <input type="hidden" id="actionCountry" name="country">
+                        <label for="actionCountrySelect">Country</label>
+                        <select id="actionCountrySelect" name="country_select">
+                            <option value="">Select Country</option>
+                        </select>
                     </div>
+                    <div class="form-group">
+                        <label for="actionLocationDetails">Location Details</label>
+                        <input type="text" id="actionLocationDetails" name="location_details" placeholder="City, Address, etc." data-geocoded="false">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-outline pick-location-btn" data-form="action">📍 Pick on Map</button>
+                    </div>
+                    <input type="hidden" id="actionLatitude" name="latitude">
+                    <input type="hidden" id="actionLongitude" name="longitude">
+                    <input type="hidden" id="actionCountry" name="country">
                     <div class="form-group">
                         <label for="actionImage">Image</label>
                         <input type="file" id="actionImage" name="image" accept="image/*">
@@ -498,10 +504,10 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="resourceType">Type</label>
+                            <label>Type</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="type" value="offer" checked> Offer</label>
-                                <label><input type="radio" name="type" value="request"> Request</label>
+                                <label><input type="radio" name="type" value="offer" id="resourceTypeOffer" checked> Offer</label>
+                                <label><input type="radio" name="type" value="request" id="resourceTypeRequest"> Request</label>
                             </div>
                         </div>
                         <div class="form-group">
@@ -520,15 +526,21 @@
                         <textarea id="resourceDescription" name="description" placeholder="Describe the resource..." rows="4" ></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="resourceLocation">Location</label>
-                        <div class="location-input-container">
-                            <input type="text" id="resourceLocation" name="location" placeholder="Enter location..." data-geocoded="false">
-                            <button type="button" class="btn btn-outline pick-location-btn" data-form="resource">📍 Pick on Map</button>
-                        </div>
-                        <input type="hidden" id="resourceLatitude" name="latitude">
-                        <input type="hidden" id="resourceLongitude" name="longitude">
-                        <input type="hidden" id="resourceCountry" name="country">
+                        <label for="resourceCountrySelect">Country</label>
+                        <select id="resourceCountrySelect" name="country_select">
+                            <option value="">Select Country</option>
+                        </select>
                     </div>
+                    <div class="form-group">
+                        <label for="resourceLocationDetails">Location Details</label>
+                        <input type="text" id="resourceLocationDetails" name="location_details" placeholder="City, Address, etc." data-geocoded="false">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-outline pick-location-btn" data-form="resource">📍 Pick on Map</button>
+                    </div>
+                    <input type="hidden" id="resourceLatitude" name="latitude">
+                    <input type="hidden" id="resourceLongitude" name="longitude">
+                    <input type="hidden" id="resourceCountry" name="country">
                     <div class="form-group">
                         <label for="resourceImage">Image</label>
                         <input type="file" id="resourceImage" name="image" accept="image/*">
@@ -561,6 +573,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="../vue/assets/js/countries.js"></script>
     <script src="../vue/assets/js/map.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="script.js"></script>

@@ -1197,6 +1197,66 @@ body {
     gap: 1.5rem;
 }
 
+/* Enhanced styling for country selection */
+.form-group select[id$="CountrySelect"] {
+    padding: 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background-color: var(--color-white);
+    min-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.form-group select[id$="CountrySelect"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(174, 225, 249, 0.1);
+}
+
+.form-group input[id$="LocationDetails"] {
+    padding: 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.form-group input[id$="LocationDetails"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(174, 225, 249, 0.1);
+}
+
+/* Location container for country + details in single row */
+.location-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.location-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.location-row .form-group:last-child {
+    flex: 1.5; /* Make location details field slightly wider */
+}
+
+@media (max-width: 600px) {
+    .location-row {
+        flex-direction: column;
+    }
+
+    .location-row .form-group {
+        width: 100%;
+    }
+}
+
 .radio-group {
     display: flex;
     gap: 2rem;

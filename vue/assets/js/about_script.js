@@ -82,3 +82,32 @@ function show(){
       xPrecent:600,
       duration:1,
     })
+
+    function setupEventListeners() {
+
+    // Navbar scroll
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        navbar.classList.toggle('scrolled', window.scrollY > 100);
+    });
+
+    // Profile dropdown
+    document.querySelector('.profile-avatar').addEventListener('click', e => {
+        e.stopPropagation();
+        document.querySelector('.dropdown').classList.toggle('active');
+    });
+    document.addEventListener('click', () => {
+        document.querySelector('.dropdown').classList.remove('active');
+    });
+
+    // ESC to close modals
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+}
+
+setupEventListeners();

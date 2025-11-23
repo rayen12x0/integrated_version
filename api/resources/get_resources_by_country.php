@@ -3,6 +3,7 @@
 require_once '../../config/config.php'; // Need this first to ensure Config class is available
 require_once '../../model/resource.php';
 require_once '../../utils/AuthHelper.php';
+require_once '../../utils/CountryNameMapper.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -28,16 +29,29 @@ if (empty($country)) {
 try {
     $resource = new Resource();
 
-    // Get resources by country
-    $resources = $resource->getByCountry($country);
+    // Normalize the input country using CountryNameMapper
+    $normalizedCountry = CountryNameMapper::normalizeCountryName($country);
+    error_log("Normalized country: '$country' to '$normalizedCountry'");
+
+    // Get all country name variations for fuzzy matching
+    $countryVariations = CountryNameMapper::getMappingVariations($country);
+    $countryVariations = array_unique($countryVariations);  // Remove duplicates
+
+    error_log("Searching for resource country variations: " . implode(', ', $countryVariations));
+
+    // Get resources by country variations
+    $resources = $resource->getByCountry($countryVariations);
 
     echo json_encode([
         'success' => true,
         'resources' => $resources,
         'count' => count($resources),
-        'country' => $country,
+        'country' => $normalizedCountry,
+        'searched_variations' => $countryVariations,
         'debug' => [
             'input_country' => $country,
+            'normalized_country' => $normalizedCountry,
+            'variations_used' => $countryVariations,
             'resources_found' => count($resources)
         ]
     ]);
@@ -50,7 +64,8 @@ try {
         'message' => 'Error retrieving resources: ' . $e->getMessage(),
         'country' => $country,
         'debug' => [
-            'input_country' => $country
+            'input_country' => $country,
+            'error' => $e->getMessage()
         ]
     ]);
 }

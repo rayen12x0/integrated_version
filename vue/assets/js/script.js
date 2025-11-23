@@ -1,7 +1,17 @@
 // Check if jQuery is available
 if (typeof jQuery === 'undefined') {
     console.error('CRITICAL: jQuery is not loaded! All AJAX calls will fail.');
-    alert('Critical Error: jQuery library failed to load. Please refresh the page.');
+    Swal.fire({
+        icon: 'error',
+        title: 'Critical Error',
+        text: 'jQuery library failed to load. Please refresh the page.',
+        confirmButtonText: 'Refresh',
+        allowOutsideClick: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.reload();
+        }
+    });
 }
 
 // =============================================
@@ -19,7 +29,46 @@ let displayedItemCount = 6; // Number of items to show per page
 let isUserLoggedIn = false; // Track if user is authenticated
 let currentUser = null;     // Store current user data
 
+// Function to populate country dropdowns
+function populateCountryDropdowns() {
+    // Check if COUNTRIES array is available
+    if (typeof window.COUNTRIES === 'undefined') {
+        console.error('COUNTRIES array not available');
+        return;
+    }
 
+    // Populate action country dropdown
+    const actionCountrySelect = document.getElementById('actionCountry');
+    if (actionCountrySelect) {
+        // Clear existing options except possible default option
+        actionCountrySelect.innerHTML = '<option value="">Select Country</option>';
+
+        // Add countries sorted alphabetically by name
+        const sortedCountries = [...window.COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
+        sortedCountries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = country.name;
+            actionCountrySelect.appendChild(option);
+        });
+    }
+
+    // Populate resource country dropdown
+    const resourceCountrySelect = document.getElementById('resourceCountry');
+    if (resourceCountrySelect) {
+        // Clear existing options except possible default option
+        resourceCountrySelect.innerHTML = '<option value="">Select Country</option>';
+
+        // Add countries sorted alphabetically by name
+        const sortedCountries = [...window.COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
+        sortedCountries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = country.name;
+            resourceCountrySelect.appendChild(option);
+        });
+    }
+}
 
 // ==================================================
 // 1. AUTHENTICATION CHECK
@@ -76,9 +125,18 @@ function updateAuthUI() {
                 openCreateModal('action');
             } else {
                 // For unauthenticated users, show login prompt
-                if (confirm('You need to be logged in to create actions or resources. Would you like to login?')) {
-                    window.location.href = '../auth/login.html';
-                }
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Required',
+                    text: 'You need to be logged in to create actions or resources. Would you like to login?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, login',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '../auth/login.html';
+                    }
+                });
             }
         };
     }
@@ -89,9 +147,18 @@ function updateAuthUI() {
                 openCreateModal('resource');
             } else {
                 // For unauthenticated users, show login prompt
-                if (confirm('You need to be logged in to create actions or resources. Would you like to login?')) {
-                    window.location.href = '../auth/login.html';
-                }
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Login Required',
+                    text: 'You need to be logged in to create actions or resources. Would you like to login?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, login',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '../auth/login.html';
+                    }
+                });
             }
         };
     }
@@ -268,9 +335,18 @@ async function submitActionForm() {
     const theme = document.getElementById('actionTheme').value;
     const description = document.getElementById('actionDescription').value.trim();
     const start_time = document.getElementById('actionDateTime').value;
-    const location = document.getElementById('actionLocation').value.trim();
+    const country = document.getElementById('actionCountry').value;
+    const locationDetails = document.getElementById('actionLocationDetails').value.trim();
     const duration = document.getElementById('actionDuration').value;
-    const fileInput = document.getElementById('file-input');
+    const fileInput = document.getElementById('file-input'); // Using the correct ID as in the HTML
+
+    // Construct location string from country and details
+    const location = country && locationDetails ? `${country} - ${locationDetails}` : country || locationDetails || '';
+
+    // Get coordinate and country hidden fields
+    const latInput = document.getElementById('actionLat');
+    const lngInput = document.getElementById('actionLng');
+    const countryHiddenInput = document.getElementById('actionCountryHidden');
 
     // Check if there's a file to upload
     const hasFile = fileInput && fileInput.files.length > 0;
@@ -285,6 +361,16 @@ async function submitActionForm() {
         formData.append('location', location);
         formData.append('start_time', start_time);
         formData.append('creator_id', currentUser ? currentUser.id : 1); // Add creator ID
+
+        // Add country, latitude, and longitude to form data
+        formData.append('country', country);
+        if (latInput && latInput.value) {
+            formData.append('latitude', latInput.value);
+        }
+        if (lngInput && lngInput.value) {
+            formData.append('longitude', lngInput.value);
+        }
+
         if (start_time && duration) {
             const start = new Date(start_time);
             start.setHours(start.getHours() + parseInt(duration));
@@ -338,6 +424,9 @@ async function submitActionForm() {
             theme,
             location,
             start_time,
+            country, // Add country field
+            latitude: latInput && latInput.value ? parseFloat(latInput.value) : null,
+            longitude: lngInput && lngInput.value ? parseFloat(lngInput.value) : null,
             image_url: null // No image provided
         };
 
@@ -461,12 +550,21 @@ async function submitResourceForm() {
     const isEditMode = createModalElement.dataset.editMode === 'true';
     const resourceId = createModalElement.dataset.resourceId;
 
-    const resourceName = document.querySelector('#resource-tab input[placeholder="e.g., Books, Furniture..."]').value.trim();
+    const resourceName = document.getElementById('resourceName').value.trim();
     const type = document.querySelector('#resource-tab input[name="type"]:checked').value;
-    const category = document.querySelector('#resource-tab select').value;
-    const description = document.querySelector('#resource-tab textarea[placeholder="Describe the resource..."]').value.trim();
-    const location = document.querySelector('#resource-tab input[placeholder="Enter location..."]').value.trim();
-    const fileInput = document.getElementById('file-input');
+    const category = document.getElementById('resourceCategory').value;
+    const description = document.getElementById('resourceDescription').value.trim();
+    const country = document.getElementById('resourceCountry').value;
+    const locationDetails = document.getElementById('resourceLocationDetails').value.trim();
+    const fileInput = document.getElementById('file-input'); // Using the correct ID as in the HTML
+
+    // Construct location string from country and details
+    const location = country && locationDetails ? `${country} - ${locationDetails}` : country || locationDetails || '';
+
+    // Get coordinate and country hidden fields
+    const latInput = document.getElementById('resourceLat');
+    const lngInput = document.getElementById('resourceLng');
+    const countryHiddenInput = document.getElementById('resourceCountryHidden');
 
     // Check if there's a file to upload
     const hasFile = fileInput && fileInput.files.length > 0;
@@ -479,6 +577,13 @@ async function submitResourceForm() {
         formData.append('category', category);
         formData.append('type', type);
         formData.append('location', location);
+        formData.append('country', country); // Add country field
+        if (latInput && latInput.value) {
+            formData.append('latitude', latInput.value);
+        }
+        if (lngInput && lngInput.value) {
+            formData.append('longitude', lngInput.value);
+        }
         formData.append('image', fileInput.files[0]);
 
         if (isEditMode) {
@@ -526,6 +631,9 @@ async function submitResourceForm() {
             category: category,
             type: type,
             location: location,
+            country: country, // Add country field
+            latitude: latInput && latInput.value ? parseFloat(latInput.value) : null,
+            longitude: lngInput && lngInput.value ? parseFloat(lngInput.value) : null,
             image_url: null // No image provided
         };
 
@@ -1197,6 +1305,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Add event listeners for form validation
     document.querySelector('#action-tab .btn-large').addEventListener('click', validateActionForm);
     document.querySelector('#resource-tab .btn-large').addEventListener('click', validateResourceForm);
+
+    // Populate country dropdowns after page loads
+    populateCountryDropdowns();
 });
 
 // =============================================

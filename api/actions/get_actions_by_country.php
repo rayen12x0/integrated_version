@@ -3,6 +3,7 @@
 require_once '../../config/config.php'; // Need this first to ensure Config class is available
 require_once '../../model/action.php';
 require_once '../../utils/AuthHelper.php';
+require_once '../../utils/CountryNameMapper.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -28,16 +29,29 @@ if (empty($country)) {
 try {
     $action = new Action();
 
-    // Get actions by country
-    $actions = $action->getByCountry($country);
+    // Normalize the input country using CountryNameMapper
+    $normalizedCountry = CountryNameMapper::normalizeCountryName($country);
+    error_log("Normalized country: '$country' to '$normalizedCountry'");
+
+    // Get all country name variations for fuzzy matching
+    $countryVariations = CountryNameMapper::getMappingVariations($country);
+    $countryVariations = array_unique($countryVariations);  // Remove duplicates
+
+    error_log("Searching for country variations: " . implode(', ', $countryVariations));
+
+    // Get actions by country variations
+    $actions = $action->getByCountry($countryVariations);
 
     echo json_encode([
         'success' => true,
         'actions' => $actions,
         'count' => count($actions),
-        'country' => $country,
+        'country' => $normalizedCountry,
+        'searched_variations' => $countryVariations,
         'debug' => [
             'input_country' => $country,
+            'normalized_country' => $normalizedCountry,
+            'variations_used' => $countryVariations,
             'actions_found' => count($actions)
         ]
     ]);
@@ -50,7 +64,8 @@ try {
         'message' => 'Error retrieving actions: ' . $e->getMessage(),
         'country' => $country,
         'debug' => [
-            'input_country' => $country
+            'input_country' => $country,
+            'error' => $e->getMessage()
         ]
     ]);
 }

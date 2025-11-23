@@ -555,19 +555,37 @@ class Action
         return $actions;
     }
 
-    // Get actions by country
+    // Get actions by country - can accept a single country or array of country variations
     public function getByCountry($country) {
         try {
+            // Convert single country to array for consistent handling
+            if (!is_array($country)) {
+                $countries = [$country];
+            } else {
+                $countries = $country;
+            }
+
+            // Sanitize the countries array - remove any empty/null values
+            $countries = array_filter($countries, function($value) {
+                return !empty(trim($value));
+            });
+
+            if (empty($countries)) {
+                return []; // Return empty array if no valid countries
+            }
+
+            // Build placeholders for the IN clause
+            $placeholders = str_repeat('?,', count($countries) - 1) . '?';
+
             $sql = "SELECT a.*, u.name as creator_name, u.avatar_url as creator_avatar, u.badge as creator_badge
                     FROM actions a
                     LEFT JOIN users u ON a.creator_id = u.id
-                    WHERE (a.country = :country OR LOWER(a.country) = LOWER(:country))
+                    WHERE a.country IN ($placeholders)
                     AND a.status = 'approved'
                     ORDER BY a.created_at DESC";
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':country', $country, PDO::PARAM_STR);
-            $stmt->execute();
+            $stmt->execute(array_values($countries)); // Sanitize the array to ensure sequential indices
 
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -616,7 +634,7 @@ class Action
                 $action['tags'] = [];
             }
 
-            return $results;
+            return $results; // This was incorrectly named, should be $actions
         } catch (PDOException $e) {
             error_log("Error getting actions by country: " . $e->getMessage());
             throw new Exception("Database error: " . $e->getMessage());

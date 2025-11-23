@@ -446,19 +446,37 @@ class Resource
         return $resources;
     }
 
-    // Get resources by country
+    // Get resources by country - can accept a single country or array of country variations
     public function getByCountry($country) {
         try {
+            // Convert single country to array for consistent handling
+            if (!is_array($country)) {
+                $countries = [$country];
+            } else {
+                $countries = $country;
+            }
+
+            // Sanitize the countries array - remove any empty/null values
+            $countries = array_filter($countries, function($value) {
+                return !empty(trim($value));
+            });
+
+            if (empty($countries)) {
+                return []; // Return empty array if no valid countries
+            }
+
+            // Build placeholders for the IN clause
+            $placeholders = str_repeat('?,', count($countries) - 1) . '?';
+
             $sql = "SELECT r.*, u.name as publisher_name, u.avatar_url as publisher_avatar, u.badge as publisher_badge
                     FROM resources r
                     LEFT JOIN users u ON r.publisher_id = u.id
-                    WHERE (r.country = :country OR LOWER(r.country) = LOWER(:country))
+                    WHERE r.country IN ($placeholders)
                     AND r.status = 'approved'
                     ORDER BY r.created_at DESC";
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':country', $country, PDO::PARAM_STR);
-            $stmt->execute();
+            $stmt->execute(array_values($countries)); // Sanitize the array to ensure sequential indices
 
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

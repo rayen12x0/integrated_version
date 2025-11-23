@@ -49,30 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Add event listener for location input blur to trigger geocoding
-    document.getElementById('actionLocation')?.addEventListener('blur', async function() {
-        if (this.value.trim() !== '' && this.getAttribute('data-geocoded') !== 'true') {
-            const geoResult = await geocodeLocation(this.value);
-            if (geoResult) {
-                document.getElementById('actionLatitude').value = geoResult.latitude;
-                document.getElementById('actionLongitude').value = geoResult.longitude;
-                document.getElementById('actionCountry').value = geoResult.country;
-                this.setAttribute('data-geocoded', 'true');
-            }
-        }
-    });
-
-    document.getElementById('resourceLocation')?.addEventListener('blur', async function() {
-        if (this.value.trim() !== '' && this.getAttribute('data-geocoded') !== 'true') {
-            const geoResult = await geocodeLocation(this.value);
-            if (geoResult) {
-                document.getElementById('resourceLatitude').value = geoResult.latitude;
-                document.getElementById('resourceLongitude').value = geoResult.longitude;
-                document.getElementById('resourceCountry').value = geoResult.country;
-                this.setAttribute('data-geocoded', 'true');
-            }
-        }
-    });
+    // Event listeners for location input blur are not needed as geocoding is handled in the form submission
+    // The map picker functionality will handle location selection instead
 
     // Add event listeners for modal controls
     document.getElementById('confirmLocationBtn')?.addEventListener('click', confirmLocationSelection);
@@ -159,6 +137,47 @@ function initializeApp() {
 
     // Setup event listeners after auth check
     setupEventListeners();
+
+    // Populate country dropdowns after DOM is loaded
+    populateCountryDropdowns();
+}
+
+// Populate country dropdowns with country options from COUNTRIES array
+function populateCountryDropdowns() {
+    // Check if COUNTRIES array is available
+    if (typeof window.COUNTRIES === 'undefined') {
+        console.error('COUNTRIES array not available');
+        return;
+    }
+
+    const actionCountrySelect = document.getElementById('actionCountrySelect');
+    const resourceCountrySelect = document.getElementById('resourceCountrySelect');
+
+    if (actionCountrySelect) {
+        // Clear existing options except the first placeholder
+        actionCountrySelect.innerHTML = '<option value="">Select Country</option>';
+
+        // Add countries to the dropdown
+        window.COUNTRIES.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = country.name;
+            actionCountrySelect.appendChild(option);
+        });
+    }
+
+    if (resourceCountrySelect) {
+        // Clear existing options except the first placeholder
+        resourceCountrySelect.innerHTML = '<option value="">Select Country</option>';
+
+        // Add countries to the dropdown
+        window.COUNTRIES.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name;
+            option.textContent = country.name;
+            resourceCountrySelect.appendChild(option);
+        });
+    }
 }
 
 // Set up event listeners
@@ -264,6 +283,132 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Search and filter functionality
+    // Actions search
+    const actionsSearchInput = document.getElementById('my-actions-search');
+    if (actionsSearchInput) {
+        let actionsSearchTimeout;
+        actionsSearchInput.addEventListener('input', function() {
+            clearTimeout(actionsSearchTimeout);
+            actionsSearchTimeout = setTimeout(() => {
+                filterActionsTable();
+            }, 300); // Debounce 300ms
+        });
+    }
+
+    // Actions status filter
+    const actionsStatusFilter = document.getElementById('my-actions-status-filter');
+    if (actionsStatusFilter) {
+        actionsStatusFilter.addEventListener('change', function() {
+            filterActionsTable();
+        });
+    }
+
+    // Resources search
+    const resourcesSearchInput = document.getElementById('my-resources-search');
+    if (resourcesSearchInput) {
+        let resourcesSearchTimeout;
+        resourcesSearchInput.addEventListener('input', function() {
+            clearTimeout(resourcesSearchTimeout);
+            resourcesSearchTimeout = setTimeout(() => {
+                filterResourcesTable();
+            }, 300); // Debounce 300ms
+        });
+    }
+
+    // Resources status filter
+    const resourcesStatusFilter = document.getElementById('my-resources-status-filter');
+    if (resourcesStatusFilter) {
+        resourcesStatusFilter.addEventListener('change', function() {
+            filterResourcesTable();
+        });
+    }
+}
+
+// Debounced filtering functions
+function filterActionsTable() {
+    const searchInput = document.getElementById('my-actions-search');
+    const statusFilter = document.getElementById('my-actions-status-filter');
+    const tableBody = document.getElementById('my-actions-table-body');
+
+    if (!tableBody) return;
+
+    const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusValue = statusFilter ? statusFilter.value : '';
+
+    const rows = tableBody.querySelectorAll('tr');
+    let hasVisibleRows = false;
+
+    rows.forEach(row => {
+        if (row.querySelector('td[colspan]')) return; // Skip the "No actions found" row
+
+        const title = row.cells[1]?.textContent.toLowerCase() || '';
+        const category = row.cells[2]?.textContent.toLowerCase() || '';
+        const status = row.cells[3]?.textContent.toLowerCase() || '';
+
+        const matchesSearch = !searchValue ||
+                              title.includes(searchValue) ||
+                              category.includes(searchValue);
+
+        const matchesStatus = !statusValue || status.includes(statusValue.toLowerCase());
+
+        if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+            hasVisibleRows = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Show/hide "No results" message
+    const noResultsRow = document.querySelector('#my-actions-table-body tr:has(td[colspan="8"])');
+    if (noResultsRow) {
+        noResultsRow.style.display = hasVisibleRows ? 'none' : '';
+    }
+}
+
+function filterResourcesTable() {
+    const searchInput = document.getElementById('my-resources-search');
+    const statusFilter = document.getElementById('my-resources-status-filter');
+    const tableBody = document.getElementById('my-resources-table-body');
+
+    if (!tableBody) return;
+
+    const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusValue = statusFilter ? statusFilter.value : '';
+
+    const rows = tableBody.querySelectorAll('tr');
+    let hasVisibleRows = false;
+
+    rows.forEach(row => {
+        if (row.querySelector('td[colspan]')) return; // Skip the "No resources found" row
+
+        const name = row.cells[1]?.textContent.toLowerCase() || '';
+        const category = row.cells[2]?.textContent.toLowerCase() || '';
+        const type = row.cells[3]?.textContent.toLowerCase() || '';
+        const status = row.cells[4]?.textContent.toLowerCase() || '';
+
+        const matchesSearch = !searchValue ||
+                              name.includes(searchValue) ||
+                              category.includes(searchValue) ||
+                              type.includes(searchValue);
+
+        const matchesStatus = !statusValue || status.includes(statusValue.toLowerCase());
+
+        if (matchesSearch && matchesStatus) {
+            row.style.display = '';
+            hasVisibleRows = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Show/hide "No results" message
+    const noResultsRow = document.querySelector('#my-resources-table-body tr:has(td[colspan="7"])');
+    if (noResultsRow) {
+        noResultsRow.style.display = hasVisibleRows ? 'none' : '';
+    }
 }
 
 // Load user's data (own actions and resources)
@@ -471,7 +616,17 @@ function renderNotifications(notifications) {
             event.stopPropagation(); // Prevent triggering notification click
             const notificationId = this.getAttribute('data-id');
             if (notificationId) {
-                if (confirm('Are you sure you want to delete this notification?')) {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                });
+
+                if (result.isConfirmed) {
                     await deleteNotification(notificationId);
                     // Reload notifications to update the UI
                     loadNotifications();
@@ -956,18 +1111,63 @@ function confirmLocationSelection() {
         }
 
         // Update form fields with selected location
-        const locationInput = document.getElementById(`${formType}Location`);
+        const countrySelect = document.getElementById(`${formType}CountrySelect`);
+        const locationDetailsInput = document.getElementById(`${formType}LocationDetails`);
         const latInput = document.getElementById(`${formType}Latitude`);
         const lngInput = document.getElementById(`${formType}Longitude`);
         const countryInput = document.getElementById(`${formType}Country`);
 
-        if (locationInput) {
-            locationInput.value = `${window.selectedLocation.lat.toFixed(6)}, ${window.selectedLocation.lng.toFixed(6)}`;
-            locationInput.setAttribute('data-geocoded', 'true');
+        // Try to reverse geocode to get country and location details
+
+        try {
+            const reverseResult = reverseGeocode(window.selectedLocation.lat, window.selectedLocation.lng);
+            if (reverseResult) {
+                // Find matching country in our COUNTRIES array
+                if (window.COUNTRIES) {
+                    const matchedCountry = window.COUNTRIES.find(country =>
+                        country.name.toLowerCase() === reverseResult.country.toLowerCase() ||
+                        country.code.toLowerCase() === reverseResult.countryCode.toLowerCase() ||
+                        (country.aliases && country.aliases.some(alias =>
+                            alias.toLowerCase() === reverseResult.country.toLowerCase()))
+                    );
+
+                    if (matchedCountry) {
+                        // Set the country in the dropdown
+                        if (countrySelect) {
+                            countrySelect.value = matchedCountry.name;
+                        }
+
+                        // Set the hidden country field
+                        if (countryInput) {
+                            countryInput.value = matchedCountry.name;
+                        }
+                    } else {
+                        // If no match, use the country from reverse geocoding
+                        if (countrySelect) {
+                            countrySelect.value = reverseResult.country;
+                        }
+                        if (countryInput) {
+                            countryInput.value = reverseResult.country;
+                        }
+                    }
+                }
+
+                // Set the location details input to the address
+                if (locationDetailsInput) {
+                    locationDetailsInput.value = window.selectedLocation.address || '';
+                }
+            }
+        } catch (error) {
+            console.error('Error reverse geocoding location:', error);
+            // If reverse geocoding fails, at least set coordinates and a placeholder
+            if (countryInput) {
+                countryInput.value = 'Unknown';
+            }
         }
+
+        // Always set the lat/lng coordinates
         if (latInput) latInput.value = window.selectedLocation.lat;
         if (lngInput) lngInput.value = window.selectedLocation.lng;
-        if (countryInput) countryInput.value = window.selectedLocation.country;
 
         // Close the modal
         document.getElementById('locationPickerModal').classList.remove('active');
@@ -981,42 +1181,59 @@ async function submitActionForm(e) {
 
     const formData = new FormData(e.target);
     const fileInput = document.getElementById('actionImage');
-    const locationInput = document.getElementById('actionLocation');
+    const countrySelect = document.getElementById('actionCountrySelect');
+    const locationDetails = document.getElementById('actionLocationDetails');
     const latInput = document.getElementById('actionLatitude');
     const lngInput = document.getElementById('actionLongitude');
     const countryInput = document.getElementById('actionCountry');
 
     console.log('Submitting action form...');
     console.log('Has file:', fileInput && fileInput.files.length > 0);
-    console.log('Location data:', { lat: latInput.value, lng: lngInput.value, country: countryInput.value });
+    console.log('Location data:', {
+        country: countrySelect.value,
+        details: locationDetails.value,
+        lat: latInput.value,
+        lng: lngInput.value,
+        hiddenCountry: countryInput.value
+    });
+
+    // Update the hidden country field with the selected country
+    if (countrySelect.value) {
+        countryInput.value = countrySelect.value;
+    }
+
+    // Combine country and location details for the location text
+    const countryValue = countrySelect.value;
+    const detailsValue = locationDetails.value.trim();
+    const fullLocationText = detailsValue ? `${countryValue} - ${detailsValue}` : countryValue;
 
     // Check if location has coordinates, if not, geocode the location
-    if (!latInput.value || !lngInput.value) {
-        // Try to geocode the location
-        const locationText = locationInput.value.trim();
-        if (locationText) {
-            showLoadingMessage('Geocoding location...');
-            const geoResult = await geocodeLocation(locationText);
-            if (geoResult) {
-                // Update the hidden fields with geocoded data
-                latInput.value = geoResult.latitude;
-                lngInput.value = geoResult.longitude;
+    if ((!latInput.value || !lngInput.value) && countryValue) {
+        showLoadingMessage('Geocoding location...');
+        const geoResult = await geocodeLocation(fullLocationText);
+        if (geoResult) {
+            // Update the hidden fields with geocoded data
+            latInput.value = geoResult.latitude;
+            lngInput.value = geoResult.longitude;
+
+            // Only set country from geocoding if country hasn't been selected
+            if (!countryInput.value && geoResult.country) {
                 countryInput.value = geoResult.country;
-
-                // Also update the formData with the new values
-                formData.set('latitude', geoResult.latitude);
-                formData.set('longitude', geoResult.longitude);
-                formData.set('country', geoResult.country);
-
-                showSuccessMessage('Location geocoded successfully');
-            } else {
-                showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
-                return; // Stop the submission if geocoding failed
             }
+
+            // Also update the formData with the new values
+            formData.set('latitude', geoResult.latitude);
+            formData.set('longitude', geoResult.longitude);
+            formData.set('country', countryInput.value);
+
+            showSuccessMessage('Location geocoded successfully');
         } else {
-            showErrorMessage('Please provide a location before submitting');
-            return;
+            showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
+            return; // Stop the submission if geocoding failed
         }
+    } else if (!countryValue) {
+        showErrorMessage('Please select a country before submitting');
+        return;
     }
 
     // Check if there's a file to upload
@@ -1077,7 +1294,7 @@ async function submitActionForm(e) {
 
         // Check if we're in edit mode
         const editId = document.getElementById('editActionId')?.value;
-        const endpoint = editId ? '../api/update_action.php' : '../api/create_action.php';
+        const endpoint = editId ? '../api/actions/update_action.php' : '../api/actions/create_action.php';
 
         try {
             const response = await fetch(endpoint, {
@@ -1112,42 +1329,59 @@ async function submitResourceForm(e) {
 
     const formData = new FormData(e.target);
     const resourceImage = document.getElementById('resourceImage');
-    const locationInput = document.getElementById('resourceLocation');
+    const countrySelect = document.getElementById('resourceCountrySelect');
+    const locationDetails = document.getElementById('resourceLocationDetails');
     const latInput = document.getElementById('resourceLatitude');
     const lngInput = document.getElementById('resourceLongitude');
     const countryInput = document.getElementById('resourceCountry');
 
     console.log('Submitting resource form...');
     console.log('Has file:', resourceImage && resourceImage.files.length > 0);
-    console.log('Location data:', { lat: latInput.value, lng: lngInput.value, country: countryInput.value });
+    console.log('Location data:', {
+        country: countrySelect.value,
+        details: locationDetails.value,
+        lat: latInput.value,
+        lng: lngInput.value,
+        hiddenCountry: countryInput.value
+    });
+
+    // Update the hidden country field with the selected country
+    if (countrySelect.value) {
+        countryInput.value = countrySelect.value;
+    }
+
+    // Combine country and location details for the location text
+    const countryValue = countrySelect.value;
+    const detailsValue = locationDetails.value.trim();
+    const fullLocationText = detailsValue ? `${countryValue} - ${detailsValue}` : countryValue;
 
     // Check if location has coordinates, if not, geocode the location
-    if (!latInput.value || !lngInput.value) {
-        // Try to geocode the location
-        const locationText = locationInput.value.trim();
-        if (locationText) {
-            showLoadingMessage('Geocoding location...');
-            const geoResult = await geocodeLocation(locationText);
-            if (geoResult) {
-                // Update the hidden fields with geocoded data
-                latInput.value = geoResult.latitude;
-                lngInput.value = geoResult.longitude;
+    if ((!latInput.value || !lngInput.value) && countryValue) {
+        showLoadingMessage('Geocoding location...');
+        const geoResult = await geocodeLocation(fullLocationText);
+        if (geoResult) {
+            // Update the hidden fields with geocoded data
+            latInput.value = geoResult.latitude;
+            lngInput.value = geoResult.longitude;
+
+            // Only set country from geocoding if country hasn't been selected
+            if (!countryInput.value && geoResult.country) {
                 countryInput.value = geoResult.country;
-
-                // Also update the formData with the new values
-                formData.set('latitude', geoResult.latitude);
-                formData.set('longitude', geoResult.longitude);
-                formData.set('country', geoResult.country);
-
-                showSuccessMessage('Location geocoded successfully');
-            } else {
-                showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
-                return; // Stop the submission if geocoding failed
             }
+
+            // Also update the formData with the new values
+            formData.set('latitude', geoResult.latitude);
+            formData.set('longitude', geoResult.longitude);
+            formData.set('country', countryInput.value);
+
+            showSuccessMessage('Location geocoded successfully');
         } else {
-            showErrorMessage('Please provide a location before submitting');
-            return;
+            showErrorMessage('Could not geocode the provided location. Please try entering coordinates directly or use the map picker.');
+            return; // Stop the submission if geocoding failed
         }
+    } else if (!countryValue) {
+        showErrorMessage('Please select a country before submitting');
+        return;
     }
 
     // Check if there's a file to upload
@@ -1208,7 +1442,7 @@ async function submitResourceForm(e) {
 
         // Check if we're in edit mode
         const editId = document.getElementById('editResourceId')?.value;
-        const endpoint = editId ? '../api/update_resource.php' : '../api/create_resource.php';
+        const endpoint = editId ? '../api/resources/update_resource.php' : '../api/resources/create_resource.php';
 
         try {
             const response = await fetch(endpoint, {
@@ -1260,7 +1494,7 @@ async function openEditModal(type, id) {
                     document.getElementById('actionDateTime').value = formattedDateTime;
                 }
 
-                document.getElementById('actionLocation').value = result.action.location || '';
+                document.getElementById('actionLocationDetails').value = result.action.location || '';
                 document.getElementById('actionDuration').value = result.action.duration || '';
 
                 // Switch to action tab
@@ -1275,14 +1509,14 @@ async function openEditModal(type, id) {
                 document.getElementById('resourceName').value = result.resource.resource_name || '';
 
                 // Select the correct type radio button
-                const typeRadio = document.querySelector(`input[name="resourceType"][value="${result.resource.type}"]`);
+                const typeRadio = document.querySelector(`input[name="type"][value="${result.resource.type}"]`);
                 if (typeRadio) {
                     typeRadio.checked = true;
                 }
 
                 document.getElementById('resourceCategory').value = result.resource.category || '';
                 document.getElementById('resourceDescription').value = result.resource.description || '';
-                document.getElementById('resourceLocation').value = result.resource.location || '';
+                document.getElementById('resourceLocationDetails').value = result.resource.location || '';
 
                 // Switch to resource tab
                 switchTab('resource-tab');
@@ -1308,15 +1542,35 @@ async function openEditModal(type, id) {
 }
 
 // Confirm delete for actions
-function confirmDeleteAction(id) {
-    if (confirm('Are you sure you want to delete this action?')) {
+async function confirmDeleteAction(id) {
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
         deleteAction(id);
     }
 }
 
 // Confirm delete for resources
-function confirmDeleteResource(id) {
-    if (confirm('Are you sure you want to delete this resource?')) {
+async function confirmDeleteResource(id) {
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
         deleteResource(id);
     }
 }
@@ -1393,7 +1647,18 @@ function showPage(pageName) {
 
 // Handle logout
 async function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
+    const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you really want to logout?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, logout!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
         try {
             const response = await fetch("../api/users/logout.php", {
                 method: 'POST',
@@ -1449,121 +1714,155 @@ function showSuccessMessage(message) {
 
 // Approve an action
 async function approveAction(id) {
-    try {
-        if (!confirm('Are you sure you want to approve this action?')) {
-            return;
+    const result = await Swal.fire({
+        title: 'Approve Action?',
+        text: "Are you sure you want to approve this action?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, approve it!'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch('../api/actions/approve_action.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id, action: 'approve' })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showSuccessMessage('Action approved successfully!');
+                // Reload data to reflect changes
+                loadUserData();
+            } else {
+                showErrorMessage(result.message || 'Failed to approve action');
+            }
+        } catch (error) {
+            console.error('Error approving action:', error);
+            showErrorMessage('Network error. Please try again.');
         }
-
-        const response = await fetch('../api/actions/approve_action.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id, action: 'approve' })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showSuccessMessage('Action approved successfully!');
-            // Reload data to reflect changes
-            loadUserData();
-        } else {
-            showErrorMessage(result.message || 'Failed to approve action');
-        }
-    } catch (error) {
-        console.error('Error approving action:', error);
-        showErrorMessage('Network error. Please try again.');
     }
 }
 
 // Reject an action
 async function rejectAction(id) {
-    try {
-        if (!confirm('Are you sure you want to reject this action?')) {
-            return;
+    const result = await Swal.fire({
+        title: 'Reject Action?',
+        text: "Are you sure you want to reject this action?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, reject it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch('../api/actions/approve_action.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id, action: 'reject' })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showSuccessMessage('Action rejected successfully!');
+                // Reload data to reflect changes
+                loadUserData();
+            } else {
+                showErrorMessage(result.message || 'Failed to reject action');
+            }
+        } catch (error) {
+            console.error('Error rejecting action:', error);
+            showErrorMessage('Network error. Please try again.');
         }
-
-        const response = await fetch('../api/actions/approve_action.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id, action: 'reject' })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showSuccessMessage('Action rejected successfully!');
-            // Reload data to reflect changes
-            loadUserData();
-        } else {
-            showErrorMessage(result.message || 'Failed to reject action');
-        }
-    } catch (error) {
-        console.error('Error rejecting action:', error);
-        showErrorMessage('Network error. Please try again.');
     }
 }
 
 // Approve a resource
 async function approveResource(id) {
-    try {
-        if (!confirm('Are you sure you want to approve this resource?')) {
-            return;
+    const result = await Swal.fire({
+        title: 'Approve Resource?',
+        text: "Are you sure you want to approve this resource?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, approve it!'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch('../api/resources/approve_resource.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id, action: 'approve' })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showSuccessMessage('Resource approved successfully!');
+                // Reload data to reflect changes
+                loadUserData();
+            } else {
+                showErrorMessage(result.message || 'Failed to approve resource');
+            }
+        } catch (error) {
+            console.error('Error approving resource:', error);
+            showErrorMessage('Network error. Please try again.');
         }
-
-        const response = await fetch('../api/resources/approve_resource.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id, action: 'approve' })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showSuccessMessage('Resource approved successfully!');
-            // Reload data to reflect changes
-            loadUserData();
-        } else {
-            showErrorMessage(result.message || 'Failed to approve resource');
-        }
-    } catch (error) {
-        console.error('Error approving resource:', error);
-        showErrorMessage('Network error. Please try again.');
     }
 }
 
 // Reject a resource
 async function rejectResource(id) {
-    try {
-        if (!confirm('Are you sure you want to reject this resource?')) {
-            return;
+    const result = await Swal.fire({
+        title: 'Reject Resource?',
+        text: "Are you sure you want to reject this resource?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, reject it!',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+        try {
+            const response = await fetch('../api/resources/approve_resource.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: id, action: 'reject' })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showSuccessMessage('Resource rejected successfully!');
+                // Reload data to reflect changes
+                loadUserData();
+            } else {
+                showErrorMessage(result.message || 'Failed to reject resource');
+            }
+        } catch (error) {
+            console.error('Error rejecting resource:', error);
+            showErrorMessage('Network error. Please try again.');
         }
-
-        const response = await fetch('../api/resources/approve_resource.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id: id, action: 'reject' })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showSuccessMessage('Resource rejected successfully!');
-            // Reload data to reflect changes
-            loadUserData();
-        } else {
-            showErrorMessage(result.message || 'Failed to reject resource');
-        }
-    } catch (error) {
-        console.error('Error rejecting resource:', error);
-        showErrorMessage('Network error. Please try again.');
     }
 }
 

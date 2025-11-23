@@ -57,7 +57,7 @@
                     <li><a href="#" class="nav-link active">Actions & Aide</a></li>
                     <li><a href="#" class="nav-link">Stories</a></li>
                     <li><a href="#" class="nav-link">Défis</a></li>
-                    <li><a href="#" class="nav-link">Contact</a></li>
+                    <li><a href="about.html" class="nav-link">about</a></li>
                 </ul>
                 <div class="profile-menu">
                     <img src="https://api.placeholder.com/40/40?text=User" alt="Profile" class="profile-avatar">
@@ -275,8 +275,20 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Location</label>
-                        <input type="text" id="actionLocation" placeholder="Enter location..." required>
+                        <label>Country</label>
+                        <select id="actionCountry" name="country" required>
+                            <option value="">Select Country</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location Details</label>
+                        <input type="text" id="actionLocationDetails" placeholder="City, Address, etc." required>
+                    </div>
+                    <input type="hidden" id="actionLat" name="latitude">
+                    <input type="hidden" id="actionLng" name="longitude">
+                    <input type="hidden" id="actionCountryHidden" name="country_hidden">
+                    <div class="form-group">
+                        <button type="button" class="btn btn-outline pick-location-btn" data-form="action">📍 Pick on Map</button>
                     </div>
                     <div class="form-group">
                         <label>Upload Image</label>
@@ -323,8 +335,24 @@
                         <textarea placeholder="Describe the resource..." rows="4" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Location</label>
-                        <input type="text" placeholder="Enter location..." required>
+                        <label>Country</label>
+                        <select id="resourceCountry" name="country" required>
+                            <option value="">Select Country</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location Details</label>
+                        <input type="text" id="resourceLocationDetails" placeholder="City, Address, etc." required>
+                    </div>
+                    <input type="hidden" id="resourceLat" name="latitude">
+                    <input type="hidden" id="resourceLng" name="longitude">
+                    <input type="hidden" id="resourceCountryHidden" name="country_hidden">
+                    <div class="form-group">
+                        <button type="button" class="btn btn-outline pick-location-btn" data-form="resource">📍 Pick on Map</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Image</label>
+                        <input type="file" id="resourceImage" accept="image/*">
                     </div>
                     <button type="submit" class="btn btn-primary btn-large">Create Resource</button>
                 </form>
@@ -410,15 +438,7 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof jQuery === 'undefined') {
-                alert('Critical Error: jQuery failed to load. Please refresh the page.');
-                return;
-            }
-            console.log('jQuery loaded successfully:', jQuery.fn.jquery);
-        });
-    </script>
+    <script src="assets/js/countries.js"></script>
     <script src="assets/js/map.js"></script>
     <script src="assets/js/script.js"></script>
     <script src="assets/js/fish.js"></script>
