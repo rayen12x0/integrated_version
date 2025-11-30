@@ -1212,12 +1212,7 @@ function openDetailsModal(item) {
     }
 
     // Show/hide Add to Calendar button based on whether it's an action with a start_time
-    const addToCalendarBtn = document.getElementById('addToCalendarBtn');
-    if (item.type === 'action' && item.start_time) {
-        addToCalendarBtn.style.display = 'block';
-    } else {
-        addToCalendarBtn.style.display = 'none';
-    }
+
 
     // Only show Edit and Delete buttons for authenticated users in the dashboard (not in public view)
     // For public view, hide edit/delete buttons
@@ -1227,6 +1222,14 @@ function openDetailsModal(item) {
     // Note: Edit/Delete operations should only be available in the dashboard interface
     // In the public view (vue/index.html), we only show join/respond buttons
     // The edit/delete functionality belongs in the dashboard
+
+    // Show/hide Create Reminder button based on whether it's an action with a start_time
+    const createReminderBtn = document.getElementById('createReminderBtn');
+    if (item.type === 'action' && item.start_time) {
+        createReminderBtn.style.display = 'inline-flex'; // Show button for actions with start time
+    } else {
+        createReminderBtn.style.display = 'none'; // Hide button for resources or actions without start time
+    }
 
     // Set currentModalData for use in other functions like reporting and calendar
     currentModalData = {
@@ -3130,6 +3133,106 @@ function loadUserReminders() {
 
 // =============================================
 // ==================================================
+// Reminder Modal Functions
+// ==================================================
+
+function openReminderModal() {
+    if (!isUserLoggedIn) {
+        showSwal('Login Required', 'Please log in to set reminders.', 'info');
+        return;
+    }
+
+    if (!currentModalData || !currentModalData.start_time) {
+        showSwal('Error', 'This item does not have a date/time for setting reminders.', 'error');
+        return;
+    }
+
+    // Set the item details in hidden fields
+    document.getElementById('reminderItemId').value = currentModalData.id;
+    document.getElementById('reminderItemType').value = currentModalData.type;
+
+    // Show the modal
+    const reminderModal = document.getElementById('reminderModal');
+    reminderModal.classList.add('active');
+}
+
+function closeReminderModal() {
+    const reminderModal = document.getElementById('reminderModal');
+    reminderModal.classList.remove('active');
+
+    // Reset form
+    document.getElementById('reminderForm').reset();
+    // Clear any error messages
+    clearFieldError('reminderTime');
+}
+
+function submitReminder() {
+    // Clear previous errors
+    clearFieldError('reminderTime');
+
+    // Validate required fields
+    const selectedTime = document.querySelector('input[name="reminderTime"]:checked');
+    if (!selectedTime) {
+        addFieldError('reminderTime', 'Please select when you want to be reminded');
+        return;
+    }
+
+    // Get item details from hidden fields
+    const itemId = document.getElementById('reminderItemId').value;
+    const itemType = document.getElementById('reminderItemType').value;
+    const timeOption = selectedTime.value;
+
+    // Calculate reminder time based on selected option and action time
+    const actionTime = new Date(currentModalData.start_time);
+    let reminderTime;
+
+    switch (timeOption) {
+        case '1h':
+            reminderTime = new Date(actionTime.getTime() - 1 * 60 * 60 * 1000); // 1 hour before
+            break;
+        case '1d':
+            reminderTime = new Date(actionTime.getTime() - 24 * 60 * 60 * 1000); // 1 day before
+            break;
+        case '1w':
+            reminderTime = new Date(actionTime.getTime() - 7 * 24 * 60 * 60 * 1000); // 1 week before
+            break;
+        default:
+            showSwal('Error', 'Invalid reminder time option.', 'error');
+            return;
+    }
+
+    // Validate that reminder time is before action time and in the future
+    const now = new Date();
+    if (reminderTime >= actionTime) {
+        showSwal('Error', 'Reminder time must be before the event time.', 'error');
+        return;
+    }
+
+    if (reminderTime <= now) {
+        showSwal('Error', 'Reminder time would be in the past. Please select an event in the future.', 'error');
+        return;
+    }
+
+    // Create the reminder via API
+    createReminder(itemId, itemType, reminderTime.toISOString(), 'both');
+
+    // Close the modal after submission
+    closeReminderModal();
+}
+
+// Add event listener for the reminder form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const reminderForm = document.getElementById('reminderForm');
+    if (reminderForm) {
+        reminderForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitReminder();
+        });
+    }
+});
+
+// =============================================
+// ==================================================
 // Reporting Functions
 // ==================================================
 
@@ -3156,80 +3259,6 @@ function closeReportModal() {
     document.getElementById('reportForm').reset();
 }
 
-function submitReport(event) {
-    event.preventDefault();
-
-    // Clear previous errors
-    clearFieldError('reportCategory');
-    clearFieldError('reportReason');
-
-    // Validate required fields
-    const isCategoryValid = validateFormField('reportCategory', 'Please select a category');
-    const isReasonValid = validateFormField('reportReason', 'Please provide a reason');
-
-    // Check if there are validation errors
-    let isValid = isCategoryValid && isReasonValid;
-
-    if (!isValid) {
-        return;
-    }
-
-    const itemId = document.getElementById('reportItemId').value;
-    const itemType = document.getElementById('reportItemType').value;
-    const category = document.getElementById('reportCategory').value;
-    const reason = document.getElementById('reportReason').value;
-
-    const reportData = {
-        reported_item_id: itemId,
-        reported_item_type: itemType,
-        report_category: category,
-        report_reason: reason
-    };
-
-    $.ajax({
-        url: '../api/reports/create_report.php',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(reportData),
-        success: function (response) {
-            if (response.success) {
-                showSwal('Success', response.message, 'success');
-                closeReportModal();
-                // Reset form after successful submission
-                document.getElementById('reportForm').reset();
-            } else {
-                showSwal('Error', response.message, 'error');
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error submitting report:', error);
-            let errorMessage = 'Failed to submit report. Please try again.';
-
-            // Check for specific error responses
-            if (xhr.status === 401) {
-                errorMessage = 'You must be logged in to submit a report.';
-            } else if (xhr.status === 400) {
-                errorMessage = 'Invalid report data. Please check your inputs.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error. Please try again later.';
-            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMessage = xhr.responseJSON.message;
-            } else if (error && error.message) {
-                errorMessage = error.message;
-            }
-
-            showSwal('Error', errorMessage, 'error', 'top-end');
-        }
-    });
-}
-
-// Add event listener for report form submission
-document.addEventListener('DOMContentLoaded', function () {
-    const reportForm = document.getElementById('reportForm');
-    if (reportForm) {
-        reportForm.addEventListener('submit', submitReport);
-    }
-});
 
 // Calendar navigation functions
 function goToToday() {

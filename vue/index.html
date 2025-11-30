@@ -329,10 +329,10 @@
                         <div id="modalActions" class="flex gap-2 mr-auto">
                             <!-- Edit and Delete buttons will be inserted here by JavaScript -->
                         </div>
-                        <button id="addToCalendarBtn"
+                        <button id="createReminderBtn"
                             class="btn btn-outline rounded-lg border border-zinc-200 px-4 py-2.5 text-zinc-600 hover:bg-zinc-50"
-                            onclick="downloadICS()" style="display: none;">
-                            <i data-lucide="calendar-plus" class="h-5 w-5"></i>
+                            onclick="openReminderModal()" style="display: none;">
+                            <i data-lucide="bell-plus" class="h-5 w-5"></i>
                         </button>
                         <button
                             class="btn btn-outline rounded-lg border border-zinc-200 px-4 py-2.5 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
@@ -388,6 +388,47 @@
                         <button type="submit"
                             class="btn btn-danger px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">Submit
                             Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="reminderModal" class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+        <div class="modal-content relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl p-6">
+            <button class="modal-close text-zinc-500 hover:text-zinc-900" onclick="closeReminderModal()">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+            <h2 class="text-lg font-semibold mb-4 text-zinc-900">Set Reminder</h2>
+            <div class="modal-body">
+                <form id="reminderForm" class="space-y-4">
+                    <input type="hidden" id="reminderItemId" value="">
+                    <input type="hidden" id="reminderItemType" value="">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-500 mb-2">When would you like to be reminded?</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
+                                <input type="radio" name="reminderTime" value="1h" class="text-zinc-900 focus:ring-zinc-900">
+                                1 hour before
+                            </label>
+                            <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
+                                <input type="radio" name="reminderTime" value="1d" class="text-zinc-900 focus:ring-zinc-900">
+                                1 day before
+                            </label>
+                            <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
+                                <input type="radio" name="reminderTime" value="1w" class="text-zinc-900 focus:ring-zinc-900">
+                                1 week before
+                            </label>
+                        </div>
+                        <small class="error-message" id="reminderTime-error"></small>
+                    </div>
+                    <div class="flex gap-2 justify-end pt-4">
+                        <button type="button"
+                            class="btn btn-outline px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
+                            onclick="closeReminderModal()">Cancel</button>
+                        <button type="submit"
+                            class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg">Create Reminder</button>
                     </div>
                 </form>
             </div>

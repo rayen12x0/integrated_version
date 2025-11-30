@@ -20,6 +20,7 @@ class ReminderController {
     }
 
     public function create() {
+        header('Content-Type: application/json');
         // Check if user is authenticated
         if (!AuthHelper::isLoggedIn()) {
             echo json_encode(['success' => false, 'message' => 'User not authenticated']);
@@ -52,6 +53,7 @@ class ReminderController {
     }
 
     public function getByUser() {
+        header('Content-Type: application/json');
         // Check if user is authenticated
         if (!AuthHelper::isLoggedIn()) {
             echo json_encode(['success' => false, 'message' => 'User not authenticated']);
@@ -65,6 +67,7 @@ class ReminderController {
     }
 
     public function getByItem() {
+        header('Content-Type: application/json');
         // Only allow admin access
         if (!AuthHelper::isAdmin()) {
             echo json_encode(['success' => false, 'message' => 'Access denied']);
@@ -85,6 +88,7 @@ class ReminderController {
     }
 
     public function delete() {
+        header('Content-Type: application/json');
         // Check if user is authenticated
         if (!AuthHelper::isLoggedIn()) {
             echo json_encode(['success' => false, 'message' => 'User not authenticated']);
@@ -122,6 +126,70 @@ class ReminderController {
         // This method is for internal use by the cron job script
         $dueReminders = $this->reminderModel->getDueReminders();
         return $dueReminders;
+    }
+
+    public function getById($id) {
+        header('Content-Type: application/json');
+        // Check if user is authenticated
+        if (!AuthHelper::isLoggedIn()) {
+            echo json_encode(['success' => false, 'message' => 'User not authenticated']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+
+        // Get the reminder by ID
+        $reminder = $this->reminderModel->getById($id);
+
+        if (!$reminder) {
+            echo json_encode(['success' => false, 'message' => 'Reminder not found']);
+            return;
+        }
+
+        // Check if user owns the reminder
+        if ($reminder['user_id'] != $userId) {
+            echo json_encode(['success' => false, 'message' => 'Access denied - you do not own this reminder']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'data' => $reminder]);
+    }
+
+    public function update() {
+        header('Content-Type: application/json');
+        // Check if user is authenticated
+        if (!AuthHelper::isLoggedIn()) {
+            echo json_encode(['success' => false, 'message' => 'User not authenticated']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $userId = $_SESSION['user_id'];
+
+        // Validate required fields
+        if (!isset($data['id']) || !isset($data['reminder_time'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields: id and reminder_time']);
+            return;
+        }
+
+        $id = $data['id'];
+        $reminderTime = $data['reminder_time'];
+
+        // Check if user owns the reminder
+        $currentReminder = $this->reminderModel->getById($id);
+        if (!$currentReminder || $currentReminder['user_id'] != $userId) {
+            echo json_encode(['success' => false, 'message' => 'Access denied - you do not own this reminder']);
+            return;
+        }
+
+        // Prepare update data
+        $updateData = [
+            'id' => $id,
+            'reminder_time' => $reminderTime
+        ];
+
+        $result = $this->reminderModel->update($updateData);
+        echo json_encode($result);
     }
 }
 ?>

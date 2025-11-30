@@ -181,6 +181,7 @@
             await loadUserStats();
             await loadRecentActivity();
             await loadReports(); // If user is admin
+            await loadUserReminders(); // Load user reminders as well
         }
 
         function populateCountryDropdowns() {
@@ -378,6 +379,12 @@
 
             if(pageName === 'reports') {
                 loadReports();
+            } else if(pageName === 'reminders') {
+                if (isUserLoggedIn) {
+                    loadUserReminders(); // Load reminders when navigating to reminders page
+                } else {
+                    showSwal('Login Required', 'Please log in to view your reminders.', 'info');
+                }
             }
         }
 
@@ -826,29 +833,44 @@
         function renderUserActions(actions) {
             const tbody = document.getElementById('my-actions-table-body');
             tbody.innerHTML = actions.map(a => {
-                const statusColor = a.status === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50' :
-                                   a.status === 'pending' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50' :
-                                   'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700';
+                let statusClass = 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700';
 
-                return `
-                <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                    <td class="py-3 px-5 text-zinc-500">#${a.id}</td>
-                    <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${a.title}</td>
-                    <td class="py-3 px-5">${a.category}</td>
-                    <td class="py-3 px-5">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusColor}">${a.status}</span>
-                    </td>
-                    <td class="py-3 px-5">${a.participants || 0}</td>
-                    <td class="py-3 px-5 text-zinc-500">${new Date(a.created_at).toLocaleDateString()}</td>
-                    <td class="py-3 px-5">
+                if (a.status.toLowerCase() === 'pending') {
+                    statusClass = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50';
+                } else if (a.status.toLowerCase() === 'approved') {
+                    statusClass = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
+                } else if (a.status.toLowerCase() === 'rejected') {
+                    statusClass = 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50';
+                }
+
+                const isAdmin = currentUser && currentUser.role === 'admin';
+                let actionButtons = '';
+
+                if (isAdmin) {
+                    actionButtons = `
+                        <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 text-xs font-medium mr-2" onclick="approveAction(${a.id})">Approve</button>
+                        <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium mr-2" onclick="rejectAction(${a.id})">Reject</button>
+                        <button class="text-amber-600 dark:text-amber-400 hover:text-amber-500 text-xs font-medium" onclick="openEditAction(${a.id})">Edit</button>
+                    `;
+                } else {
+                    actionButtons = `
                         <button class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 text-xs font-medium mr-2" onclick="openEditAction(${a.id})">Edit</button>
                         <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium" onclick="confirmDeleteAction(${a.id})">Delete</button>
-                        ${currentUser && currentUser.role === 'admin' && a.status === 'pending' ? `
-                            <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 text-xs font-medium ml-2" onclick="approveAction(${a.id})">Approve</button>
-                            <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium ml-1" onclick="rejectAction(${a.id})">Reject</button>
-                        ` : ''}
-                    </td>
-                </tr>
+                    `;
+                }
+
+                return `
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td class="py-3 px-5 text-zinc-500">#${a.id}</td>
+                        <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${a.title}</td>
+                        <td class="py-3 px-5">${a.category}</td>
+                        <td class="py-3 px-5"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusClass}">${a.status}</span></td>
+                        <td class="py-3 px-5">${a.participants || 0}</td>
+                        <td class="py-3 px-5 text-zinc-500">${new Date(a.created_at).toLocaleDateString()}</td>
+                        <td class="py-3 px-5">
+                            ${actionButtons}
+                        </td>
+                    </tr>
                 `;
             }).join('');
         }
@@ -856,29 +878,44 @@
         function renderUserResources(resources) {
             const tbody = document.getElementById('my-resources-table-body');
             tbody.innerHTML = resources.map(r => {
-                const statusColor = r.status === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50' :
-                                   r.status === 'pending' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50' :
-                                   'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700';
+                let statusClass = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
 
-                return `
-                <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                    <td class="py-3 px-5 text-zinc-500">#${r.id}</td>
-                    <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${r.resource_name || r.title}</td>
-                    <td class="py-3 px-5">${r.category}</td>
-                    <td class="py-3 px-5 uppercase text-[10px] font-bold text-zinc-500">${r.type || ''}</td>
-                    <td class="py-3 px-5">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusColor}">${r.status}</span>
-                    </td>
-                    <td class="py-3 px-5 text-zinc-500">${r.location || ''}</td>
-                    <td class="py-3 px-5">
+                if (r.status.toLowerCase() === 'pending') {
+                    statusClass = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50';
+                } else if (r.status.toLowerCase() === 'approved') {
+                    statusClass = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
+                } else if (r.status.toLowerCase() === 'rejected') {
+                    statusClass = 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50';
+                }
+
+                const isAdmin = currentUser && currentUser.role === 'admin';
+                let resourceButtons = '';
+
+                if (isAdmin) {
+                    resourceButtons = `
+                        <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 text-xs font-medium mr-2" onclick="approveResource(${r.id})">Approve</button>
+                        <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium mr-2" onclick="rejectResource(${r.id})">Reject</button>
+                        <button class="text-amber-600 dark:text-amber-400 hover:text-amber-500 text-xs font-medium" onclick="openEditResource(${r.id})">Edit</button>
+                    `;
+                } else {
+                    resourceButtons = `
                         <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 text-xs font-medium mr-2" onclick="openEditResource(${r.id})">Edit</button>
                         <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium" onclick="confirmDeleteResource(${r.id})">Delete</button>
-                        ${currentUser && currentUser.role === 'admin' && r.status === 'pending' ? `
-                            <button class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 text-xs font-medium ml-2" onclick="approveResource(${r.id})">Approve</button>
-                            <button class="text-rose-600 dark:text-rose-400 hover:text-rose-500 text-xs font-medium ml-1" onclick="rejectResource(${r.id})">Reject</button>
-                        ` : ''}
-                    </td>
-                </tr>
+                    `;
+                }
+
+                return `
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td class="py-3 px-5 text-zinc-500">#${r.id}</td>
+                        <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${r.resource_name || r.title}</td>
+                        <td class="py-3 px-5">${r.category}</td>
+                        <td class="py-3 px-5 uppercase text-[10px] font-bold text-zinc-500">${r.type || ''}</td>
+                        <td class="py-3 px-5"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusClass}">${r.status}</span></td>
+                        <td class="py-3 px-5 text-zinc-500">${r.location || ''}</td>
+                        <td class="py-3 px-5">
+                            ${resourceButtons}
+                        </td>
+                    </tr>
                 `;
             }).join('');
         }
@@ -1331,23 +1368,32 @@
             }
         }
 
-        async function rejectAction(id) {
+         async function rejectAction(actionId) {
+            if (!confirm('Are you sure you want to reject this action?')) return;
+
             try {
-                const response = await fetch("./../api/actions/approve_action.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: id, action: 'reject' })
+                const response = await fetch('../api/actions/reject_action.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: actionId,
+                        action: 'reject'  // Use 'action' field instead of 'status'
+                    })
                 });
+
                 const result = await response.json();
-                if(result.success) {
-                    showSuccessMessage('Action rejected successfully!');
-                    await loadAllData();
+
+                if (result.success) {
+                    showSwal('Success', 'Action rejected successfully', 'success');
+                    loadUserActions(); // Reload the actions list
                 } else {
-                    showErrorMessage(result.message);
+                    showSwal('Error', `Failed to reject action: ${result.message}`, 'error');
                 }
             } catch (error) {
-                console.error("Error rejecting action:", error);
-                showErrorMessage('Error rejecting action');
+                console.error('Error rejecting action:', error);
+                showSwal('Error', 'Failed to reject action. Please try again.', 'error');
             }
         }
 
@@ -1372,23 +1418,32 @@
             }
         }
 
-        async function rejectResource(id) {
+        async function rejectResource(resourceId) {
+            if (!confirm('Are you sure you want to reject this resource?')) return;
+
             try {
-                const response = await fetch("./../api/resources/approve_resource.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: id, action: 'reject' })
+                const response = await fetch('../api/resources/reject_resource.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: resourceId,
+                        action: 'reject'  // Use 'action' field instead of 'status'
+                    })
                 });
+
                 const result = await response.json();
-                if(result.success) {
-                    showSuccessMessage('Resource rejected successfully!');
-                    await loadAllData();
+
+                if (result.success) {
+                    showSwal('Success', 'Resource rejected successfully', 'success');
+                    loadUserResources(); // Reload the resources list
                 } else {
-                    showErrorMessage(result.message);
+                    showSwal('Error', `Failed to reject resource: ${result.message}`, 'error');
                 }
             } catch (error) {
-                console.error("Error rejecting resource:", error);
-                showErrorMessage('Error rejecting resource');
+                console.error('Error rejecting resource:', error);
+                showSwal('Error', 'Failed to reject resource. Please try again.', 'error');
             }
         }
 
@@ -1655,3 +1710,372 @@
                 console.error("Error getting country from coordinates:", error);
             }
         }
+
+        // --- 8. REMINDER MANAGEMENT FUNCTIONS ---
+
+        // Load user reminders
+        async function loadUserReminders() {
+            try {
+                const response = await fetch("../api/reminders/get_reminders.php");
+                const result = await response.json();
+
+                if (result.success) {
+                    const reminders = result.data || [];
+                    document.getElementById('totalRemindersCount').textContent = reminders.length;
+
+                    // Calculate upcoming and overdue reminders
+                    const now = new Date();
+                    const upcoming = reminders.filter(reminder => new Date(reminder.reminder_time) > now).length;
+                    const overdue = reminders.filter(reminder => new Date(reminder.reminder_time) <= now && !reminder.sent).length;
+
+                    document.getElementById('upcomingRemindersCount').textContent = upcoming;
+                    document.getElementById('pastRemindersCount').textContent = overdue;
+
+                    renderRemindersTable(reminders);
+                } else {
+                    console.error("Failed to load reminders:", result.message);
+                    showErrorMessage(result.message || "Failed to load reminders");
+                }
+            } catch (error) {
+                console.error("Error loading reminders:", error);
+                showErrorMessage("Network error. Failed to load reminders.");
+            }
+        }
+
+        // Render reminders in the table
+        function renderRemindersTable(reminders) {
+            const tableBody = document.getElementById('remindersTableBody');
+            if (!tableBody) return;
+
+            if (reminders.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-zinc-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="bell-off" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No reminders set yet</p>
+                                <p class="text-xs text-zinc-400 mt-1">Create reminders from the calendar view</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Initialize Lucide icons
+                lucide.createIcons();
+                return;
+            }
+
+            tableBody.innerHTML = reminders.map(reminder => {
+                const reminderTime = new Date(reminder.reminder_time);
+                const statusClass = reminder.sent ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                  new Date(reminder.reminder_time) <= new Date() ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                                  'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+                const statusText = reminder.sent ? 'Sent' :
+                                 new Date(reminder.reminder_time) <= new Date() ? 'Overdue' :
+                                 'Upcoming';
+
+                return `
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-900/20">
+                        <td class="py-3 px-5 text-sm text-zinc-700 dark:text-zinc-300">${reminder.id}</td>
+                        <td class="py-3 px-5 text-sm">
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">${reminder.item_title || 'Untitled'}</div>
+                            <div class="text-xs text-zinc-500">${reminder.item_type || 'N/A'}</div>
+                        </td>
+                        <td class="py-3 px-5 text-sm text-zinc-700 dark:text-zinc-300 capitalize">${reminder.item_type || 'N/A'}</td>
+                        <td class="py-3 px-5 text-sm">
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">${new Date(reminder.reminder_time).toLocaleDateString()}</div>
+                            <div class="text-xs text-zinc-500">${new Date(reminder.reminder_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </td>
+                        <td class="py-3 px-5">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="py-3 px-5 text-sm text-zinc-500">${new Date(reminder.created_at).toLocaleDateString()}</td>
+                        <td class="py-3 px-5">
+                            <div class="flex gap-2">
+                                <button onclick="editReminder(${reminder.id})" class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">Edit</button>
+                                <button onclick="deleteReminder(${reminder.id})" class="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 ml-2">Delete</button>
+                                <button onclick="downloadICSFromReminder(${reminder.id})" class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 ml-2 flex items-center gap-1">
+                                    <i data-lucide="download" class="w-3 h-3"></i> Download
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Initialize Lucide icons
+            lucide.createIcons();
+        }
+
+        // Filter reminders table
+        function filterRemindersTable() {
+            const searchTerm = document.getElementById('remindersSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('reminderStatusFilter').value;
+
+            // For this implementation, we'll reload and filter all reminders
+            loadUserReminders();
+        }
+
+        // Edit reminder function
+        async function editReminder(id) {
+            try {
+                const response = await fetch(`../api/reminders/get_reminder.php?id=${id}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const reminder = result.data;
+
+                    // Show a modal or form to edit the reminder
+                    Swal.fire({
+                        title: 'Edit Reminder',
+                        html: `
+                            <div class="text-left mx-auto w-full">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700">Event: ${reminder.item_title || 'N/A'}</label>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700">Type: ${reminder.item_type || 'N/A'}</label>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700">Current Time: ${new Date(reminder.reminder_time).toLocaleString()}</label>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700">New Reminder Time</label>
+                                    <input type="datetime-local" id="editReminderTime" class="swal2-input w-full mt-1" value="${reminder.reminder_time.slice(0, 16)}">
+                                </div>
+                            </div>
+                        `,
+                        focusConfirm: false,
+                        preConfirm: () => {
+                            const newTime = document.getElementById('editReminderTime').value;
+                            if (!newTime) {
+                                Swal.showValidationMessage('Please select a reminder time');
+                                return false;
+                            }
+                            return { newTime };
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'Update',
+                        cancelButtonText: 'Cancel'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            // Validate that the new reminder time is in the future
+                            const selectedTime = new Date(result.value.newTime);
+                            const now = new Date();
+
+                            if (selectedTime <= now) {
+                                showErrorMessage('Reminder time is in the past. Please select a future time.');
+                                return;
+                            }
+
+                            try {
+                                const updateResponse = await fetch('../api/reminders/update_reminder.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        id: id,
+                                        reminder_time: result.value.newTime
+                                    })
+                                });
+
+                                const updateResult = await updateResponse.json();
+
+                                if (updateResult.success) {
+                                    showSuccessMessage(updateResult.message || 'Reminder updated successfully');
+                                    loadUserReminders(); // Reload the reminders table
+                                } else {
+                                    showErrorMessage(updateResult.message || 'Failed to update reminder');
+                                }
+                            } catch (error) {
+                                console.error('Error updating reminder:', error);
+                                showErrorMessage('Network error. Please try again.');
+                            }
+                        }
+                    });
+                } else {
+                    showErrorMessage(result.message || 'Failed to get reminder details');
+                }
+            } catch (error) {
+                console.error('Error fetching reminder details:', error);
+                showErrorMessage('Network error. Please try again.');
+            }
+        }
+
+        // Delete reminder function
+        async function deleteReminder(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch('../api/reminders/delete_reminder.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ id: id })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showSuccessMessage(result.message || 'Reminder deleted successfully');
+                            loadUserReminders(); // Reload the reminders table
+                        } else {
+                            showErrorMessage(result.message || 'Failed to delete reminder');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting reminder:', error);
+                        showErrorMessage('Network error. Please try again.');
+                    }
+                }
+            });
+        }
+
+        // Download ICS for a specific reminder
+        async function downloadICSFromReminder(reminderId) {
+            try {
+                // Fetch the reminder details by ID
+                const response = await fetch(`../api/reminders/get_reminder.php?id=${reminderId}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const reminder = result.data;
+
+                    // Check if the reminder has an associated action (for resources, there may not be a start_time for a calendar event)
+                    if (!reminder.item_title) {
+                        showSwal('Error', 'Cannot create calendar entry for this item.', 'error');
+                        return;
+                    }
+
+                    // For actions, we can create a calendar event using the action's start time, not the reminder time
+                    // But we need to get the full action details to do this properly
+                    const fullItem = reminder.item_type === 'action' ?
+                        actionsData.find(action => action.id == reminder.item_id) :
+                        resourcesData.find(resource => resource.id == reminder.item_id);
+
+                    if (!fullItem) {
+                        // If the full item isn't in our cached data, we need to fetch it
+                        fetch(`../api/${reminder.item_type}s/get_${reminder.item_type}.php?id=${reminder.item_id}`)
+                            .then(response => response.json())
+                            .then(fetchResult => {
+                                if (fetchResult.success) {
+                                    const item = fetchResult.data;
+                                    generateAndDownloadICS(item, reminder.item_title);
+                                } else {
+                                    showSwal('Error', 'Failed to get item details for calendar export.', 'error');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching item details for ICS:', error);
+                                showSwal('Error', 'Failed to get item details for calendar export.', 'error');
+                            });
+                    } else {
+                        generateAndDownloadICS(fullItem, reminder.item_title);
+                    }
+                } else {
+                    showSwal('Error', result.message || 'Failed to get reminder details.', 'error');
+                }
+            } catch (error) {
+                console.error('Error downloading ICS for reminder:', error);
+                showSwal('Error', 'Network error. Failed to download calendar file.', 'error');
+            }
+        }
+
+        // Helper function to generate and download ICS file
+        function generateAndDownloadICS(item, titleOverride = null) {
+            try {
+                // Use start_time from the action/resource rather than reminder time
+                // This creates a calendar event for the actual action/resource event, not the reminder
+                const startTime = new Date(item.start_time || item.created_at);
+                if (isNaN(startTime.getTime())) {
+                    showSwal('Error', 'Invalid date for calendar export.', 'error');
+                    return;
+                }
+
+                // Calculate end time (assuming 2 hours duration)
+                const endTime = new Date(startTime.getTime() + (2 * 60 * 60 * 1000));
+
+                // Create unique UID for the event
+                const uid = `${item.id}-${item.creator_id || item.publisher_id}@connectforpeace.com`;
+
+                // Build ICS content
+                const icsContent = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//Connect for Peace//Calendar Export//EN',
+                    'BEGIN:VEVENT',
+                    `UID:${uid}`,
+                    `DTSTAMP:${toISOStringForICS(new Date())}`,
+                    `DTSTART:${toISOStringForICS(startTime)}`,
+                    `DTEND:${toISOStringForICS(endTime)}`,
+                    `SUMMARY:${escapeICSText(titleOverride || item.title || item.resource_name)}`,
+                    `DESCRIPTION:${escapeICSText(item.description || 'No description provided')}`,
+                    `LOCATION:${escapeICSText(item.location || 'Location not specified')}`,
+                    'END:VEVENT',
+                    'END:VCALENDAR'
+                ].join('\\r\\n');
+
+                // Create blob and download
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${(titleOverride || item.title || item.resource_name || 'event').replace(/[^a-z0-9]/gi, '_')}.ics`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showSwal('Success', 'Calendar file downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('Error generating ICS:', error);
+                showSwal('Error', 'Failed to generate calendar file.', 'error');
+            }
+        }
+
+        // Helper function to format date for ICS
+        function toISOStringForICS(date) {
+            // Format date as YYYYMMDDTHHMMSSZ for ICS
+            return date.getFullYear() +
+                String(date.getMonth() + 1).padStart(2, '0') +
+                String(date.getDate()).padStart(2, '0') + 'T' +
+                String(date.getHours()).padStart(2, '0') +
+                String(date.getMinutes()).padStart(2, '0') +
+                String(date.getSeconds()).padStart(2, '0') + 'Z';
+        }
+
+        // Helper function to escape ICS text
+        function escapeICSText(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/\\/g, '\\\\')
+                .replace(/;/g, '\\;')
+                .replace(/,/g, '\\,')
+                .replace(/\n/g, '\\n');
+        }
+
+        // Add event listeners for reminders page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners for reminders filters if on reminders page
+            const reminderStatusFilter = document.getElementById('reminderStatusFilter');
+            const remindersSearch = document.getElementById('remindersSearch');
+
+            if (reminderStatusFilter) {
+                reminderStatusFilter.addEventListener('change', filterRemindersTable);
+            }
+
+            if (remindersSearch) {
+                remindersSearch.addEventListener('input', filterRemindersTable);
+            }
+        });

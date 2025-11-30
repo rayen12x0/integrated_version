@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect for Peace - Aura Dashboard</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,12 +28,12 @@
             }
         }
     </script>
-    
+
     <!-- Dependencies -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
-    
+
     <style>
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -42,7 +42,7 @@
         .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
         ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
         .dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
-        
+
         .glass {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
@@ -57,7 +57,7 @@
         /* Functional overrides */
         .page { display: none; }
         .page.active { display: block; animation: fadeIn 0.3s ease-out; }
-        
+
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
 
@@ -65,7 +65,7 @@
 
         /* Map Fixes */
         #locationPickerMap { height: 300px; width: 100%; border-radius: 0.5rem; z-index: 1; }
-        
+
         /* SweetAlert Customization */
         body.dark .swal2-popup-custom {
             background: #18181b !important;
@@ -103,7 +103,7 @@
     </div>
 
     <div class="flex h-screen w-full">
-        
+
         <!-- Sidebar Navigation -->
         <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-zinc-950/50 border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 sidebar flex flex-col" id="sidebar">
             <div class="flex items-center justify-between h-16 px-6 border-b border-zinc-200 dark:border-zinc-800/50">
@@ -119,10 +119,10 @@
                     <i data-lucide="x" class="stroke-[1.5] w-5 h-5"></i>
                 </button>
             </div>
-            
+
             <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 <div class="px-3 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Menu</div>
-                
+
                 <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item active text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-zinc-800/50" data-page="overview">
                     <i data-lucide="layout-dashboard" class="stroke-[1.5] w-4 h-4 mr-3 text-indigo-600 dark:text-indigo-400"></i>
                     <span>Dashboard</span>
@@ -139,9 +139,13 @@
                     <i data-lucide="trophy" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
                     <span>Challenges</span>
                 </a>
-                
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="reminders">
+                    <i data-lucide="bell" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                    <span>Reminders</span>
+                </a>
+
                 <div class="px-3 mt-6 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Support</div>
-                
+
                 <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="reports">
                     <i data-lucide="flag" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
                     <span>Reports</span>
@@ -162,7 +166,7 @@
 
         <!-- Main Content -->
         <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-300" id="mainContent">
-            
+
             <!-- Header -->
             <header class="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800/50 glass z-20 sticky top-0 transition-colors duration-300">
                 <div class="flex items-center gap-4">
@@ -174,8 +178,8 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="search" class="h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors"></i>
                         </div>
-                        <input type="text" 
-                            class="block w-full pl-10 pr-3 py-1.5 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg leading-5 text-zinc-900 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 sm:text-sm transition-all" 
+                        <input type="text"
+                            class="block w-full pl-10 pr-3 py-1.5 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg leading-5 text-zinc-900 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 sm:text-sm transition-all"
                             placeholder="Search workspace...">
                     </div>
                 </div>
@@ -197,7 +201,7 @@
                             <!-- Dynamic content injected by JS -->
                         </div>
                     </div>
-                    
+
                     <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
 
                     <!-- User Menu -->
@@ -233,7 +237,7 @@
 
             <!-- Page Content -->
             <div class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
-                
+
                 <!-- Overview Page -->
                 <section id="overview" class="page active space-y-8">
                     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -311,6 +315,96 @@
                                 <!-- Dynamic items injected by JS -->
                                 <p class="text-sm text-zinc-500 text-center py-4">Loading activity...</p>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reminders Page -->
+                <section id="reminders" class="page space-y-8">
+                    <div>
+                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">My Reminders</h2>
+                        <p class="text-sm text-zinc-500 mt-1">Manage your upcoming events and deadlines.</p>
+                    </div>
+
+                    <!-- Reminders Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total Reminders</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="totalRemindersCount">0</h3>
+                                </div>
+                                <div class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                                    <i data-lucide="bell" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Upcoming</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="upcomingRemindersCount">0</h3>
+                                </div>
+                                <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
+                                    <i data-lucide="calendar-clock" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Past Due</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="pastRemindersCount">0</h3>
+                                </div>
+                                <div class="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/20">
+                                    <i data-lucide="clock-alert" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reminders Table -->
+                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
+                        <div class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">Reminder List</h3>
+                            <div class="flex gap-3">
+                                <select id="reminderStatusFilter" class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
+                                    <option value="">All Statuses</option>
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="overdue">Overdue</option>
+                                    <option value="sent">Sent</option>
+                                </select>
+                                <input type="text" id="remindersSearch" placeholder="Search reminders..." class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse admin-table text-zinc-700 dark:text-zinc-300">
+                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                                    <tr>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Event</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Type</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Reminder Time</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Created At</th>
+                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="remindersTableBody" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
+                                    <!-- Reminders will be populated by JS -->
+                                    <tr>
+                                        <td colspan="7" class="py-8 text-center text-zinc-500">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i data-lucide="bell-off" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                                <p class="text-sm">No reminders set yet</p>
+                                                <p class="text-xs text-zinc-400 mt-1">Create your first reminder from the calendar</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -394,14 +488,14 @@
                         </div>
                     </div>
                 </section>
-                
+
                 <!-- Reports Page -->
                 <section id="reports" class="page space-y-8">
                      <div>
                         <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Reports Management</h2>
                         <p class="text-sm text-zinc-500 mt-1">Admin moderation tools.</p>
                     </div>
-                    
+
                     <div class="grid grid-cols-3 gap-4">
                         <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
                             <div class="text-2xl font-bold text-zinc-900 dark:text-zinc-100" id="totalReportsCount">0</div>
@@ -453,7 +547,7 @@
                          </div>
                     </div>
                 </section>
-                
+
                 <!-- Contact & Settings (Simplified for this view) -->
                 <section id="contact" class="page space-y-8">
                      <div><h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Help Center</h2></div>
@@ -467,7 +561,7 @@
                 </section>
 
                 <!-- Hidden Modals -->
-                
+
                 <!-- Report Details Modal -->
                 <div id="reportDetailsModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
                     <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 transition-all">
@@ -488,7 +582,7 @@
                                  <div class="space-y-1"><label class="text-xs font-semibold text-zinc-500 uppercase">Category: <span id="reportCategoryDetail" class="text-zinc-900 dark:text-zinc-200"></span></label></div>
                                  <div class="space-y-1"><label class="text-xs font-semibold text-zinc-500 uppercase">Date: <span id="reportDateDetail" class="text-zinc-900 dark:text-zinc-200"></span></label></div>
                              </div>
-                             
+
                              <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
                                 <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">Reporter</h3>
                                 <p id="reporterNameDetail" class="text-sm text-zinc-700 dark:text-zinc-400"></p>
@@ -531,7 +625,7 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
+
             <div class="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30">
                 <button class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn active" data-tab="action-tab">Action</button>
                 <button class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn" data-tab="resource-tab">Resource</button>
@@ -542,7 +636,7 @@
                 <div id="action-tab" class="tab-content active space-y-4">
                     <form id="actionForm" class="space-y-4">
                         <input type="hidden" id="editActionId" value="">
-                        
+
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Title</label>
                             <input type="text" id="actionTitle" name="title" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none" placeholder="e.g. Beach Cleanup">
@@ -563,12 +657,12 @@
                                 <input type="text" id="actionTheme" name="theme" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
                              </div>
                         </div>
-                        
+
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Date & Time</label>
                             <input type="datetime-local" id="actionDateTime" name="start_time" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none dark:[color-scheme:dark]">
                         </div>
-                        
+
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Description</label>
                             <textarea id="actionDescription" name="description" rows="3" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"></textarea>
@@ -584,7 +678,7 @@
                              <input type="hidden" id="actionLatitude" name="latitude">
                              <input type="hidden" id="actionLongitude" name="longitude">
                              <input type="hidden" id="actionCountry" name="country">
-                             
+
                              <button type="button" class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn" data-form="action">
                                 <i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i> Pick on Map
                              </button>
@@ -613,7 +707,7 @@
                                  <label class="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"><input type="radio" name="type" value="request" class="text-emerald-600 dark:text-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500/50"> Request</label>
                              </div>
                          </div>
-                         
+
                          <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Description</label>
                             <textarea id="resourceDescription" name="description" rows="2" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none"></textarea>
@@ -629,12 +723,12 @@
                              <input type="hidden" id="resourceLatitude" name="latitude">
                              <input type="hidden" id="resourceLongitude" name="longitude">
                              <input type="hidden" id="resourceCountry" name="country">
-                             
+
                              <button type="button" class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn" data-form="resource">
                                 <i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i> Pick on Map
                              </button>
                          </div>
-                         
+
                          <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition-all mt-4 btn-large">Create Resource</button>
                      </form>
                 </div>
@@ -671,10 +765,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Import main app functionality -->
     <script src="./assets/js/countries.js"></script>
     <script src="script.js"></script>
-    
+
 </body>
 </html>

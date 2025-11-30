@@ -13,6 +13,14 @@ class Reminder {
 
     public function create($data) {
         try {
+            // Validate that reminder time is in the future
+            $reminderTime = new DateTime($data['reminder_time']);
+            $now = new DateTime();
+
+            if ($reminderTime <= $now) {
+                return ['success' => false, 'message' => 'Reminder time must be in the future.'];
+            }
+
             $query = "INSERT INTO reminders (user_id, item_id, item_type, reminder_type, reminder_time)
                       VALUES (:user_id, :item_id, :item_type, :reminder_type, :reminder_time)";
 
@@ -31,6 +39,9 @@ class Reminder {
         } catch (PDOException $e) {
             error_log("Reminder creation error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        } catch (Exception $e) {
+            error_log("Reminder creation validation error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Invalid reminder time format: ' . $e->getMessage()];
         }
     }
 
@@ -180,6 +191,51 @@ class Reminder {
         } catch (Exception $e) {
             error_log("Create auto reminder error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error creating auto reminder: ' . $e->getMessage()];
+        }
+    }
+
+    public function getById($id) {
+        try {
+            $query = "SELECT * FROM reminders WHERE id = :id LIMIT 1";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get reminder by ID error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function update($data) {
+        try {
+            // Validate that reminder time is in the future
+            $reminderTime = new DateTime($data['reminder_time']);
+            $now = new DateTime();
+
+            if ($reminderTime <= $now) {
+                return ['success' => false, 'message' => 'Reminder time must be in the future.'];
+            }
+
+            $query = "UPDATE reminders SET reminder_time = :reminder_time WHERE id = :id";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $data['id']);
+            $stmt->bindParam(':reminder_time', $data['reminder_time']);
+
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Reminder updated successfully.'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update reminder.'];
+            }
+        } catch (PDOException $e) {
+            error_log("Update reminder error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        } catch (Exception $e) {
+            error_log("Update reminder validation error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Invalid reminder time format: ' . $e->getMessage()];
         }
     }
 }

@@ -113,17 +113,9 @@ class ActionParticipantController
 
                     if ($action && $user && $action['creator_id'] != $userId) { // Don't notify the user if they're joining their own action
                         $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
-
-                        // Create automatic reminder for the participant if action has a start_time in the future
-                        if ($action && !empty($action['start_time'])) {
-                            // Include the Reminder model and use its createAutoReminder method
-                            require_once __DIR__ . "/../model/reminder.php";
-                            $reminderModel = new Reminder($this->pdo);
-                            $reminderModel->createAutoReminder($userId, $actionId, $action['start_time'], 'action');
-                        }
                     }
 
-                    ApiResponse::success(['joined' => true], "You've successfully joined this action! We'll send you a reminder before it starts.", 200);
+                    ApiResponse::success(['joined' => true], "You've successfully joined this action!", 200);
                 } else {
                     error_log("Failed to add user to action participants. Action ID: $actionId, User ID: $userId");
                     ApiResponse::error("Failed to join the action. Please try again.", 400);
