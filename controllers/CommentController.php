@@ -4,6 +4,7 @@
 
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../model/comment.php";
+require_once __DIR__ . "/../utils/ApiResponse.php";
 
 class CommentController
 {
@@ -29,10 +30,7 @@ class CommentController
         // Validate input
         if (!$input) {
             error_log("Invalid JSON input received.");
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input"
-            ]);
+            ApiResponse::error("Invalid JSON input", 400);
             return;
         }
 
@@ -43,10 +41,7 @@ class CommentController
         foreach ($required as $field) {
             if (empty($input[$field])) {
                 error_log("Missing required field: $field");
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Missing required field: $field"
-                ]);
+                ApiResponse::error("Missing required field: $field", 400);
                 return;
             }
         }
@@ -54,10 +49,7 @@ class CommentController
         // Either action_id or resource_id must be provided
         if (empty($input['action_id']) && empty($input['resource_id'])) {
             error_log("Either action_id or resource_id must be provided");
-            echo json_encode([
-                "success" => false,
-                "message" => "Either action_id or resource_id must be provided"
-            ]);
+            ApiResponse::error("Either action_id or resource_id must be provided", 400);
             return;
         }
 
@@ -118,18 +110,11 @@ class CommentController
                 $notification->createCommentAddedNotification($creatorId, $itemId, $itemTitle, $commenterName, $itemType);
             }
 
-            echo json_encode([
-                "success" => true,
-                "message" => "Comment created successfully",
-                "id" => $lastId
-            ]);
+            ApiResponse::success(['id' => $lastId], "Comment created successfully", 201);
         } else {
             // Error response
             error_log("Failed to create comment in model.");
-            echo json_encode([
-                "success" => false,
-                "message" => "Failed to create comment"
-            ]);
+            ApiResponse::error("Failed to create comment", 400);
         }
     }
 
@@ -139,46 +124,38 @@ class CommentController
 
         try {
             $comments = $this->comment->getAll();
-            echo json_encode([
-                "success" => true,
-                "comments" => $comments
-            ]);
+            ApiResponse::success($comments, 'Comments retrieved successfully', 200);
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
     // Get comments by entity (action or resource)
-    public function getByEntity() {
+    public function getByEntity($actionId = null, $resourceId = null) {
         header("Content-Type: application/json");
 
-        $actionId = $_GET['action_id'] ?? null;
-        $resourceId = $_GET['resource_id'] ?? null;
+        // If IDs are not passed as parameters, try to get from GET request
+        if ($actionId === null) {
+            $actionId = $_GET['action_id'] ?? null;
+        }
+        if ($resourceId === null) {
+            $resourceId = $_GET['resource_id'] ?? null;
+        }
 
         // Either action_id or resource_id must be provided
         if (!$actionId && !$resourceId) {
             error_log("Either action_id or resource_id must be provided for get by entity");
-            echo json_encode([
-                "success" => false,
-                "message" => "Either action_id or resource_id must be provided"
-            ]);
+            ApiResponse::error("Either action_id or resource_id must be provided", 400);
             return;
         }
 
         try {
             $comments = $this->comment->getByEntity($actionId, $resourceId);
-            echo json_encode([
-                "success" => true,
-                "comments" => $comments
-            ]);
+            // Changed to match the frontend expectation:
+            // Frontend expects result.data.comments structure
+            ApiResponse::success(['comments' => $comments, 'count' => count($comments)], 'Comments retrieved successfully', 200);
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -189,21 +166,12 @@ class CommentController
         try {
             $comment = $this->comment->findById($id);
             if ($comment) {
-                echo json_encode([
-                    "success" => true,
-                    "comment" => $comment
-                ]);
+                ApiResponse::success($comment, 'Comment retrieved successfully', 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Comment not found"
-                ]);
+                ApiResponse::error('Comment not found', 404);
             }
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -213,10 +181,7 @@ class CommentController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing comment ID"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing comment ID", 400);
             return;
         }
 
@@ -225,25 +190,16 @@ class CommentController
 
         // Required fields for comment update
         if (!isset($input['content'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Missing required field: content"
-            ]);
+            ApiResponse::error("Missing required field: content", 400);
             return;
         }
 
         $result = $this->comment->update($id, $input);
 
         if ($result) {
-            echo json_encode([
-                "success" => true,
-                "message" => "Comment updated successfully"
-            ]);
+            ApiResponse::success(null, "Comment updated successfully", 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Failed to update comment or comment not found"
-            ]);
+            ApiResponse::error("Failed to update comment or comment not found", 400);
         }
     }
 
@@ -253,10 +209,7 @@ class CommentController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing comment ID"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing comment ID", 400);
             return;
         }
 
@@ -265,15 +218,9 @@ class CommentController
         $result = $this->comment->delete($id);
 
         if ($result) {
-            echo json_encode([
-                "success" => true,
-                "message" => "Comment deleted successfully"
-            ]);
+            ApiResponse::success(null, "Comment deleted successfully", 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Failed to delete comment or comment not found"
-            ]);
+            ApiResponse::error("Failed to delete comment or comment not found", 400);
         }
     }
 
@@ -284,24 +231,15 @@ class CommentController
         $userId = $_GET['user_id'] ?? null;
 
         if (!$userId) {
-            echo json_encode([
-                "success" => false,
-                "message" => "User ID is required"
-            ]);
+            ApiResponse::error("User ID is required", 400);
             return;
         }
 
         try {
             $comments = $this->comment->getByUser($userId);
-            echo json_encode([
-                "success" => true,
-                "comments" => $comments
-            ]);
+            ApiResponse::success($comments, 'Comments retrieved successfully', 200);
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -312,10 +250,7 @@ class CommentController
         $commentId = $_GET['id'] ?? null;
 
         if (!$commentId) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Comment ID is required"
-            ]);
+            ApiResponse::error("Comment ID is required", 400);
             return;
         }
 
@@ -327,10 +262,7 @@ class CommentController
             // Get the comment to check ownership
             $comment = $this->comment->findById($commentId);
             if (!$comment) {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Comment not found"
-                ]);
+                ApiResponse::error("Comment not found", 404);
                 return;
             }
 
@@ -340,31 +272,19 @@ class CommentController
                            (isset($_GET['user_id_override']) && $_GET['user_id_override'] == '1'); // For admin override
 
             if (!$isAuthorized) {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Unauthorized to delete this comment"
-                ]);
+                ApiResponse::error("Unauthorized to delete this comment", 403);
                 return;
             }
 
             $result = $this->comment->delete($commentId);
 
             if ($result) {
-                echo json_encode([
-                    "success" => true,
-                    "message" => "Comment deleted successfully"
-                ]);
+                ApiResponse::success(null, "Comment deleted successfully", 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Failed to delete comment or comment not found"
-                ]);
+                ApiResponse::error("Failed to delete comment or comment not found", 400);
             }
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 }

@@ -84,7 +84,7 @@ function createCustomMarker(lat, lng, type, title, id, country) {
         iconAnchor: [16, 16]
     });
 
-    const marker = L.marker([lat, lng], { icon: customIcon }).addTo(window.map);
+    const marker = L.marker([lat, lng], { icon: customIcon, zIndexOffset: 2000 }).addTo(window.map);
 
     // Create popup content
     const popupContent = `
@@ -182,10 +182,11 @@ function initMap() {
         // Initialize the map
         const map = L.map('map').setView([48.8566, 2.3522], 12);
 
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+        // Add tile layer with grayscale style for template consistency
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(map);
 
         // Store map instance globally
@@ -200,6 +201,26 @@ function initMap() {
 
                 // Center the map on the specific location with higher zoom
                 map.setView([params.lat, params.lng], 15);
+
+                // Show SweetAlert confirmation that pin has been created
+                const alertKey = `mapAlert_${params.id}_${params.type}`;
+                const alertShown = sessionStorage.getItem(alertKey);
+
+                if (!alertShown && typeof Swal !== 'undefined') {
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'Location Found!',
+                            text: `A pin has been placed on the map for the ${params.type}: "${params.title}"`,
+                            icon: 'success',
+                            position: 'top-end',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                            toast: true
+                        });
+                        sessionStorage.setItem(alertKey, 'true');
+                    }, 1000); // Small delay to ensure map is loaded
+                }
             } else {
                 // If no coordinates but we have an ID or title, show the details modal instead
                 // Create a minimal object to pass to the details modal
@@ -361,7 +382,9 @@ function updateMap() {
     displayData.forEach(item => {
         if (!item.latitude || !item.longitude) return;
 
-        const marker = L.marker([item.latitude, item.longitude])
+        const marker = L.marker([item.latitude, item.longitude], {
+            zIndexOffset: 2000  // Ensure markers appear above other map elements
+        })
             .addTo(window.map);
 
         // Store marker reference in our array
@@ -379,16 +402,13 @@ function updateMap() {
             locationDisplay = item.location_details;
         }
 
-        marker.bindPopup(`
-            <div style="min-width: 200px;">
-                <h4>${item.title || item.resource_name || 'Untitled'}</h4>
-                <p>${locationDisplay}</p>
-                <button onclick="openDetailsModal(${JSON.stringify(item).replace(/"/g, '&quot;')})"
-                        style="padding: 6px 12px; margin-top: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    View Details
-                </button>
-            </div>
-        `);
+        marker.on('click', () => {
+            if (typeof window.openDetailsModal === 'function') {
+                window.openDetailsModal(item);
+            } else {
+                console.warn('openDetailsModal function not available');
+            }
+        });
     });
 }
 
@@ -396,3 +416,4 @@ function updateMap() {
 window.addMarkerToMap = addMarkerToMap;
 window.clearAllMarkers = clearAllMarkers;
 window.removeMarker = removeMarker;
+

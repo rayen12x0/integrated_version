@@ -1,10 +1,16 @@
 <?php
 // API endpoint to get recent activity for dashboard
-// Real implementation querying database
+error_reporting(0); // Suppress PHP errors
+ini_set('display_errors', 0);
 
 require_once "../../config/config.php";
 
 header("Content-Type: application/json");
+
+// Clear any output buffers
+if (ob_get_level()) {
+    ob_clean();
+}
 
 try {
     $pdo = Config::getConnexion();
@@ -55,7 +61,7 @@ try {
                 'type' => $activity['type'],
                 'title' => $activity['title'] ?: 'Untitled',
                 'description' => $activity['description'] ?: 'No description',
-                'date' => $activity['date'],
+                'timestamp' => $activity['date'],
                 'status' => $activity['status']
             ];
         }
@@ -101,7 +107,7 @@ try {
                 'type' => $activity['type'],
                 'title' => $activity['title'] ?: 'Untitled',
                 'description' => $activity['description'] ?: 'No description',
-                'date' => $activity['date'],
+                'timestamp' => $activity['date'],
                 'status' => $activity['status']
             ];
         }
@@ -109,7 +115,7 @@ try {
 
     echo json_encode([
         "success" => true,
-        "recentItems" => $activities
+        "activity" => $activities
     ]);
 
 } catch (Exception $e) {

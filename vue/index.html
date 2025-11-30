@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aide & Actions - Connect for Peace</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/fish_style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#AEE1F9',
+                        'accent-green': '#C3E6CB',
+                        coral: '#FFB6A0',
+                        'light-beige': '#FFF9F0',
+                        'accent-blue': '#AEE1F9'  // Same as primary for consistency
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .error-border {
             border: 2px solid red !important;
@@ -35,37 +54,66 @@
             font-size: 0.9rem !important;
         }
     </style>
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- jQuery - Load with integrity check and fallback -->
+    <script
+        src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous"
+        onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'">
+    </script>
     <script>
         if (typeof jQuery === 'undefined') {
-            console.error('jQuery failed to load! Loading fallback...');
-            document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
+            alert('Application error: Required libraries failed to load. Please refresh the page.');
         }
     </script>
 </head>
-<body>
+
+<body class="bg-zinc-50 text-zinc-900 antialiased">
     <!-- Navigation Bar -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <div class="navbar-container">
-                <div class="navbar-logo">
-                    <span>Connect for Peace</span>
+    <nav class="navbar fixed top-0 z-40 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md transition-all duration-300"
+        id="navbar">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div class="navbar-logo flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
+                    <i data-lucide="zap" class="h-5 w-5"></i>
                 </div>
-                <ul class="nav-menu">
-                    <li><a href="#" class="nav-link">Home</a></li>
-                    <li><a href="#" class="nav-link ">Actions & Aide</a></li>
-                    <li><a href="#" class="nav-link">Stories</a></li>
-                    <li><a href="#" class="nav-link">Défis</a></li>
-                    <li><a href="about.html" class="nav-link">about</a></li>
-                </ul>
-                <div class="profile-menu">
-                    <img src="https://api.placeholder.com/40/40?text=User" alt="Profile" class="profile-avatar">
-                    <div class="dropdown">
-                        <a href="profile" class="profile-link"><span class="material-symbols-outlined">account_circle</span> Profile</a>
-                        <a href="../dashboard/index.html"><span class="material-symbols-outlined">settings</span> Settings</a>
-                        <a href="#"><span class="material-symbols-outlined">logout</span> Logout</a>
-                    </div>
+                <span class="font-sans text-lg font-semibold tracking-tight text-zinc-900">Connect<span
+                        class="text-zinc-400">Peace</span></span>
+            </div>
+            <ul class="nav-menu hidden items-center gap-8 md:flex">
+                <li><a href="#"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Home</a>
+                </li>
+                <li><a href="#"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Actions
+                        & Aide</a></li>
+                <li><a href="#"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Stories</a>
+                </li>
+                <li><a href="#"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Défis</a>
+                </li>
+                <li><a href="about.html"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">about</a>
+                </li>
+            </ul>
+            <div class="profile-menu relative">
+                <button
+                    class="profile-avatar flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 ring-offset-2 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-zinc-900">
+                    <img src="https://api.placeholder.com/40/40?text=User" alt="Profile"
+                        class="h-full w-full rounded-full object-cover">
+                </button>
+                <div
+                    class="dropdown absolute right-0 mt-2 hidden w-48 origin-top-right transform rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black ring-opacity-5 transition-all">
+                    <a href="profile"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="user" class="h-4 w-4"></i> Profile</a>
+                    <a href="../dashboard/index.html"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="settings" class="h-4 w-4"></i> Settings</a>
+                    <a href="#"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="log-out" class="h-4 w-4"></i> Logout</a>
                 </div>
             </div>
         </div>
@@ -74,300 +122,486 @@
 
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-
-            <h1 class="hero-title">Small Acts, Big Impact </h1>
-            <p class="hero-subtitle">Join a community action or lend a helping hand near you.</p>
-            <spline-viewer url="https://prod.spline.design/8G96X9jnSxc0lqWr/scene.splinecode" class="global"></spline-viewer>
-            <div class="hero-buttons">
-                <button class="btn btn-primary create-action-btn">
-                    <span class="material-symbols-outlined">add</span> Create an Action
+    <section
+        class="hero relative flex min-h-[90vh] items-center justify-center overflow-hidden bg-zinc-950 px-6 py-24 text-center">
+        <div class="global absolute inset-0 z-0 opacity-40">
+            <spline-viewer url="https://prod.spline.design/8G96X9jnSxc0lqWr/scene.splinecode"></spline-viewer>
+        </div>
+        <div class="hero-content relative z-10 mx-auto max-w-3xl animate-fade-in">
+            <h1 class="mb-6 font-sans text-5xl font-semibold tracking-tight text-white md:text-7xl">Small Acts,
+                <br /><span
+                    class="bg-gradient-to-r from-primary via-accent-green to-coral bg-clip-text text-transparent">Big
+                    Impact</span></h1>
+            <div
+                class="mb-6 inline-flex items-center rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 backdrop-blur-sm">
+                <span class="text-xs font-medium text-zinc-300">Connect for Peace Community</span>
+            </div>
+            <p class="mb-10 text-lg leading-relaxed text-zinc-400 md:text-xl">Join a community action or lend a helping
+                hand near you.</p>
+            <div class="hero-buttons flex flex-wrap justify-center gap-4">
+                <button
+                    class="create-action-btn flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-lg transition-transform hover:-translate-y-1">
+                    <i data-lucide="plus" class="h-4 w-4"></i> Create an Action
                 </button>
-                <button class="btn btn-secondary create-resource-btn">
-                    <span class="material-symbols-outlined">groups</span> Offer Help
+                <button
+                    class="create-resource-btn flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-1">
+                    <i data-lucide="heart-handshake" class="h-4 w-4"></i> Offer Help
                 </button>
-                <button class="btn btn-outline explore-nearby-btn">
-                    <span class="material-symbols-outlined">near_me</span> Explore Nearby
+                <button
+                    class="explore-nearby-btn flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-zinc-400 hover:text-white">
+                    <i data-lucide="map-pin" class="h-4 w-4"></i> Explore Nearby
                 </button>
             </div>
-
         </div>
-
     </section>
 
     <!-- Filter & Search Section -->
-    <section class="filter-section">
-        <div class="filter-container">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search actions, resources..." class="search-input">
-                <span class="material-symbols-outlined">search</span>
+    <section class="filter-section sticky top-[73px] z-30 border-b border-zinc-200 bg-white/80 backdrop-blur-md">
+        <div class="filter-container mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 py-4">
+            <div class="search-box relative flex-1 min-w-[200px]">
+                <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"></i>
+                <input type="text" id="searchInput" placeholder="Search actions, resources..."
+                    class="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-zinc-400 focus:bg-white focus:ring-1 focus:ring-zinc-400">
             </div>
-            <div class="filters">
-                <select id="typeFilter" class="filter-select">
+            <div class="filters flex items-center gap-3 overflow-x-auto">
+                <select id="typeFilter"
+                    class="appearance-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-600 hover:border-zinc-300 focus:outline-none">
                     <option value="">All Types</option>
                     <option value="action">Actions</option>
                     <option value="resource">Resources</option>
                 </select>
-                <select id="themeFilter" class="filter-select">
+                <select id="themeFilter"
+                    class="appearance-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-600 hover:border-zinc-300 focus:outline-none">
                     <option value="">All Themes</option>
-                    <option value="environment">🪴 Environment</option>
-                    <option value="education">📚 Education</option>
-                    <option value="social">🤲 Social Help</option>
-                    <option value="culture">🎨 Art & Culture</option>
+                    <option value="environment">Environment</option>
+                    <option value="education">Education</option>
+                    <option value="social">Social Help</option>
+                    <option value="culture">Art & Culture</option>
                 </select>
-                <select id="statusFilter" class="filter-select">
+                <select id="statusFilter"
+                    class="appearance-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-600 hover:border-zinc-300 focus:outline-none">
                     <option value="">All Status</option>
-                    <option value="active">🟢 Active</option>
-                    <option value="ongoing">🟡 Ongoing</option>
-                    <option value="completed">✅ Completed</option>
+                    <option value="active">Active</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
                 </select>
-                <button class="btn-clear" onclick="clearFilters()">Clear Filters</button>
+                <button class="btn-clear text-xs font-medium text-zinc-400 hover:text-zinc-600 hover:underline"
+                    onclick="clearFilters()">Clear Filters</button>
             </div>
         </div>
     </section>
 
     <!-- Grid Display Section -->
-    <section class="grid-section">
-        <div class="container">
-            <h2 class="section-title">Featured Actions & Resources</h2>
-            <div class="cards-grid" id="cardsGrid">
+    <section class="grid-section bg-zinc-50 py-16">
+        <div class="container mx-auto max-w-7xl px-6">
+            <h2 class="section-title mb-10 text-2xl font-semibold tracking-tight text-zinc-900">Featured Actions &
+                Resources</h2>
+            <div class="cards-grid grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="cardsGrid">
                 <!-- Cards will be generated by JavaScript -->
             </div>
         </div>
     </section>
 
+    <!-- Calendar Section -->
+    <section class="calendar-section border-t border-zinc-200 bg-white py-16" role="region"
+        aria-label="Calendar and Events">
+        <div class="container mx-auto max-w-7xl px-6">
+            <div class="calendar-header mb-8 flex flex-wrap items-center justify-between gap-4">
+                <h2 class="section-title text-2xl font-semibold tracking-tight text-zinc-900">Calendar & Upcoming Events
+                </h2>
+                <div class="view-toggle flex rounded-lg border border-zinc-200 bg-zinc-50 p-1">
+                    <button
+                        class="btn rounded-md px-4 py-1.5 text-sm font-medium text-zinc-600 transition-all hover:text-zinc-900 data-[pressed=true]:bg-white data-[pressed=true]:text-zinc-900 data-[pressed=true]:shadow-sm"
+                        data-view="calendar" onclick="toggleCalendarView(this.dataset.view)" aria-pressed="true"
+                        role="button" tabindex="0">Calendar View</button>
+                    <button
+                        class="btn rounded-md px-4 py-1.5 text-sm font-medium text-zinc-600 transition-all hover:text-zinc-900 data-[pressed=true]:bg-white data-[pressed=true]:text-zinc-900 data-[pressed=true]:shadow-sm"
+                        data-view="agenda" onclick="toggleCalendarView(this.dataset.view)" aria-pressed="false"
+                        role="button" tabindex="0">List View</button>
+                </div>
+            </div>
+            <div class="calendar-legend flex items-center gap-4 mb-4">
+                <div class="flex items-center gap-2 text-sm text-zinc-600">
+                    <div
+                        style="background-color: var(--color-primary); width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 5px;">
+                    </div>
+                    <span>Action</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-zinc-600">
+                    <div
+                        style="background-color: var(--color-accent-green); width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 5px;">
+                    </div>
+                    <span>Resource</span>
+                </div>
+            </div>
+            <div id="calendar-container"
+                class="calendar-container overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+                style="display: block;" aria-live="polite"></div>
+            <div id="agenda-container" class="agenda-container hidden" aria-live="polite"></div>
+        </div>
+    </section>
+
     <!-- Details Modal -->
-    <div id="detailsModal" class="modal">
-        <div class="modal-content modal-large">
-            <button class="modal-close" onclick="closeModal('detailsModal')">
-                <span class="material-symbols-outlined">close</span>
+    <div id="detailsModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+        <div
+            class="modal-content relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <button
+                class="modal-close absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-zinc-600 hover:bg-zinc-100"
+                onclick="closeModal('detailsModal')">
+                <i data-lucide="x" class="h-5 w-5"></i>
             </button>
-            <div class="modal-header">
-                <img id="modalImage" src="/placeholder.svg" alt="" class="modal-image">
-                <div class="modal-overlay-content">
-                    <span id="modalBadge" class="badge">Action</span>
-                    <h2 id="modalTitle" class="modal-title">Action Title</h2>
-                    <div class="creator-info">
-                        <img id="modalCreatorAvatar" src="/placeholder.svg" alt="" class="small-avatar">
-                        <div>
-                            <p id="modalCreatorName" class="creator-name">Creator Name</p>
-                            <p id="modalCreatorBadge" class="creator-badge">Verified Organizer</p>
+            <div class="flex h-full flex-col md:flex-row">
+                <div class="relative h-64 w-full md:h-auto md:w-2/5 flex-shrink-0">
+                    <img id="modalImage" src="/placeholder.svg" alt="" class="h-full w-full object-cover">
+                    <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-6">
+                        <span id="modalBadge"
+                            class="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">Action</span>
+                        <div class="flex items-center gap-3">
+                            <img id="modalCreatorAvatar" src="/placeholder.svg" alt=""
+                                class="h-8 w-8 rounded-full border border-white/30">
+                            <div>
+                                <p id="modalCreatorName" class="text-sm font-medium text-white">Creator Name</p>
+                                <p id="modalCreatorBadge" class="text-xs text-zinc-300">Verified Organizer</p>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="flex flex-1 flex-col overflow-hidden p-8 min-h-0">
+                    <div class="flex-1 overflow-y-auto max-h-[calc(90vh-250px)] pr-2">
+                        <h2 id="modalTitle" class="mb-4 text-2xl font-semibold tracking-tight text-zinc-900">Action Title
+                        </h2>
+                        <div class="mb-8 grid grid-cols-2 gap-4 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                            <div>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">📍 Location</span>
+                                <p id="modalLocation" class="mt-1 text-sm font-medium text-zinc-700">Location</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">📅 Date</span>
+                                <p id="modalDate" class="mt-1 text-sm font-medium text-zinc-700">Date</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">👥
+                                    Participants</span>
+                                <p id="modalParticipants" class="mt-1 text-sm font-medium text-zinc-700">0 people</p>
+                            </div>
+                            <div>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">⏱️ Duration</span>
+                                <p id="modalDuration" class="mt-1 text-sm font-medium text-zinc-700">Duration</p>
+                            </div>
+                        </div>
+                        <div class="mb-8">
+                            <h3 class="mb-2 text-sm font-semibold text-zinc-900">About</h3>
+                            <p id="modalDescription" class="text-sm leading-relaxed text-zinc-600">Full description goes
+                                here...</p>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="mb-2 text-sm font-semibold text-zinc-900">Tags</h3>
+                            <div class="tags flex flex-wrap gap-2" id="modalTags"></div>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="mb-2 text-sm font-semibold text-zinc-900">Participants</h3>
+                            <div class="participants-list grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
+                                id="participantsList"></div>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="mb-2 text-sm font-semibold text-zinc-900">Comments</h3>
+                            <div class="comments-section">
+                                <div class="comments-list mb-4" id="commentsList">
+                                    <!-- Comments will be loaded here -->
+                                </div>
+                                <div class="add-comment-section">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <img id="commentUserAvatar" src="/placeholder.svg" alt="" class="h-8 w-8 rounded-full border border-zinc-200">
+                                        <div>
+                                            <p id="commentUserName" class="text-sm font-medium text-zinc-700">User Name</p>
+                                        </div>
+                                    </div>
+                                    <textarea id="commentInput" placeholder="Add a comment..."
+                                        class="w-full rounded-lg border border-zinc-200 p-2 text-sm mb-2"></textarea>
+                                    <button id="addCommentBtn" class="btn btn-primary px-4 py-2 text-sm font-medium"
+                                        onclick="addComment()">Post Comment</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto flex gap-3 border-t border-zinc-100 pt-6">
+                        <div id="modalActions" class="flex gap-2 mr-auto">
+                            <!-- Edit and Delete buttons will be inserted here by JavaScript -->
+                        </div>
+                        <button id="addToCalendarBtn"
+                            class="btn btn-outline rounded-lg border border-zinc-200 px-4 py-2.5 text-zinc-600 hover:bg-zinc-50"
+                            onclick="downloadICS()" style="display: none;">
+                            <i data-lucide="calendar-plus" class="h-5 w-5"></i>
+                        </button>
+                        <button
+                            class="btn btn-outline rounded-lg border border-zinc-200 px-4 py-2.5 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                            onclick="openReportModal()">
+                            <i data-lucide="flag" class="h-5 w-5"></i>
+                        </button>
+                        <button id="actionButton"
+                            class="btn btn-primary flex-1 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                            onclick="toggleJoin()">Join Action</button>
+                    </div>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+        <div class="modal-content relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl p-6">
+            <button class="modal-close text-zinc-500 hover:text-zinc-900" onclick="closeReportModal()">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+            <h2 class="text-lg font-semibold mb-4 text-zinc-900">Report Content</h2>
             <div class="modal-body">
-                <div class="modal-section">
-                    <h3>About</h3>
-                    <p id="modalDescription" class="description-text">Full description goes here...</p>
-                </div>
-                <div class="modal-section">
-                    <h3>Details</h3>
-                    <div class="details-grid">
-                        <div class="detail-item">
-                            <span class="detail-label">📍 Location</span>
-                            <p id="modalLocation">Location</p>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">📅 Date</span>
-                            <p id="modalDate">Date</p>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">👥 Participants</span>
-                            <p id="modalParticipants">0 people</p>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">⏱️ Duration</span>
-                            <p id="modalDuration">Duration</p>
-                        </div>
+                <form id="reportForm" class="space-y-4">
+                    <input type="hidden" id="reportItemId" value="">
+                    <input type="hidden" id="reportItemType" value="">
+                    <div>
+                        <label for="reportCategory" class="block text-xs font-medium text-zinc-500 mb-1">Report
+                            Category</label>
+                        <select id="reportCategory"
+                            class="w-full rounded-lg border border-zinc-200 p-2 text-sm bg-white focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Select a category</option>
+                            <option value="scam">Scam</option>
+                            <option value="spam">Spam</option>
+                            <option value="inappropriate">Inappropriate Content</option>
+                            <option value="fake">Fake Information</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <small class="error-message" id="reportCategory-error"></small>
                     </div>
-                </div>
-                <div class="modal-section">
-                    <h3>Tags</h3>
-                    <div class="tags" id="modalTags"></div>
-                </div>
-                <div class="modal-section">
-                    <h3>Participants</h3>
-                    <div class="participants-list" id="participantsList"></div>
-                </div>
-                <div class="modal-section">
-                    <h3>Feedback</h3>
-                    <div class="rating-section">
-                        <div class="stars" id="ratingStars">
-                            <span class="star" onclick="setRating(1)">⭐</span>
-                            <span class="star" onclick="setRating(2)">⭐</span>
-                            <span class="star" onclick="setRating(3)">⭐</span>
-                            <span class="star" onclick="setRating(4)">⭐</span>
-                            <span class="star" onclick="setRating(5)">⭐</span>
-                        </div>
-                        <textarea placeholder="Share your experience..." class="feedback-textarea"></textarea>
-                        <button class="btn btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+                    <div>
+                        <label for="reportReason" class="block text-xs font-medium text-zinc-500 mb-1">Report
+                            Reason</label>
+                        <textarea id="reportReason"
+                            class="w-full rounded-lg border border-zinc-200 p-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                            placeholder="Please explain why you're reporting this content..." rows="4"></textarea>
+                        <small class="error-message" id="reportReason-error"></small>
                     </div>
-                    <div class="comments-list" id="commentsList"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div id="modalActions" style="display: flex; gap: 10px; margin-right: auto;">
-                    <!-- Edit and Delete buttons will be inserted here by JavaScript -->
-                </div>
-                <button id="actionButton" class="btn btn-primary btn-large" onclick="toggleJoin()">Join Action</button>
-                <button class="btn btn-outline" onclick="closeModal('detailsModal')">Close</button>
+                    <div class="flex gap-2 justify-end pt-2">
+                        <button type="button"
+                            class="btn btn-outline px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
+                            onclick="closeReportModal()">Cancel</button>
+                        <button type="submit"
+                            class="btn btn-danger px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">Submit
+                            Report</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <!-- Create Modal -->
-    <div id="createModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('createModal')">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <h2 class="modal-title">Create New</h2>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('action-tab')">
-                    <span class="material-symbols-outlined">eco</span> Create Action
-                </button>
-                <button class="tab-btn" onclick="switchTab('resource-tab')">
-                    <span class="material-symbols-outlined">inventory</span> Offer/Request Resource
+    <div id="createModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+        <div class="modal-content relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-zinc-900">Create New</h2>
+                <button class="text-zinc-500 hover:text-zinc-900" onclick="closeModal('createModal')">
+                    <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-
-            <!-- Create Action Tab -->
-            <div id="action-tab" class="tab-content active">
-                <form class="create-form">
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" id="actionTitle" placeholder="Give your action a title..." required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select id="actionCategory" required>
-                                <option>🪴 Environment</option>
-                                <option>📚 Education</option>
-                                <option>🤲 Social Help</option>
-                                <option>🎨 Art & Culture</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Theme</label>
-                            <select id="actionTheme" required>
-                                <option>Cleanup</option>
-                                <option>Workshop</option>
-                                <option>Mentoring</option>
-                                <option>Volunteering</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="actionDescription" placeholder="Describe your action in detail..." rows="4" required></textarea>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Date & Time</label>
-                            <input type="datetime-local" id="actionDateTime" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (hours)</label>
-                            <input type="number" id="actionDuration" placeholder="2" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Country</label>
-                        <select id="actionCountry" name="country" required>
-                            <option value="">Select Country</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Location Details</label>
-                        <input type="text" id="actionLocationDetails" placeholder="City, Address, etc." required>
-                    </div>
-                    <input type="hidden" id="actionLat" name="latitude">
-                    <input type="hidden" id="actionLng" name="longitude">
-                    <input type="hidden" id="actionCountryHidden" name="country_hidden">
-                    <div class="form-group">
-                        <button type="button" class="btn btn-outline pick-location-btn" data-form="action">📍 Pick on Map</button>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Image</label>
-                        <div class="file-upload">
-                            <span class="material-symbols-outlined">cloud_upload</span>
-                            <p>Drag and drop or click to upload</p>
-                            <input type="file" id="file-input" name="image" accept="image/*" />
-                            <div id="num-of-files">No Files Choosen</div>
-                            <ul id="files-list"></ul>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-large" id="createActionBtn">Create Action</button>
-                </form>
+            <div class="tabs flex border-b border-zinc-200 px-6">
+                <button class="tab-btn active mr-6 border-b-2 border-zinc-900 py-3 text-sm font-medium text-zinc-900" data-tab="action-tab">
+                    <i data-lucide="eco" class="h-4 w-4 mr-2"></i> Create Action
+                </button>
+                <button
+                    class="tab-btn border-b-2 border-transparent py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700" data-tab="resource-tab">
+                    <i data-lucide="inventory" class="h-4 w-4 mr-2"></i> Offer/Request Resource
+                </button>
             </div>
-
-            <!-- Resource Tab -->
-            <div id="resource-tab" class="tab-content">
-                <form class="create-form">
-                    <div class="form-group">
-                        <label>Resource Name</label>
-                        <input type="text" id="resourceName" placeholder="e.g., Books, Furniture..." required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Type</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="type" value="offer"> Offer</label>
-                                <label><input type="radio" name="type" value="request"> Request</label>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <!-- Create Action Tab -->
+                <div id="action-tab" class="tab-content active">
+                    <form class="create-form space-y-4">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Title</label>
+                            <input type="text" id="actionTitle"
+                                class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                placeholder="Give your action a title...">
+                            <small class="error-message" id="actionTitle-error"></small>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Category</label>
+                                <select id="actionCategory"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                                    <option>Environment</option>
+                                    <option>Education</option>
+                                    <option>Social Help</option>
+                                    <option>Art & Culture</option>
+                                </select>
+                                <small class="error-message" id="actionCategory-error"></small>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Theme</label>
+                                <select id="actionTheme"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                                    <option>Cleanup</option>
+                                    <option>Workshop</option>
+                                    <option>Mentoring</option>
+                                    <option>Volunteering</option>
+                                </select>
+                                <small class="error-message" id="actionTheme-error"></small>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select id="resourceCategory" required>
-                                <option>Books</option>
-                                <option>Furniture</option>
-                                <option>Clothing</option>
-                                <option>Food</option>
-                                <option>Other</option>
-                            </select>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Description</label>
+                            <textarea id="actionDescription"
+                                class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                placeholder="Describe your action in detail..." rows="4"></textarea>
+                            <small class="error-message" id="actionDescription-error"></small>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea id="resourceDescription" placeholder="Describe the resource..." rows="4" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Country</label>
-                        <select id="resourceCountry" name="country" required>
-                            <option value="">Select Country</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Location Details</label>
-                        <input type="text" id="resourceLocationDetails" placeholder="City, Address, etc." required>
-                    </div>
-                    <input type="hidden" id="resourceLat" name="latitude">
-                    <input type="hidden" id="resourceLng" name="longitude">
-                    <input type="hidden" id="resourceCountryHidden" name="country_hidden">
-                    <div class="form-group">
-                        <button type="button" class="btn btn-outline pick-location-btn" data-form="resource">📍 Pick on Map</button>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Image</label>
-                        <div class="file-upload">
-                            <span class="material-symbols-outlined">cloud_upload</span>
-                            <p>Drag and drop or click to upload</p>
-                            <input type="file" id="file-input" name="image" accept="image/*" />
-                            <div id="num-of-files">No Files Choosen</div>
-                            <ul id="files-list"></ul>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Date & Time</label>
+                                <input type="datetime-local" id="actionDateTime"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                                <small class="error-message" id="actionDateTime-error"></small>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Duration (hours)</label>
+                                <input type="number" id="actionDuration"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                    placeholder="2">
+                                <small class="error-message" id="actionDuration-error"></small>
+                            </div>
                         </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-large" id="createResourceBtn">Create Resource</button>
-                </form>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Country</label>
+                                <select id="actionCountry"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                                    <option value="">Select Country</option>
+                                </select>
+                                <small class="error-message" id="actionCountry-error"></small>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Location Details</label>
+                                <input type="text" id="actionLocationDetails"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                    placeholder="City, Address, etc.">
+                                <small class="error-message" id="actionLocationDetails-error"></small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="actionLat" name="latitude">
+                        <input type="hidden" id="actionLng" name="longitude">
+                        <input type="hidden" id="actionCountryHidden" name="country_hidden">
+                        <div>
+                            <button type="button"
+                                class="pick-location-btn w-full rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+                                data-form="action">
+                                <i data-lucide="map-pin" class="inline h-3 w-3 mr-1"></i> Pick on Map
+                            </button>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Upload Image</label>
+                            <input type="file" id="action-file-input"
+                                class="w-full text-xs text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
+                                name="image" accept="image/*">
+                            <div id="action-num-of-files" class="text-xs mt-1 text-zinc-400">No Files Choosen</div>
+                            <ul id="action-files-list"></ul>
+                        </div>
+                        <button type="button"
+                            class="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                            id="createActionBtn">Create Action</button>
+                    </form>
+                </div>
+
+                <!-- Resource Tab -->
+                <div id="resource-tab" class="tab-content hidden">
+                    <form class="create-form space-y-4">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Resource Name</label>
+                            <input type="text" id="resourceName"
+                                class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                placeholder="e.g., Books, Furniture...">
+                            <small class="error-message" id="resourceName-error"></small>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Type</label>
+                                <div class="radio-group flex gap-4 my-2" id="resourceType">
+                                    <label class="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                                        <input type="radio" name="type" value="offer"
+                                            class="text-zinc-900 focus:ring-zinc-900"> Offer
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+                                        <input type="radio" name="type" value="request"
+                                            class="text-zinc-900 focus:ring-zinc-900"> Request
+                                    </label>
+                                </div>
+                                <small class="error-message" id="resourceType-error"></small>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Category</label>
+                                <select id="resourceCategory"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                                    <option>Books</option>
+                                    <option>Furniture</option>
+                                    <option>Clothing</option>
+                                    <option>Food</option>
+                                    <option>Other</option>
+                                </select>
+                                <small class="error-message" id="resourceCategory-error"></small>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Description</label>
+                            <textarea id="resourceDescription"
+                                class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                placeholder="Describe the resource..." rows="4"></textarea>
+                            <small class="error-message" id="resourceDescription-error"></small>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Country</label>
+                                <select id="resourceCountry"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                                    <option value="">Select Country</option>
+                                </select>
+                                <small class="error-message" id="resourceCountry-error"></small>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-zinc-500">Location Details</label>
+                                <input type="text" id="resourceLocationDetails"
+                                    class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                                    placeholder="City, Address, etc.">
+                                <small class="error-message" id="resourceLocationDetails-error"></small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="resourceLat" name="latitude">
+                        <input type="hidden" id="resourceLng" name="longitude">
+                        <input type="hidden" id="resourceCountryHidden" name="country_hidden">
+                        <div>
+                            <button type="button"
+                                class="pick-location-btn w-full rounded-lg border border-zinc-200 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+                                data-form="resource">
+                                <i data-lucide="map-pin" class="inline h-3 w-3 mr-1"></i> Pick on Map
+                            </button>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-zinc-500">Upload Image</label>
+                            <input type="file" id="resource-file-input"
+                                class="w-full text-xs text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
+                                name="image" accept="image/*">
+                            <div id="resource-num-of-files" class="text-xs mt-1 text-zinc-400">No Files Choosen</div>
+                            <ul id="resource-files-list"></ul>
+                        </div>
+                        <button type="submit"
+                            class="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                            id="createResourceBtn">Create Resource</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Image Gallery Section -->
-    <section class="image-gallery">
+    <section class="image-gallery bg-zinc-950">
         <div class="wrapper">
             <div class="items">
                 <div class="item" tabindex="0" style="background-image: url(./Images/1.avif)"></div>
@@ -387,80 +621,95 @@
         </div>
     </section>
 
+
     <!-- Map Section -->
-    <section class="map-section">
-        <div class="container">
-            <h2 class="section-title">Community Map</h2>
-            <div id="map" class="map-container"></div>
+    <section class="map-section bg-zinc-50 py-16">
+        <div class="mx-auto max-w-7xl px-6">
+            <div class="container  mb-8">
+                <h2 class="text-2xl font-semibold tracking-tight text-zinc-900">Community Map</h2>
+                <p class="text-sm text-zinc-500">Discover initiatives happening around the globe.</p>
+            </div>
+            <div id="map" class="h-[500px] w-full overflow-hidden rounded-2xl border border-zinc-200 shadow-sm"></div>
         </div>
     </section>
 
-           <!-- Save the Fish Section -->
-    <section class="save-the-fish-section">
-        <div class="container">
+    <!-- Save the Fish Section -->
+    <section class="save-the-fish-section border-t border-zinc-200 bg-white py-16">
+        <div class="container mx-auto max-w-3xl px-6 text-center">
             <div class="section-header">
-                <h2 class="section-title">Saving Lives, One Drop at a Time</h2>
-                <p class="section-subtitle">Just as we save the fish by refilling its bowl, we can all take small actions to support peace, inclusion, and community aid. Every act of kindness helps keep our community thriving.(refresh page if the fish died)</p>
+                <h2 class="section-title mb-2 text-2xl font-semibold tracking-tight text-zinc-900">Saving Lives, One
+                    Drop at a Time</h2>
+                <p class="section-subtitle text-sm text-zinc-500">Just as we save the fish by refilling its bowl, we can
+                    all take small actions to support peace, inclusion, and community aid. Every act of kindness helps
+                    keep our community thriving.(refresh page if the fish died)</p>
             </div>
 
             <div class="fish-container">
-
-            <div id="fishbowl" class="fishbowl">
-            <div class="fishbowl__pool"></div>
-            <div class="fishbowl__background"></div>
-            <div class="fishbowl__bottom"></div>
-            <div class="fishbowl__decoration">
-                <div class="fishbowl__seaweed fishbowl__seaweed--1"></div>
-                <div class="fishbowl__seaweed fishbowl__seaweed--2"></div>
-                <div class="fishbowl__seaweed fishbowl__seaweed--3"></div>
-            </div>
-            <div class="fishbowl__water">
-                <div id="fish" class="fishbowl__fish">
-                <div class="fishbowl__fish-tail"></div>
+                <div id="fishbowl" class="fishbowl">
+                    <div class="fishbowl__pool"></div>
+                    <div class="fishbowl__background"></div>
+                    <div class="fishbowl__bottom"></div>
+                    <div class="fishbowl__decoration">
+                        <div class="fishbowl__seaweed fishbowl__seaweed--1"></div>
+                        <div class="fishbowl__seaweed fishbowl__seaweed--2"></div>
+                        <div class="fishbowl__seaweed fishbowl__seaweed--3"></div>
+                    </div>
+                    <div class="fishbowl__water">
+                        <div id="fish" class="fishbowl__fish">
+                            <div class="fishbowl__fish-tail"></div>
+                        </div>
+                        <div class="fishbowl__water-color"></div>
+                    </div>
+                    <div class="fishbowl__top"></div>
+                    <div id="tap" class="fishbowl__tap">
+                        <div class="fishbowl__tap-base"></div>
+                        <div class="fishbowl__tap-handle"></div>
+                        <div class="fishbowl__tap-stream"></div>
+                        <div class="fishbowl__tap-end"></div>
+                        <div class="fishbowl__tap-head"></div>
+                        <div class="fishbowl__tap-text">Click to refill</div>
+                    </div>
                 </div>
-                <div class="fishbowl__water-color"></div>
-            </div>
-            <div class="fishbowl__top"></div>
-            <div id="tap" class="fishbowl__tap">
-                <div class="fishbowl__tap-base"></div>
-                <div class="fishbowl__tap-handle"></div>
-                <div class="fishbowl__tap-stream"></div>
-                <div class="fishbowl__tap-end"></div>
-                <div class="fishbowl__tap-head"></div>
-                <div class="fishbowl__tap-text">Click to refill</div>
-            </div>
-            </div>
             </div> <!-- Close fish-container -->
-            </div> <!-- Close container -->
+        </div> <!-- Close container -->
     </section> <!-- Close save-the-fish-section -->
 
     <!-- Location Picker Modal -->
-    <div id="locationPickerModal" class="modal">
-        <div class="modal-content modal-fullscreen">
-            <button class="modal-close" id="closeLocationPickerBtn">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <div class="modal-header">
-                <h2 class="modal-title">Select Location on Map</h2>
+    <div id="locationPickerModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+        <div
+            class="modal-content relative flex h-[80vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-zinc-200 p-4">
+                <h2 class="text-lg font-semibold text-zinc-900">Select Location on Map</h2>
+                <button class="text-zinc-500 hover:text-zinc-900" id="closeLocationPickerBtn">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
             </div>
-            <div class="modal-body">
-                <div id="locationPickerMap" style="height: 600px; width: 100%;"></div>
-                <div class="location-info p-3 bg-light">
-                    <p><strong>Selected Coordinates:</strong> <span id="selectedCoordinates">Click on map to select</span></p>
+            <div class="flex-1 relative">
+                <div id="locationPickerMap" class="absolute inset-0 h-full w-full"></div>
+            </div>
+            <div class="bg-zinc-50 border-t border-zinc-200 p-4 flex justify-between items-center">
+                <div class="text-xs">
+                    <p><strong>Selected Coordinates:</strong> <span id="selectedCoordinates">Click on map to
+                            select</span></p>
                     <p><strong>Selected Address:</strong> <span id="selectedAddress">-</span></p>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelLocationPicker">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmLocationBtn" disabled>Confirm Location</button>
+                <div class="flex gap-2">
+                    <button type="button"
+                        class="btn btn-secondary px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
+                        id="cancelLocationPicker">Cancel</button>
+                    <button type="button"
+                        class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg"
+                        id="confirmLocationBtn" disabled>Confirm Location</button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 Connect for Peace. Building communities through action.</p>
+    <footer class="footer border-t border-zinc-200 bg-white py-12">
+        <div class="container mx-auto max-w-7xl px-6 text-center">
+            <p class="text-sm text-zinc-500">&copy; 2025 Connect for Peace. Building communities through action.</p>
         </div>
     </footer>
 
@@ -475,6 +724,10 @@
     <script src="assets/js/map.js"></script>
     <script src="assets/js/script.js"></script>
     <script src="assets/js/fish.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
     <script type="module" src="https://unpkg.com/@splinetool/viewer@1.11.2/build/spline-viewer.js"></script>
 </body>
+
 </html>

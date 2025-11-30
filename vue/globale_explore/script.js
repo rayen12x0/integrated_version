@@ -752,8 +752,23 @@ function navigateToMap(item, type) {
         params.append('lng', item.longitude);
     }
 
-    // Navigate to main page with parameters
-    window.location.href = `../index.html?${params.toString()}`;
+    // Show SweetAlert before navigation
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Redirecting...',
+            text: `Opening map to view ${type === 'action' ? 'action' : 'resource'} "${item.title || item.resource_name}"`,
+            icon: 'info',
+            timer: 1500,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            willClose: () => {
+                window.location.href = `../index.html?${params.toString()}`;
+            }
+        });
+    } else {
+        // Fallback to navigate without SweetAlert if not available
+        window.location.href = `../index.html?${params.toString()}`;
+    }
 }
 
 // Expose closeCountryPanel globally to make it accessible to the onclick handler in the HTML

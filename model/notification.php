@@ -1,6 +1,7 @@
 <?php
 // models/Notification.php
 // Notification model with PDO database operations for user notifications
+require_once __DIR__ . '/../utils/EmailService.php';
 
 class Notification
 {
@@ -9,6 +10,16 @@ class Notification
     // Constructor receives database connection
     public function __construct($pdo) {
         $this->pdo = $pdo;
+    }
+
+    // Helper method to get user email by user ID
+    private function getUserEmail($userId) {
+        $sql = "SELECT email FROM users WHERE id = :user_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['email'] : null;
     }
 
     // Create a new notification in the database
@@ -32,18 +43,59 @@ class Notification
         $success = $stmt->execute($params);
         if (!$success) {
             error_log("Notification::create() - SQL Error: " . print_r($stmt->errorInfo(), true));
+            return $success;
         }
+
+        // Send email notification based on notification type
+        if (isset($data['user_id']) && $data['user_id']) {
+            $userEmail = $this->getUserEmail($data['user_id']);
+            $userName = $this->getUserName($data['user_id']);
+
+            if ($userEmail && $userName) {
+                switch ($data['type']) {
+                    case 'action_approved':
+                        EmailService::sendNotificationEmail($userEmail, $userName, "Your Action Has Been Approved", $data['message'], null, null);
+                        break;
+                    case 'action_rejected':
+                        EmailService::sendNotificationEmail($userEmail, $userName, "Your Action Has Been Rejected", $data['message'], null, null);
+                        break;
+                    case 'resource_approved':
+                        EmailService::sendNotificationEmail($userEmail, $userName, "Your Resource Has Been Approved", $data['message'], null, null);
+                        break;
+                    case 'resource_rejected':
+                        EmailService::sendNotificationEmail($userEmail, $userName, "Your Resource Has Been Rejected", $data['message'], null, null);
+                        break;
+                    case 'action_comment_added':
+                    case 'resource_comment_added':
+                        $itemType = strpos($data['type'], 'action') === 0 ? 'action' : 'resource';
+                        EmailService::sendNotificationEmail($userEmail, $userName, "New Comment on Your {$itemType}", $data['message'], null, null);
+                        break;
+                }
+            }
+        }
+
         return $success;
+    }
+
+    // Helper method to get user name by user ID
+    private function getUserName($userId) {
+        $sql = "SELECT name FROM users WHERE id = :user_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['name'] : null;
     }
 
     // Get notifications for a user
     public function getByUser($userId, $limit = 10) {
         $sql = "SELECT n.*, u.name as user_name, u.avatar_url as user_avatar,
-                       a.title as action_title, r.resource_name as resource_name
+                       a.title as action_title, r.resource_name as resource_name, rep.report_category as report_category
                 FROM notifications n
                 LEFT JOIN users u ON n.user_id = u.id
                 LEFT JOIN actions a ON n.related_id = a.id AND (n.type LIKE 'action\\_%' OR n.type = 'action_approved' OR n.type = 'action_rejected' OR n.type = 'action_created' OR n.type = 'action_updated' OR n.type = 'action_deleted' OR n.type = 'action_joined')
                 LEFT JOIN resources r ON n.related_id = r.id AND (n.type LIKE 'resource\\_%' OR n.type = 'resource_approved' OR n.type = 'resource_rejected' OR n.type = 'resource_created' OR n.type = 'resource_updated' OR n.type = 'resource_deleted')
+                LEFT JOIN reports rep ON n.related_id = rep.id AND n.type = 'report_created'
                 WHERE n.user_id = :user_id
                 ORDER BY n.created_at DESC
                 LIMIT :limit";
@@ -65,11 +117,12 @@ class Notification
     // Get all notifications (for admin dashboard)
     public function getAll($limit = 50) {
         $sql = "SELECT n.*, u.name as user_name, u.avatar_url as user_avatar,
-                       a.title as action_title, r.resource_name as resource_name
+                       a.title as action_title, r.resource_name as resource_name, rep.report_category as report_category
                 FROM notifications n
                 LEFT JOIN users u ON n.user_id = u.id
                 LEFT JOIN actions a ON n.related_id = a.id AND (n.type LIKE 'action\\_%' OR n.type = 'action_approved' OR n.type = 'action_rejected' OR n.type = 'action_created' OR n.type = 'action_updated' OR n.type = 'action_deleted' OR n.type = 'action_joined')
                 LEFT JOIN resources r ON n.related_id = r.id AND (n.type LIKE 'resource\\_%' OR n.type = 'resource_approved' OR n.type = 'resource_rejected' OR n.type = 'resource_created' OR n.type = 'resource_updated' OR n.type = 'resource_deleted')
+                LEFT JOIN reports rep ON n.related_id = rep.id AND n.type = 'report_created'
                 ORDER BY n.created_at DESC
                 LIMIT :limit";
         $stmt = $this->pdo->prepare($sql);
@@ -231,6 +284,20 @@ class Notification
             'user_id' => $creatorId,
             'type' => $type,
             'message' => "{$commenterName} commented on your {$itemTypeLabel} '{$itemTitle}'.",
+            'related_id' => $itemId
+        ];
+        return $this->create($data);
+    }
+
+    /**
+     * Create a reminder notification for a user
+     */
+    public function createReminderNotification($userId, $itemId, $itemType, $itemTitle, $itemDate) {
+        $formattedDate = date('F j, Y \a\t g:i A', strtotime($itemDate));
+        $data = [
+            'user_id' => $userId,
+            'type' => 'reminder',
+            'message' => "Reminder: Your {$itemType} '{$itemTitle}' is scheduled for {$formattedDate}",
             'related_id' => $itemId
         ];
         return $this->create($data);

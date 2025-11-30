@@ -3,6 +3,8 @@
 // Action Participant Controller to handle business logic for joining actions
 
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../utils/AuthHelper.php";
+require_once __DIR__ . "/../utils/ApiResponse.php";
 
 class ActionParticipantController
 {
@@ -19,85 +21,120 @@ class ActionParticipantController
         // Set JSON header
         header("Content-Type: application/json");
 
-        // Get JSON input
-        $input = json_decode(file_get_contents("php://input"), true);
-        error_log("Received input: " . print_r($input, true));
-
-        // Validate input
-        if (!$input) {
-            error_log("Invalid JSON input received.");
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input"
-            ]);
-            return;
-        }
-
-        // For testing purposes, we'll use a default user_id if not provided
-        $actionId = $input['action_id'] ?? null;
-
-        if (!$actionId) {
-            error_log("Missing required field: action_id");
-            echo json_encode([
-                "success" => false,
-                "message" => "Missing required field: action_id"
-            ]);
-            return;
-        }
-
-        // Use a default test user ID for testing purposes
-        $userId = $input['user_id'] ?? 1; // Default to user ID 1 for testing
-
-        // Check if user already joined this action
-        $checkStmt = $this->pdo->prepare("SELECT id FROM action_participants WHERE action_id = :action_id AND user_id = :user_id");
-        $checkStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
-
         try {
+            // Get JSON input
+            $input = json_decode(file_get_contents("php://input"), true);
+
+            if ($input === null && json_last_error() !== JSON_ERROR_NONE) {
+                error_log("Invalid JSON input received: " . json_last_error_msg());
+                ApiResponse::error("Invalid JSON input received: " . json_last_error_msg(), 400);
+                return;
+            }
+
+            error_log("Received input: " . print_r($input, true));
+
+            // Validate input
+            if (!$input) {
+                error_log("No input received or empty input.");
+                ApiResponse::error("No data received. Please ensure your request contains valid JSON data.", 400);
+                return;
+            }
+
+            $actionId = $input['action_id'] ?? null;
+
+            if (!$actionId) {
+                error_log("Missing required field: action_id");
+                ApiResponse::error("Action ID is required but not provided. Please check your request.", 400);
+                return;
+            }
+
+            // Check if user is authenticated
+            if (!AuthHelper::isLoggedIn()) {
+                ApiResponse::error("You must be logged in to join actions. Please log in and try again.", 401);
+                return;
+            }
+
+            $userId = $_SESSION['user_id'];
+
+            // Check if action exists and is active
+            $actionStmt = $this->pdo->prepare("SELECT id, status, title FROM actions WHERE id = :action_id");
+            $actionStmt->execute([':action_id' => $actionId]);
+            $action = $actionStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$action) {
+                ApiResponse::error("The specified action does not exist. Please verify the action ID is correct.", 404);
+                return;
+            }
+
+            if ($action['status'] === 'cancelled') {
+                ApiResponse::error("This action has been cancelled and is no longer available for joining.", 400);
+                return;
+            }
+
+            if ($action['status'] === 'completed') {
+                ApiResponse::error("This action has already been completed and cannot be joined.", 400);
+                return;
+            }
+
+            // Check if user already joined this action
+            $checkStmt = $this->pdo->prepare("SELECT id FROM action_participants WHERE action_id = :action_id AND user_id = :user_id");
+            $checkStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
+
             if ($checkStmt->fetch()) {
                 // User already joined, so remove them
                 $deleteStmt = $this->pdo->prepare("DELETE FROM action_participants WHERE action_id = :action_id AND user_id = :user_id");
-                $deleteStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
+                $deleteResult = $deleteStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
 
-                echo json_encode([
-                    "success" => true,
-                    "message" => "Successfully left action",
-                    "joined" => false
-                ]);
+                if ($deleteResult) {
+                    ApiResponse::success(['joined' => false], "You've left this action. Hope to see you at another event!", 200);
+                } else {
+                    error_log("Failed to remove user from action participants. Action ID: $actionId, User ID: $userId");
+                    ApiResponse::error("Failed to leave the action. Please try again.", 400);
+                }
             } else {
                 // Add user to action participants
                 $insertStmt = $this->pdo->prepare("INSERT INTO action_participants (action_id, user_id) VALUES (:action_id, :user_id)");
-                $insertStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
+                $insertResult = $insertStmt->execute([':action_id' => $actionId, ':user_id' => $userId]);
 
-                // Add notification for joining action
-                require_once __DIR__ . "/../model/notification.php";
-                $notification = new Notification($this->pdo);
+                if ($insertResult) {
+                    // Add notification for joining action
+                    require_once __DIR__ . "/../model/notification.php";
+                    $notification = new Notification($this->pdo);
 
-                // Get action creator ID and title
-                $actionStmt = $this->pdo->prepare("SELECT creator_id, title FROM actions WHERE id = :action_id");
-                $actionStmt->execute([':action_id' => $actionId]);
-                $action = $actionStmt->fetch(PDO::FETCH_ASSOC);
+                    // Get action creator ID and title
+                    $actionStmt = $this->pdo->prepare("SELECT creator_id, title, start_time FROM actions WHERE id = :action_id");
+                    $actionStmt->execute([':action_id' => $actionId]);
+                    $action = $actionStmt->fetch(PDO::FETCH_ASSOC);
 
-                // Get user name
-                $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
-                $userStmt->execute([':user_id' => $userId]);
-                $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+                    // Get user name
+                    $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+                    $userStmt->execute([':user_id' => $userId]);
+                    $user = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-                if ($action && $user && $action['creator_id'] != $userId) { // Don't notify the user if they're joining their own action
-                    $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
+                    if ($action && $user && $action['creator_id'] != $userId) { // Don't notify the user if they're joining their own action
+                        $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
+
+                        // Create automatic reminder for the participant if action has a start_time in the future
+                        if ($action && !empty($action['start_time'])) {
+                            // Include the Reminder model and use its createAutoReminder method
+                            require_once __DIR__ . "/../model/reminder.php";
+                            $reminderModel = new Reminder($this->pdo);
+                            $reminderModel->createAutoReminder($userId, $actionId, $action['start_time'], 'action');
+                        }
+                    }
+
+                    ApiResponse::success(['joined' => true], "You've successfully joined this action! We'll send you a reminder before it starts.", 200);
+                } else {
+                    error_log("Failed to add user to action participants. Action ID: $actionId, User ID: $userId");
+                    ApiResponse::error("Failed to join the action. Please try again.", 400);
                 }
-
-                echo json_encode([
-                    "success" => true,
-                    "message" => "Successfully joined action",
-                    "joined" => true
-                ]);
             }
+        } catch (PDOException $e) {
+            error_log("Database error in joinAction: " . $e->getMessage());
+            ApiResponse::error("Database error occurred while processing your request: " . $e->getMessage() . ". Please try again later.", 500);
         } catch (Exception $e) {
             error_log("Error in joinAction: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error("An unexpected error occurred while processing your request: " . $e->getMessage() . ". Please try again later.", 500);
         }
     }
 
@@ -108,10 +145,7 @@ class ActionParticipantController
         $actionId = $_GET['action_id'] ?? null;
 
         if (!$actionId) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Action ID is required"
-            ]);
+            ApiResponse::error("Action ID is required", 400);
             return;
         }
 
@@ -133,17 +167,13 @@ class ActionParticipantController
                 $participant['joined_at_formatted'] = date('M d, Y', strtotime($participant['joined_at']));
             }
 
-            echo json_encode([
-                "success" => true,
+            ApiResponse::success([
                 "participants" => $participants,
                 "count" => count($participants)
-            ]);
+            ], 'Participants retrieved successfully', 200);
         } catch (Exception $e) {
             error_log("Error in getParticipants: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error("An error occurred while fetching participants. Please try again later.", 500);
         }
     }
 
@@ -155,10 +185,7 @@ class ActionParticipantController
         $userId = $_GET['user_id'] ?? null;
 
         if (!$userId) {
-            echo json_encode([
-                "success" => false,
-                "message" => "User ID is required"
-            ]);
+            ApiResponse::error("User ID is required", 400);
             return;
         }
 
@@ -218,17 +245,14 @@ class ActionParticipantController
                 $action['tags'] = [];
             }
 
-            echo json_encode([
-                "success" => true,
+            ApiResponse::success([
                 "actions" => $actions,
                 "count" => count($actions)
-            ]);
+            ], 'Participated actions retrieved successfully', 200);
         } catch (Exception $e) {
             error_log("Error in getByUser: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error("An error occurred while fetching your participated actions. Please try again later.", 500);
         }
     }
+
 }

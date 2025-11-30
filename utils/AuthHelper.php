@@ -84,6 +84,15 @@ class AuthHelper {
         return (int)$contentOwnerId === (int)$actualUserId;
     }
 
+    // Check if user is logged in
+    public static function isLoggedIn() {
+        if (session_id() == '') {
+            session_start();
+        }
+
+        return isset($_SESSION['user_id']) && $_SESSION['user_id'] !== null;
+    }
+
     // Start a new session for the given user
     public static function startSession($userId) {
         if (session_id() == '') {

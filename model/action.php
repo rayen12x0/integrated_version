@@ -52,9 +52,18 @@ class Action
             error_log("Action::create() - SQL Error: " . print_r($stmt->errorInfo(), true));
         }
 
-        // If creation was successful, create a notification for admin
+        // If creation was successful, create a notification for admin and auto-reminder for creator
         if ($success) {
-            $this->createActionCreatedNotification($data['creator_id'], $this->pdo->lastInsertId(), $data['title'] ?? 'Untitled Action');
+            $actionId = $this->pdo->lastInsertId();
+            $this->createActionCreatedNotification($data['creator_id'], $actionId, $data['title'] ?? 'Untitled Action');
+
+            // Create automatic reminder for the creator if action has a start_time in the future
+            if (!empty($data['start_time'])) {
+                // Include the Reminder model and use its createAutoReminder method
+                require_once __DIR__ . '/reminder.php';
+                $reminderModel = new Reminder($this->pdo);
+                $reminderModel->createAutoReminder($data['creator_id'], $actionId, $data['start_time'], 'action');
+            }
         }
 
         return $success;
@@ -350,7 +359,7 @@ class Action
         // Create notification if approval was successful
         if ($result) {
             // Include the notification functionality
-            require_once '../model/notification.php';
+            require_once __DIR__ . '/notification.php';
             $notification = new Notification($this->pdo);
             $notification->createActionApprovedNotification($action['creator_id'], $id, $action['title']);
         }
@@ -668,5 +677,6 @@ class Action
             error_log("Error creating action created notification: " . $e->getMessage());
         }
     }
+
 
 }

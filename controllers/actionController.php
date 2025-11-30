@@ -7,6 +7,7 @@ require_once __DIR__ . "/../model/action.php";
 require_once __DIR__ . "/../utils/imageUpload.php";
 require_once __DIR__ . "/../utils/AuthHelper.php";
 require_once __DIR__ . "/../utils/CountryNameMapper.php";
+require_once __DIR__ . "/../utils/ApiResponse.php";
 
 class ActionController
 {
@@ -26,9 +27,9 @@ class ActionController
 
     // Handle input for both JSON and file uploads
     private function getActionData() {
-        
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
-            
+
             $data = [];
             foreach ($_POST as $key => $value) {
                 $data[$key] = $value;
@@ -49,7 +50,16 @@ class ActionController
             // Handle JSON input
             $input = json_decode(file_get_contents("php://input"), true);
             if (!$input) {
-                throw new Exception("Invalid JSON input");
+                // For file uploads, PHP might not parse JSON properly, so check if we have POST data that's not JSON
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['image'])) {
+                    // This could be invalid JSON, so we'll try to get it raw and check
+                    $rawData = file_get_contents("php://input");
+                    if (!empty($rawData)) {
+                        throw new Exception("Invalid JSON input: " . $rawData);
+                    }
+                }
+                // If it's an empty JSON body, we'll handle it in the create method
+                return [];
             }
             return $input;
         }
@@ -58,7 +68,7 @@ class ActionController
     // Create action method
     public function create() {
         error_log("ActionController::create() called.");
-       
+
         header("Content-Type: application/json");
 
         try {
@@ -74,7 +84,7 @@ class ActionController
                 $input['end_time'] = $startTime->format('Y-m-d H:i:s');
             }
 
-            
+
             // Define required fields (excluding country as it may be auto-detected from coordinates)
             $required = ["creator_id", "title", "description", "category", "theme", "location", "start_time", "end_time"];
 
@@ -82,10 +92,7 @@ class ActionController
             foreach ($required as $field) {
                 if (empty($input[$field])) {
                     error_log("Missing required field: $field");
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Missing required field: $field"
-                    ]);
+                    ApiResponse::error("Missing required field: $field", 400);
                     return;
                 }
             }
@@ -97,19 +104,13 @@ class ActionController
 
                 // Validate that when coordinates are provided, country is not empty after normalization
                 if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             } else {
                 // If no country provided but coordinates exist, try to extract from location or return error
                 if (!empty($input['latitude']) && !empty($input['longitude'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
                 error_log("No country provided for action");
@@ -130,25 +131,15 @@ class ActionController
                 // Create notification for action creation
                 $notification->createActionCreatedNotification($input['creator_id'], $lastId, $input['title']);
 
-                echo json_encode([
-                    "success" => true,
-                    "message" => "Action created successfully",
-                    "id" => $lastId
-                ]);
+                ApiResponse::success(['id' => $lastId], 'Action created successfully', 201);
             } else {
                 // Error response
                 error_log("Failed to create action in model.");
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Failed to create action"
-                ]);
+                ApiResponse::error('Failed to create action', 400);
             }
         } catch (Exception $e) {
             error_log("Error in create action: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -159,75 +150,48 @@ class ActionController
         try {
             $action = $this->action->findById($id);
             if ($action) {
-                echo json_encode([
-                    "success" => true,
-                    "action" => $action
-                ]);
+                ApiResponse::success($action, 'Action retrieved successfully', 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Action not found"
-                ]);
+                ApiResponse::error('Action not found', 404);
             }
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
     // Get actions by creator ID method (for user dashboard)
     public function getByCreatorId($creator_id) {
-        header("Content-Type: application/json");
-
         try {
             $actions = $this->action->getByCreatorId($creator_id);
-            echo json_encode([
-                "success" => true,
-                "actions" => $actions
-            ]);
+            // Return the data for the API endpoint to format
+            return $actions;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
     // Get approved actions method (for public display)
     public function getApproved() {
-        header("Content-Type: application/json");
-
         try {
             $actions = $this->action->getApproved();
-            echo json_encode([
-                "success" => true,
-                "actions" => $actions
-            ]);
+            // Return the data for the API endpoint to format
+            return $actions;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
     // Get all actions method
     public function getAll() {
-        header("Content-Type: application/json");
-
         try {
             $actions = $this->action->getAll();
-            echo json_encode([
-                "success" => true,
-                "actions" => $actions
-            ]);
+            // Return the data for the API endpoint to format
+            return $actions;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
@@ -240,10 +204,7 @@ class ActionController
             $input = $this->getActionData();
 
             if (!$input || !isset($input['id'])) {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Invalid input or missing action ID"
-                ]);
+                ApiResponse::error("Invalid input or missing action ID", 400);
                 return;
             }
 
@@ -263,13 +224,12 @@ class ActionController
             $existingAction = $this->action->findById($id);
 
             if (!$existingAction) {
-                echo json_encode(["success" => false, "message" => "Action not found"]);
+                ApiResponse::error("Action not found", 404);
                 return;
             }
 
             if (!AuthHelper::isAdmin($currentUser) && !AuthHelper::isOwner($existingAction['creator_id'], $currentUser['id'])) {
-                http_response_code(403);
-                echo json_encode(["success" => false, "message" => "Unauthorized. You can only edit your own actions."]);
+                ApiResponse::error("Unauthorized. You can only edit your own actions.", 403);
                 return;
             }
 
@@ -282,10 +242,7 @@ class ActionController
                     if ($field === "creator_id" && !isset($input[$field])) {
                         $input['creator_id'] = 1; // Default test user
                     } else {
-                        echo json_encode([
-                            "success" => false,
-                            "message" => "Missing required field for update: $field"
-                        ]);
+                        ApiResponse::error("Missing required field for update: $field", 400);
                         return;
                     }
                 }
@@ -298,19 +255,13 @@ class ActionController
 
                 // Validate that when coordinates are provided, country is not empty after normalization
                 if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             } else {
                 // If no country provided but coordinates exist, return error
                 if (!empty($input['latitude']) && !empty($input['longitude'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             }
@@ -330,22 +281,13 @@ class ActionController
                     $notification->createActionUpdatedNotification($existingAction['creator_id'], $id, $input['title'] ?? $existingAction['title']);
                 }
 
-                echo json_encode([
-                    "success" => true,
-                    "message" => "Action updated successfully"
-                ]);
+                ApiResponse::success(null, 'Action updated successfully', 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Failed to update action or action not found"
-                ]);
+                ApiResponse::error('Failed to update action or action not found', 400);
             }
         } catch (Exception $e) {
             error_log("Error in update action: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -355,10 +297,7 @@ class ActionController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id']) || !isset($input['action'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing action ID or action"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing action ID or action", 400);
             return;
         }
 
@@ -394,23 +333,14 @@ class ActionController
                 $notification->createActionRejectedNotification($existingAction['creator_id'], $existingAction['id'], $existingAction['title']);
             }
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid action. Use 'approve' or 'reject'."
-            ]);
+            ApiResponse::error("Invalid action. Use 'approve' or 'reject'.", 400);
             return;
         }
 
         if ($result) {
-            echo json_encode([
-                "success" => true,
-                "message" => $message
-            ]);
+            ApiResponse::success(null, $message, 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => $message
-            ]);
+            ApiResponse::error($message, 400);
         }
     }
 
@@ -420,10 +350,7 @@ class ActionController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing action ID"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing action ID", 400);
             return;
         }
 
@@ -434,13 +361,12 @@ class ActionController
         $existingAction = $this->action->findById($id);
 
         if (!$existingAction) {
-            echo json_encode(["success" => false, "message" => "Action not found"]);
+            ApiResponse::error("Action not found", 404);
             return;
         }
 
         if (!AuthHelper::isAdmin($currentUser) && !AuthHelper::isOwner($existingAction['creator_id'], $currentUser['id'])) {
-            http_response_code(403);
-            echo json_encode(["success" => false, "message" => "Unauthorized. You can only delete your own actions."]);
+            ApiResponse::error("Unauthorized. You can only delete your own actions.", 403);
             return;
         }
 
@@ -458,15 +384,9 @@ class ActionController
                 $notification->createActionDeletedNotification($existingAction['creator_id'], $existingAction['title']);
             }
 
-            echo json_encode([
-                "success" => true,
-                "message" => "Action deleted successfully"
-            ]);
+            ApiResponse::success(null, "Action deleted successfully", 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Failed to delete action or action not found"
-            ]);
+            ApiResponse::error("Failed to delete action or action not found", 400);
         }
     }
 }

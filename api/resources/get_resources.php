@@ -13,9 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once '../../controllers/resourceController.php';
+require_once __DIR__ . '/../../controllers/resourceController.php';
 
 error_log('get_resources.php called');
 
 $controller = new ResourceController();
-$controller->getApproved();
+$resources = $controller->getApproved();
+
+// Format response to match frontend expectation
+echo json_encode([
+    "success" => true,
+    "resources" => $resources
+], JSON_PRETTY_PRINT);

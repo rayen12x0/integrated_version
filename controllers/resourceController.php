@@ -7,6 +7,7 @@ require_once __DIR__ . "/../model/resource.php";
 require_once __DIR__ . "/../utils/imageUpload.php";
 require_once __DIR__ . "/../utils/AuthHelper.php";
 require_once __DIR__ . "/../utils/CountryNameMapper.php";
+require_once __DIR__ . "/../utils/ApiResponse.php";
 
 class ResourceController
 {
@@ -84,10 +85,7 @@ class ResourceController
             foreach ($required as $field) {
                 if (empty($input[$field])) {
                     error_log("Missing required field: $field");
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Missing required field: $field"
-                    ]);
+                    ApiResponse::error("Missing required field: $field", 400);
                     return;
                 }
             }
@@ -99,19 +97,13 @@ class ResourceController
 
                 // Validate that when coordinates are provided, country is not empty after normalization
                 if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             } else {
                 // If no country provided but coordinates exist, return error
                 if (!empty($input['latitude']) && !empty($input['longitude'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
                 error_log("No country provided for resource");
@@ -120,10 +112,7 @@ class ResourceController
             // Handle resource name field - it might be called differently in various forms
             if (empty($input['resource_name']) && empty($input['title']) && empty($input['resourceName'])) {
                 error_log("Missing required field: resource_name (could be named 'resource_name', 'title', or 'resourceName')");
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Missing required field: resource_name (could be named 'resource_name', 'title', or 'resourceName')"
-                ]);
+                ApiResponse::error("Missing required field: resource_name (could be named 'resource_name', 'title', or 'resourceName')", 400);
                 return;
             }
 
@@ -158,43 +147,27 @@ class ResourceController
                 // Create notification for resource creation
                 $notification->createResourceCreatedNotification($input['publisher_id'], $lastId, $input['resource_name']);
 
-                echo json_encode([
-                    "success" => true,
-                    "message" => "resource created successfully",
-                    "id" => $lastId
-                ]);
+                ApiResponse::success(['id' => $lastId], 'resource created successfully', 201);
             } else {
                 // Error response
                 error_log("Failed to create resource in model.");
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Failed to create resource"
-                ]);
+                ApiResponse::error("Failed to create resource", 400);
             }
         } catch (Exception $e) {
             error_log("Error in create resource: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
     // Get all resources method
     public function getAll() {
-        header("Content-Type: application/json");
-
         try {
             $resources = $this->resource->getAll();
-            echo json_encode([
-                "success" => true,
-                "resources" => $resources
-            ]);
+            // Return the data for the API endpoint to format
+            return $resources;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
@@ -205,21 +178,12 @@ class ResourceController
         try {
             $resource = $this->resource->findById($id);
             if ($resource) {
-                echo json_encode([
-                    "success" => true,
-                    "resource" => $resource
-                ]);
+                ApiResponse::success($resource, 'Resource retrieved successfully', 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Resource not found"
-                ]);
+                ApiResponse::error('Resource not found', 404);
             }
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
@@ -232,10 +196,7 @@ class ResourceController
             $input = $this->getResourceData();
 
             if (!$input || !isset($input['id'])) {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Invalid input or missing resource ID"
-                ]);
+                ApiResponse::error("Invalid input or missing resource ID", 400);
                 return;
             }
 
@@ -247,13 +208,12 @@ class ResourceController
             $existingResource = $this->resource->findById($id);
 
             if (!$existingResource) {
-                echo json_encode(["success" => false, "message" => "Resource not found"]);
+                ApiResponse::error("Resource not found", 404);
                 return;
             }
 
             if (!AuthHelper::isAdmin($currentUser) && !AuthHelper::isOwner($existingResource['publisher_id'], $currentUser['id'])) {
-                http_response_code(403);
-                echo json_encode(["success" => false, "message" => "Unauthorized. You can only edit your own resources."]);
+                ApiResponse::error("Unauthorized. You can only edit your own resources.", 403);
                 return;
             }
 
@@ -265,10 +225,7 @@ class ResourceController
                     if ($field === "publisher_id" && !isset($input[$field])) {
                         $input['publisher_id'] = 1; // Default test user
                     } else {
-                        echo json_encode([
-                            "success" => false,
-                            "message" => "Missing required field for update: $field"
-                        ]);
+                        ApiResponse::error("Missing required field for update: $field", 400);
                         return;
                     }
                 }
@@ -281,19 +238,13 @@ class ResourceController
 
                 // Validate that when coordinates are provided, country is not empty after normalization
                 if (!empty($input['latitude']) && !empty($input['longitude']) && empty($input['country'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             } else {
                 // If no country provided but coordinates exist, return error
                 if (!empty($input['latitude']) && !empty($input['longitude'])) {
-                    echo json_encode([
-                        "success" => false,
-                        "message" => "Country field is required when coordinates are provided"
-                    ]);
+                    ApiResponse::error("Country field is required when coordinates are provided", 400);
                     return;
                 }
             }
@@ -319,58 +270,37 @@ class ResourceController
                     $notification->createResourceUpdatedNotification($existingResource['publisher_id'], $id, $resourceName);
                 }
 
-                echo json_encode([
-                    "success" => true,
-                    "message" => "resource updated successfully"
-                ]);
+                ApiResponse::success(null, 'resource updated successfully', 200);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Failed to update resource or resource not found"
-                ]);
+                ApiResponse::error("Failed to update resource or resource not found", 400);
             }
         } catch (Exception $e) {
             error_log("Error in update resource: " . $e->getMessage());
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            ApiResponse::error($e->getMessage(), 500);
         }
     }
 
     // Get resources by publisher ID method (for user dashboard)
     public function getByPublisherId($publisher_id) {
-        header("Content-Type: application/json");
-
         try {
             $resources = $this->resource->getByPublisherId($publisher_id);
-            echo json_encode([
-                "success" => true,
-                "resources" => $resources
-            ]);
+            // Return the data for the API endpoint to format
+            return $resources;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
     // Get approved resources method (for public display)
     public function getApproved() {
-        header("Content-Type: application/json");
-
         try {
             $resources = $this->resource->getApproved();
-            echo json_encode([
-                "success" => true,
-                "resources" => $resources
-            ]);
+            // Return the data for the API endpoint to format
+            return $resources;
         } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => $e->getMessage()
-            ]);
+            // Throw exception for the API endpoint to handle
+            throw $e;
         }
     }
 
@@ -380,10 +310,7 @@ class ResourceController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id']) || !isset($input['action'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing resource ID or action"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing resource ID or action", 400);
             return;
         }
 
@@ -419,23 +346,14 @@ class ResourceController
                 $notification->createResourceRejectedNotification($existingResource['publisher_id'], $existingResource['id'], $existingResource['resource_name']);
             }
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid action. Use 'approve' or 'reject'."
-            ]);
+            ApiResponse::error("Invalid action. Use 'approve' or 'reject'.", 400);
             return;
         }
 
         if ($result) {
-            echo json_encode([
-                "success" => true,
-                "message" => $message
-            ]);
+            ApiResponse::success(null, $message, 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => $message
-            ]);
+            ApiResponse::error($message, 400);
         }
     }
 
@@ -445,10 +363,7 @@ class ResourceController
         $input = json_decode(file_get_contents("php://input"), true);
 
         if (!$input || !isset($input['id'])) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid JSON input or missing resource ID"
-            ]);
+            ApiResponse::error("Invalid JSON input or missing resource ID", 400);
             return;
         }
 
@@ -459,13 +374,12 @@ class ResourceController
         $existingResource = $this->resource->findById($id);
 
         if (!$existingResource) {
-            echo json_encode(["success" => false, "message" => "Resource not found"]);
+            ApiResponse::error("Resource not found", 404);
             return;
         }
 
         if (!AuthHelper::isAdmin($currentUser) && !AuthHelper::isOwner($existingResource['publisher_id'], $currentUser['id'])) {
-            http_response_code(403);
-            echo json_encode(["success" => false, "message" => "Unauthorized. You can only delete your own resources."]);
+            ApiResponse::error("Unauthorized. You can only delete your own resources.", 403);
             return;
         }
 
@@ -483,15 +397,9 @@ class ResourceController
                 $notification->createResourceDeletedNotification($existingResource['publisher_id'], $existingResource['resource_name']);
             }
 
-            echo json_encode([
-                "success" => true,
-                "message" => "resource deleted successfully"
-            ]);
+            ApiResponse::success(null, "resource deleted successfully", 200);
         } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Failed to delete resource or resource not found"
-            ]);
+            ApiResponse::error("Failed to delete resource or resource not found", 400);
         }
     }
 }

@@ -1072,3 +1072,13 @@ footer .wrapper { text-align: center; }
   .footer-link { margin-bottom: 0.3rem; }
 
 }
+
+/* SweetAlert z-index override */
+.swal2-container {
+  z-index: 999999 !important;
+}
+
+/* Ensure SweetAlert appears above modals */
+.swal2-popup {
+  z-index: 999999 !important;
+}

@@ -13,9 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once "../../controllers/actionController.php";
+require_once __DIR__ . '/../../controllers/actionController.php';
 
 error_log('get_actions.php called');
 
 $controller = new ActionController();
-$controller->getApproved();
+$actions = $controller->getApproved();
+
+// Format response to match frontend expectation
+echo json_encode([
+    "success" => true,
+    "actions" => $actions
+], JSON_PRETTY_PRINT);

@@ -66,6 +66,7 @@ CREATE TABLE `action_participants` (
     `action_id` INT UNSIGNED NOT NULL,
     `user_id` INT UNSIGNED NOT NULL,
     `joined_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`action_id`) REFERENCES `actions`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     UNIQUE KEY `unique_participation` (`action_id`, `user_id`)
@@ -88,12 +89,47 @@ CREATE TABLE `comments` (
 CREATE TABLE `notifications` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL, -- Recipient of notification
-    `type` ENUM('action_created', 'resource_created', 'action_updated', 'resource_updated', 'action_deleted', 'resource_deleted', 'action_approved', 'resource_approved', 'action_rejected', 'resource_rejected') NOT NULL,
+    `type` ENUM('action_created', 'resource_created', 'action_updated', 'resource_updated', 'action_deleted', 'resource_deleted', 'action_approved', 'resource_approved', 'action_rejected', 'resource_rejected', 'reminder', 'report_created') NOT NULL,
     `message` TEXT NOT NULL,
     `related_id` INT UNSIGNED, -- ID of related action/resource
     `is_read` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Reports table for user reports
+CREATE TABLE `reports` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `reporter_id` INT UNSIGNED NOT NULL,
+    `reported_item_id` INT UNSIGNED NOT NULL,
+    `reported_item_type` ENUM('action', 'resource') NOT NULL,
+    `report_category` ENUM('scam', 'spam', 'inappropriate', 'fake', 'other') NOT NULL,
+    `report_reason` TEXT NOT NULL,
+    `status` ENUM('pending', 'reviewed', 'resolved') NOT NULL DEFAULT 'pending',
+    `admin_notes` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_reporter_id` (`reporter_id`),
+    INDEX `idx_reported_item` (`reported_item_id`, `reported_item_type`),
+    INDEX `idx_status` (`status`)
+) ENGINE=InnoDB;
+
+-- Reminders table for user reminders
+CREATE TABLE `reminders` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED NOT NULL,
+    `item_id` INT UNSIGNED NOT NULL,
+    `item_type` ENUM('action', 'resource') NOT NULL,
+    `reminder_type` ENUM('email', 'in_app', 'both') NOT NULL DEFAULT 'both',
+    `reminder_time` DATETIME NOT NULL,
+    `sent` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_user_id` (`user_id`),
+    INDEX `idx_item` (`item_id`, `item_type`),
+    INDEX `idx_reminder_time` (`reminder_time`),
+    INDEX `idx_sent` (`sent`)
 ) ENGINE=InnoDB;
 
 -- Insert default admin user
@@ -102,7 +138,7 @@ VALUES ('Admin User', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3
 
 -- Insert default regular user
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`, `avatar_url`, `badge`)
-VALUES ('Regular User', 'user@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'https://api.placeholder.com/40/40?text=R', 'Community Member');
+VALUES ('Regular User', 'rayen12x@gmail.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'user', 'https://api.placeholder.com/40/40?text=R', 'Community Member');
 
 -- Insert sample actions
 INSERT INTO `actions` (`creator_id`, `title`, `description`, `category`, `theme`, `location`, `country`, `start_time`, `status`, `image_url`)
