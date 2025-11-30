@@ -1,5 +1,10 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/vendor/autoload.php'; // Load PHPMailer via Composer
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 class EmailService {
 
@@ -16,54 +21,35 @@ class EmailService {
     }
 
     public static function sendEmail($to, $subject, $htmlContent) {
-        // Check if API key is properly configured
-        if (empty(RESEND_API_KEY)) {
-            // Log error but don't fail completely in development mode
-            error_log("Email sending attempted but RESEND_API_KEY is not configured. Skipping email to $to with subject: $subject");
+        $mail = new PHPMailer(true);
 
-            // In development mode, we might want to simulate success to prevent breaking functionality
-            if (defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE === true) {
-                error_log("In development mode - simulating email success to $to");
-                return true; // Return true to maintain functionality in development
-            }
+        try {
+            // Server settings - adjust these according to your email configuration
+            // Enable verbose debug output (set to 0 for production)
+            // $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+            $mail->isSMTP();                                            // Send using SMTP
+            $mail->Host       = SMTP_HOST ?? 'smtp.gmail.com';          // Set the SMTP server to send through
+            $mail->SMTPAuth   = true;                                   // Enable SMTP authentication
+            $mail->Username   = SMTP_USERNAME ?? 'your-email@gmail.com'; // SMTP username
+            $mail->Password   = SMTP_PASSWORD ?? 'your-app-password';   // SMTP password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption
+            $mail->Port       = SMTP_PORT ?? 587;                       // TCP port to connect to
 
-            return false; // In production, return false for failed email
-        }
+            // Recipients
+            $mail->setFrom(SMTP_FROM_EMAIL ?? 'noreply@connectforpeace.com', 'Connect for Peace');
+            $mail->addAddress($to);                                     // Add recipient
 
-        $curl = curl_init();
+            // Content
+            $mail->isHTML(true);                                        // Set email format to HTML
+            $mail->Subject = $subject;
+            $mail->Body    = $htmlContent;
+            $mail->AltBody = strip_tags($htmlContent);                  // Plain text body
 
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "https://api.resend.com/emails",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode([
-                "from" => "noreply@connectforpeace.com",
-                "to" => [$to],
-                "subject" => $subject,
-                "html" => $htmlContent
-            ]),
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer " . RESEND_API_KEY,
-                "Content-Type: application/json"
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($error) {
-            error_log("Email sending error: " . $error);
-            return false;
-        }
-
-        if ($httpCode === 200) {
-            error_log("Email sent successfully to $to. Subject: $subject. Response: $response");
+            $mail->send();
+            error_log("Email sent successfully to $to. Subject: $subject");
             return true;
-        } else {
-            error_log("Email sending failed to $to. HTTP Code: $httpCode. Response: $response. Subject: $subject");
+        } catch (Exception $e) {
+            error_log("Email sending failed to $to. Error: {$mail->ErrorInfo}");
             return false;
         }
     }

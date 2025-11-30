@@ -6,21 +6,35 @@ if (!defined('DEVELOPMENT_MODE')) {
     define('DEVELOPMENT_MODE', true);  // Change to false in production
 }
 
-// Resend Email Service API Key
-if (!defined('RESEND_API_KEY')) {
-    $resendApiKey = getenv('RESEND_API_KEY') ?: 're_HUSan4tf_Hj6D8e9AhT4V5G6NFgANWpBb'; // Updated to use the new API key
+// SMTP Configuration for PHPMailer
+if (!defined('SMTP_HOST')) {
+    $smtpHost = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+    define('SMTP_HOST', $smtpHost);
+}
 
-    if (empty($resendApiKey) && defined('DEVELOPMENT_MODE') && DEVELOPMENT_MODE === true) {
-        // In development mode, we can use a placeholder or skip email functionality
-        $resendApiKey = '';
-        error_log("WARNING: RESEND_API_KEY environment variable is not set. Email functionality may not work in development mode.");
-    } elseif (empty($resendApiKey)) {
-        // In production mode, fail fast with clear error
-        error_log("ERROR: RESEND_API_KEY environment variable is required but not set.");
-        die("Configuration error: RESEND_API_KEY environment variable is missing.");
-    }
+if (!defined('SMTP_USERNAME')) {
+    $smtpUsername = getenv('SMTP_USERNAME') ?: 'rayen12x@gmail.com';
+    define('SMTP_USERNAME', $smtpUsername);
+}
 
-    define('RESEND_API_KEY', $resendApiKey);
+if (!defined('SMTP_PASSWORD')) {
+    $smtpPassword = getenv('SMTP_PASSWORD') ?: 'zrhg ompy upwq qatc';
+    define('SMTP_PASSWORD', $smtpPassword);
+}
+
+if (!defined('SMTP_PORT')) {
+    $smtpPort = (int)(getenv('SMTP_PORT') ?: 587);
+    define('SMTP_PORT', $smtpPort);
+}
+
+if (!defined('SMTP_FROM_EMAIL')) {
+    $smtpFromEmail = getenv('SMTP_FROM_EMAIL') ?: 'noreply@connectforpeace.com';
+    define('SMTP_FROM_EMAIL', $smtpFromEmail);
+}
+
+if (!defined('SMTP_FROM_NAME')) {
+    $smtpFromName = getenv('SMTP_FROM_NAME') ?: 'Connect for Peace';
+    define('SMTP_FROM_NAME', $smtpFromName);
 }
 
 class Config {
