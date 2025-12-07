@@ -780,20 +780,59 @@
                 if (statsResult.success) {
                     dashboardStats = statsResult.data;
 
+                    // Debug: Log the dashboard data to console to understand the structure
+                    console.log("Dashboard stats data:", statsResult.data);
+
                     // Update stat cards - fix total stories to show actual stories, not reports
-                    document.getElementById('totalStories').textContent = statsResult.data.total_stories || statsResult.data.report_stats?.total || 0;
-                    document.getElementById('pendingStories').textContent = statsResult.data.pending_stories_count || statsResult.data.pending_reports_count || 0;
-                    document.getElementById('flaggedComments').textContent = statsResult.data.flagged_comments_count || 0;
-                    document.getElementById('bannedUsers').textContent = statsResult.data.banned_users_count || 0;
+                    // Try multiple possible fields for total stories count
+                    let totalStoriesCount = 0;
+                    if (statsResult.data.total_stories !== undefined) {
+                        totalStoriesCount = statsResult.data.total_stories;
+                    } else if (statsResult.data.total_published_stories !== undefined) {
+                        totalStoriesCount = statsResult.data.total_published_stories;
+                    } else if (statsResult.data.total_approved_stories !== undefined) {
+                        totalStoriesCount = statsResult.data.total_approved_stories;
+                    } else if (statsResult.data.total_active_stories !== undefined) {
+                        totalStoriesCount = statsResult.data.total_active_stories;
+                    } else if (statsResult.data.report_stats?.total !== undefined) {
+                        // This is the report count, not actual stories - avoid using this
+                        console.warn("Dashboard API only provides report count, not actual story count. Fetching separately.");
+                        totalStoriesCount = await getTotalStoriesCount();
+                    } else {
+                        // If no specific total is available, we'll load it separately
+                        console.warn("No story count found in dashboard API, fetching separately.");
+                        totalStoriesCount = await getTotalStoriesCount();
+                    }
+
+                    // Get pending stories count - prioritize the more specific fields
+                    let pendingStoriesCount = 0;
+                    if (statsResult.data.pending_stories_count !== undefined) {
+                        pendingStoriesCount = statsResult.data.pending_stories_count;
+                    } else if (statsResult.data.pending_approval_count !== undefined) {
+                        pendingStoriesCount = statsResult.data.pending_approval_count;
+                    } else if (statsResult.data.pending_reports_count !== undefined) {
+                        // This is reports, not actual stories pending approval
+                        console.warn("Dashboard provides pending reports count, not pending stories. Fetching separately.");
+                        // Try to get the actual count of pending stories
+                        pendingStoriesCount = await getPendingStoriesCount();
+                    } else {
+                        // Fallback: try to get the actual count
+                        pendingStoriesCount = await getPendingStoriesCount();
+                    }
+
+                    document.getElementById('totalStories').textContent = totalStoriesCount;
+                    document.getElementById('pendingStories').textContent = pendingStoriesCount;
+                    document.getElementById('flaggedComments').textContent = statsResult.data.flagged_comments_count || statsResult.data.flagged_count || 0;
+                    document.getElementById('bannedUsers').textContent = statsResult.data.banned_users_count || statsResult.data.banned_count || 0;
 
                     // Load most reported stories
-                    loadMostReportedStories(statsResult.data.most_reported_stories || []);
+                    loadMostReportedStories(statsResult.data.most_reported_stories || statsResult.data.top_reported_stories || []);
                 } else {
                     console.error("Failed to load dashboard stats:", statsResult.message);
 
                     // Set defaults if API returns error
-                    document.getElementById('totalStories').textContent = 0;
-                    document.getElementById('pendingStories').textContent = 0;
+                    document.getElementById('totalStories').textContent = await getTotalStoriesCount();
+                    document.getElementById('pendingStories').textContent = await getPendingStoriesCount();
                     document.getElementById('flaggedComments').textContent = 0;
                     document.getElementById('bannedUsers').textContent = 0;
 
@@ -829,43 +868,271 @@
                     }
                 });
 
+                // If the main endpoint returns 404, try alternative approaches
+                if (response.status === 404) {
+                    console.log("get_pending.php not found, trying alternative endpoints for pending stories...");
+
+                    // Try the specific endpoint that we know works for pending stories
+                    const statusResponse = await fetch("./../api/stories/get_stories.php?status=pending", {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+
+                    if (statusResponse.ok) {
+                        let responseText = await statusResponse.text();
+                        console.log("Pending stories (status=pending) response:", responseText); // Debug log
+
+                        let result;
+                        try {
+                            // Check if response has PHP error markers and extract JSON if embedded
+                            if (responseText.includes('<b>')) {
+                                const jsonStart = responseText.lastIndexOf('{');
+                                const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                                if (jsonStart !== -1 && jsonEnd !== 0) {
+                                    responseText = responseText.substring(jsonStart, jsonEnd);
+                                    console.warn("Extracted JSON from mixed response:", responseText);
+                                } else {
+                                    console.error("Could not extract JSON from response:", responseText);
+                                    result = { success: false, stories: [] };
+                                }
+                            } else if (!responseText || responseText.trim() === '') {
+                                console.warn("Pending stories API (status=pending) returned empty response");
+                                result = { success: true, stories: [] };
+                            } else if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                                result = { success: false, stories: [] };
+                            } else {
+                                result = JSON.parse(responseText);
+                            }
+                        } catch (parseError) {
+                            console.error("Error parsing pending stories (status=pending) response:", parseError);
+                            result = { success: false, stories: [] };
+                        }
+
+                        if (result.success) {
+                            pendingStories = result.stories || [];
+                            console.log(`Loaded ${pendingStories.length} pending stories from status=pending API:`, pendingStories); // Debug log
+                            renderPendingStories();
+                            return; // Exit after successfully loading
+                        } else {
+                            console.error('Failed to load pending stories from status=pending API:', result.message);
+                        }
+                    } else {
+                        console.error("Pending stories API (status=pending) failed with status:", statusResponse.status);
+                    }
+
+                    // If the specific status=pending API failed, try other alternatives
+                    // Array of possible endpoints and status values to try
+                    const endpointsToTry = [
+                        "./../api/stories/get_stories.php?status=awaiting_approval",
+                        "./../api/stories/get_stories.php?status=moderation",
+                        "./../api/stories/get_stories.php?status=unapproved",
+                        "./../api/stories/get_stories.php?status=draft"
+                    ];
+
+                    for (const endpoint of endpointsToTry) {
+                        try {
+                            console.log(`Trying alternative endpoint: ${endpoint}`);
+                            const altResponse = await fetch(endpoint, {
+                                method: "GET",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
+
+                            if (altResponse.ok) {
+                                let responseText = await altResponse.text();
+                                console.log(`Alternative pending stories response (${endpoint}):`, responseText); // Debug log
+
+                                let result;
+                                try {
+                                    // Check if response has PHP error markers and extract JSON if embedded
+                                    if (responseText.includes('<b>')) {
+                                        const jsonStart = responseText.lastIndexOf('{');
+                                        const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                                            responseText = responseText.substring(jsonStart, jsonEnd);
+                                            console.warn("Extracted JSON from mixed response:", responseText);
+                                        } else {
+                                            console.error("Could not extract JSON from response:", responseText);
+                                            continue; // Try next endpoint
+                                        }
+                                    } else if (!responseText || responseText.trim() === '') {
+                                        console.warn(`Alternative pending stories API returned empty response for ${endpoint}`);
+                                        result = { success: true, stories: [] };
+                                    } else if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                                        continue; // Try next endpoint
+                                    } else {
+                                        result = JSON.parse(responseText);
+                                    }
+                                } catch (parseError) {
+                                    console.error("Error parsing alternative pending stories response:", parseError);
+                                    continue; // Try next endpoint
+                                }
+
+                                if (result.success) {
+                                    pendingStories = result.stories || [];
+                                    console.log(`Loaded ${pendingStories.length} pending stories from ${endpoint}:`, pendingStories); // Debug log
+                                    renderPendingStories();
+                                    return; // Exit after successfully loading from an alternative endpoint
+                                } else {
+                                    console.error(`Failed to load pending stories from ${endpoint}:`, result.message);
+                                    continue; // Try next endpoint
+                                }
+                            } else {
+                                console.error(`Alternative pending stories API failed with status for ${endpoint}:`, altResponse.status);
+                                continue; // Try next endpoint
+                            }
+                        } catch (err) {
+                            console.error(`Error trying alternative endpoint ${endpoint}:`, err);
+                            continue; // Try next endpoint
+                        }
+                    }
+
+                    // If all alternatives failed, set to empty and render
+                    console.warn("All pending stories API endpoints failed, showing empty list");
+                    pendingStories = [];
+                    renderPendingStories();
+                    return;
+                }
+
                 if (!response.ok) {
                     if (response.status === 401) {
                         // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                    // Check if it's a 404 - we'll try alternative approaches like before
+                    if (response.status === 404) {
+                        console.log("get_pending.php returned 404, trying status=pending API...");
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                } else {
+                    // If response is successful, try to parse it
+                    let result;
+                    let responseText; // Declare variable in proper scope
+                    try {
+                        // Read response as text first to check for HTML content
+                        responseText = await response.text();
 
-                let result;
-                try {
-                    // Read response as text first to check for HTML content
-                    const responseText = await response.text();
+                        console.log("Raw pending stories response:", responseText); // Debug log
 
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                        // Check if response is empty - if so, try the status=pending approach
+                        if (!responseText || responseText.trim() === '') {
+                            console.warn("Pending stories API returned empty response, trying status=pending API...");
+                            // Try the status=pending API
+                            const statusResponse = await fetch("./../api/stories/get_stories.php?status=pending", {
+                                method: "GET",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
+
+                            if (statusResponse.ok) {
+                                let statusResponseText = await statusResponse.text();
+                                console.log("Status=pending API response:", statusResponseText); // Debug log
+
+                                let statusResult;
+                                try {
+                                    // Check if response has PHP error markers and extract JSON if embedded
+                                    if (statusResponseText.includes('<b>')) {
+                                        const jsonStart = statusResponseText.lastIndexOf('{');
+                                        const jsonEnd = statusResponseText.lastIndexOf('}') + 1;
+
+                                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                                            statusResponseText = statusResponseText.substring(jsonStart, jsonEnd);
+                                            console.warn("Extracted JSON from mixed response:", statusResponseText);
+                                        } else {
+                                            console.error("Could not extract JSON from response:", statusResponseText);
+                                            statusResult = { success: false, stories: [] };
+                                        }
+                                    } else if (!statusResponseText || statusResponseText.trim() === '') {
+                                        console.warn("Status-pending API also returned empty response");
+                                        statusResult = { success: true, stories: [] };
+                                    } else if (statusResponseText.trim().startsWith('<!DOCTYPE') || statusResponseText.trim().startsWith('<html')) {
+                                        console.error("Status-pending API returned HTML instead of JSON:", statusResponseText.substring(0, 200) + "...");
+                                        statusResult = { success: false, stories: [] };
+                                    } else {
+                                        statusResult = JSON.parse(statusResponseText);
+                                    }
+                                } catch (parseError) {
+                                    console.error("Error parsing status-pending API response:", parseError);
+                                    statusResult = { success: false, stories: [] };
+                                }
+
+                                if (statusResult.success) {
+                                    pendingStories = statusResult.stories || [];
+                                    console.log(`Loaded ${pendingStories.length} pending stories from status-pending API:`, pendingStories); // Debug log
+                                    renderPendingStories();
+                                    return; // Exit after successfully loading
+                                } else {
+                                    console.error('Failed to load pending stories from status-pending API:', statusResult.message);
+                                }
+                            } else {
+                                console.error("Status-pending API failed with status:", statusResponse.status);
+                            }
+
+                            // If status-pending also failed, use empty array
+                            pendingStories = [];
+                            renderPendingStories();
+                            return;
+                        } else {
+                            // Non-empty response - parse normally
+                            // Check if response has PHP error markers and extract JSON if embedded
+                            if (responseText.includes('<b>')) {
+                                // Extract JSON from mixed response (PHP errors mixed with JSON)
+                                const jsonStart = responseText.lastIndexOf('{');
+                                const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                                if (jsonStart !== -1 && jsonEnd !== 0) {
+                                    responseText = responseText.substring(jsonStart, jsonEnd);
+                                    console.warn("Extracted JSON from mixed response:", responseText);
+                                } else {
+                                    console.error("Could not extract JSON from response:", responseText);
+                                    throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                                }
+                            }
+
+                            // Additional check for HTML tags
+                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                                throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                            }
+
+                            result = JSON.parse(responseText);
+                        }
+                    } catch (parseError) {
+                        console.error("Error parsing pending stories response:", parseError);
+                        if (typeof responseText !== 'undefined') {
+                            console.error("Raw response:", responseText);
+                        }
+                        throw new Error("Invalid JSON response from server");
                     }
 
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing pending stories response:", parseError);
-                    throw new Error("Invalid JSON response from server");
-                }
-
-                if (result.success) {
-                    pendingStories = result.stories || [];
-                    renderPendingStories();
-                } else {
-                    console.error('Failed to load pending stories:', result.message);
+                    if (result.success) {
+                        pendingStories = result.stories || [];
+                        console.log("Loaded pending stories:", pendingStories); // Debug log
+                        renderPendingStories();
+                    } else {
+                        console.error('Failed to load pending stories:', result.message);
+                        pendingStories = []; // Ensure array is empty if API fails
+                        renderPendingStories(); // Still render to show empty state
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load pending stories:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
+                } else {
+                    // If there's an error, make sure to render the empty state
+                    pendingStories = [];
+                    renderPendingStories();
                 }
             }
         }
@@ -938,13 +1205,30 @@
                 }
 
                 let result;
+                let responseText; // Declare variable in proper scope
                 try {
                     // Read response as text first to check for HTML content
-                    const responseText = await response.text();
+                    responseText = await response.text();
 
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                    console.log("Raw flagged comments response:", responseText); // Debug log
+
+                    // Check if response has PHP error markers and extract JSON if embedded
+                    if (responseText.includes('<b>')) {
+                        // Extract JSON from mixed response (PHP errors mixed with JSON)
+                        const jsonStart = responseText.lastIndexOf('{');
+                        const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                            responseText = responseText.substring(jsonStart, jsonEnd);
+                            console.warn("Extracted JSON from mixed response:", responseText);
+                        } else {
+                            console.error("Could not extract JSON from response:", responseText);
+                            throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                        }
+                    }
+
+                    // Additional check for HTML tags
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
                         console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
@@ -952,14 +1236,20 @@
                     result = JSON.parse(responseText);
                 } catch (parseError) {
                     console.error("Error parsing flagged comments response:", parseError);
+                    if (typeof responseText !== 'undefined') {
+                        console.error("Raw response:", responseText);
+                    }
                     throw new Error("Invalid JSON response from server");
                 }
 
                 if (result.success) {
                     flaggedComments = result.data || result; // Check response format
+                    console.log("Loaded flagged comments:", flaggedComments); // Debug log
                     renderFlaggedComments();
                 } else {
                     console.error('Failed to load flagged comments:', result.message);
+                    flaggedComments = []; // Ensure array is empty if API fails
+                    renderFlaggedComments(); // Still render to show empty state
                 }
             } catch (error) {
                 console.error("Failed to load flagged comments:", error);
@@ -1034,13 +1324,30 @@
                 }
 
                 let result;
+                let responseText; // Declare variable in proper scope
                 try {
                     // Read response as text first to check for HTML content
-                    const responseText = await response.text();
+                    responseText = await response.text();
 
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                    console.log("Raw banned users response:", responseText); // Debug log
+
+                    // Check if response has PHP error markers and extract JSON if embedded
+                    if (responseText.includes('<b>')) {
+                        // Extract JSON from mixed response (PHP errors mixed with JSON)
+                        const jsonStart = responseText.lastIndexOf('{');
+                        const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                            responseText = responseText.substring(jsonStart, jsonEnd);
+                            console.warn("Extracted JSON from mixed response:", responseText);
+                        } else {
+                            console.error("Could not extract JSON from response:", responseText);
+                            throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                        }
+                    }
+
+                    // Additional check for HTML tags
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
                         console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
@@ -1048,14 +1355,20 @@
                     result = JSON.parse(responseText);
                 } catch (parseError) {
                     console.error("Error parsing banned users response:", parseError);
+                    if (typeof responseText !== 'undefined') {
+                        console.error("Raw response:", responseText);
+                    }
                     throw new Error("Invalid JSON response from server");
                 }
 
                 if (result.success) {
                     bannedUsers = result.data || result.banned_users || [];
+                    console.log("Loaded banned users:", bannedUsers); // Debug log
                     renderBannedUsers();
                 } else {
                     console.error('Failed to load banned users:', result.message);
+                    bannedUsers = []; // Ensure array is empty if API fails
+                    renderBannedUsers(); // Still render to show empty state
                 }
             } catch (error) {
                 console.error("Failed to load banned users:", error);
@@ -1158,7 +1471,17 @@
 
         // Approve story
         async function approveStory(storyId) {
-            if (!confirm('Are you sure you want to approve this story?')) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "Do you want to approve this story?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, approve it!'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
@@ -1183,12 +1506,29 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                try {
+                    // Read response as text first to check for HTML content
+                    const responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing approve story response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Success',
+                        title: 'Approved!',
                         text: 'Story approved successfully',
                         showConfirmButton: false,
                         timer: 1500
@@ -1256,7 +1596,25 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing reject story response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
@@ -1290,9 +1648,121 @@
         }
 
         // View story details
-        function viewStoryDetails(storyId) {
-            // Open story in a new tab or show details modal
-            window.open(`../stories.html#story-${storyId}`, '_blank');
+        async function viewStoryDetails(storyId) {
+            try {
+                // Fetch story details from API
+                const response = await fetch(`./../api/stories/get_story.php?id=${storyId}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success && result.story) {
+                    const story = result.story;
+
+                    // Create detailed story modal content
+                    const storyContent = `
+                        <div class="max-h-[70vh] overflow-y-auto">
+                            <div class="mb-4">
+                                <img src="${story.image_url || story.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}"
+                                     alt="${story.title || 'Story'}"
+                                     class="w-full h-48 object-cover rounded-lg"
+                                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                            </div>
+
+                            <div class="mb-4">
+                                <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">${story.title || 'No Title'}</h3>
+
+                                <div class="flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="user"></i>
+                                        ${story.author_name || story.creator?.name || 'Anonymous'}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="tag"></i>
+                                        ${story.theme || 'Uncategorized'}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="globe"></i>
+                                        ${story.language || 'en'}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i data-lucide="calendar"></i>
+                                        ${formatDate(story.created_at)}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">
+                                        Status: ${story.status || 'Unknown'}
+                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                        Views: ${story.views || 0}
+                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
+                                        Comments: ${story.comments_count || story.comment_count || 0}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 mb-4">
+                                ${story.content ? story.content.replace(/\n/g, '<br>') : 'No content available'}
+                            </div>
+
+                            ${story.excerpt ? `
+                            <div class="mt-4 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                                <h4 class="font-semibold text-sm text-zinc-900 dark:text-zinc-200 mb-1">Excerpt:</h4>
+                                <p class="text-sm text-zinc-600 dark:text-zinc-400">${story.excerpt}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    // Show story details in a modal using SweetAlert
+                    Swal.fire({
+                        title: `Story Details (ID: ${storyId})`,
+                        html: storyContent,
+                        width: 800,
+                        confirmButtonText: 'Close',
+                        customClass: {
+                            popup: 'swal2-wide'
+                        },
+                        willOpen: () => {
+                            // Initialize lucide icons in the modal
+                            lucide.createIcons();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message || 'Failed to load story details'
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading story details:', error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load story details'
+                    });
+                }
+            }
         }
 
         // Approve flagged comment
@@ -1315,7 +1785,25 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing approve comment response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
@@ -1382,7 +1870,25 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing delete comment response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
@@ -1449,7 +1955,25 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing unban user response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
@@ -1483,9 +2007,96 @@
         }
 
         // View user history
-        function viewUserHistory(userId) {
-            alert('User history view would open here for user ID: ' + userId);
-            // In a real implementation, this would open a modal with user's activity history
+        async function viewUserHistory(userId) {
+            try {
+                // Try to fetch user history data
+                const response = await fetch(`./../api/users/get_user_activity.php?user_id=${userId}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    // Check if the endpoint doesn't exist (404) or other error
+                    if (response.status === 404) {
+                        // If endpoint doesn't exist, show a simple message
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'User History',
+                            text: `Detailed history for user ID: ${userId} is not available`
+                        });
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Build the user history content
+                    let activityContent = '<div class="max-h-64 overflow-y-auto">';
+
+                    if (result.activity && result.activity.length > 0) {
+                        result.activity.forEach(activity => {
+                            activityContent += `
+                                <div class="mb-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${activity.action || 'Activity'}</p>
+                                            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">${activity.description || 'No description'}</p>
+                                        </div>
+                                        <span class="text-xs text-zinc-400">${formatDate(activity.created_at || activity.timestamp)}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        activityContent += '<p class="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No activity found for this user</p>';
+                    }
+
+                    activityContent += '</div>';
+
+                    // Show user history in a modal using SweetAlert
+                    Swal.fire({
+                        title: `User History (ID: ${userId})`,
+                        html: activityContent,
+                        width: 600,
+                        confirmButtonText: 'Close',
+                    });
+                } else {
+                    // If the API returned success=false, show the result message
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'User History',
+                        text: result.message || `No history available for user ID: ${userId}`
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading user history:', error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else if (error.message.includes('404')) {
+                    // Handle case where endpoint doesn't exist
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'User History',
+                        text: `History service not available for user ID: ${userId}`
+                    });
+                } else {
+                    // General error
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load user history'
+                    });
+                }
+            }
         }
 
         // Take action on most reported story
@@ -1516,14 +2127,31 @@
         // Take general moderation action
         async function takeModerationAction(entityId, action, options = {}) {
             try {
+                // Prepare the payload based on the action type
+                const payload = {
+                    action: action,
+                    ...options
+                };
+
+                // For different action types, we might need to send different identifiers
+                if (action === 'dismiss') {
+                    payload.report_id = entityId; // Dismissing a report uses the report/story ID
+                } else if (action === 'delete') {
+                    payload.story_id = entityId; // Deleting a story uses the story ID
+                } else if (action === 'ban') {
+                    // If banning, we might need to get the user ID associated with the story
+                    // For now, we'll pass the ID as is, but in a real implementation,
+                    // we would need to fetch user info for the ban action
+                    payload.story_id = entityId;
+                } else {
+                    // Default: send as report_id for other actions
+                    payload.report_id = entityId;
+                }
+
                 const response = await fetch('./../api/moderation/take_action.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        report_id: entityId, // This might need to be adjusted based on what the endpoint expects
-                        action: action,
-                        ...options
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
@@ -1535,7 +2163,25 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing moderation action response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
                     Swal.fire({
@@ -1579,6 +2225,345 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        // Helper function to get total stories count separately
+        async function getTotalStoriesCount() {
+            try {
+                // Try to get the total count by fetching stories with different status values and summing them up
+                // Different status categories to check
+                const statusTypes = ['approved', 'pending', 'draft', 'rejected']; // Common status values
+                let totalStories = 0;
+
+                // First, try to get all stories without status filter
+                let allStoriesCount = 0;
+                let gotAllStories = false;
+
+                try {
+                    const allResponse = await fetch('./../api/stories/get_stories.php', {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+
+                    if (allResponse.ok) {
+                        let responseText = await allResponse.text();
+
+                        // Check if response has PHP error markers and extract JSON if embedded
+                        if (responseText.includes('<b>')) {
+                            const jsonStart = responseText.lastIndexOf('{');
+                            const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                            if (jsonStart !== -1 && jsonEnd !== 0) {
+                                responseText = responseText.substring(jsonStart, jsonEnd);
+                                console.warn("Extracted JSON from mixed response:", responseText);
+                            } else {
+                                console.error("Could not extract JSON from response:", responseText);
+                                // Continue to try other methods
+                            }
+                        }
+
+                        // Additional check for HTML tags
+                        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                            console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                            // Continue to try other methods
+                        } else {
+                            try {
+                                const result = JSON.parse(responseText);
+
+                                if (result.success && result.stories && Array.isArray(result.stories)) {
+                                    // Check if this returns all stories regardless of status
+                                    // This is just a count, we don't return immediately
+                                    console.log("get_stories.php without status returned", result.stories.length, "stories");
+                                    allStoriesCount = result.stories.length;
+
+                                    // If it has 'total' field, that might be the total count (but we'll verify with other methods)
+                                    if (result.total !== undefined) {
+                                        console.log("get_stories.php reported total field:", result.total);
+                                        // We'll use this as our count if other methods don't give us a better count
+                                        allStoriesCount = result.total;
+                                    }
+
+                                    // If the API is designed to return ALL stories regardless of status,
+                                    // we can set a flag to indicate that
+                                    // For now, we'll continue to try other methods to be sure
+                                }
+                            } catch (parseError) {
+                                console.error("Error parsing all stories response:", parseError);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error getting all stories:", err);
+                }
+
+                // If getting all stories didn't work, try getting count by status category
+                console.log("Trying to count stories by status categories...");
+                const uniqueStoryIds = new Set(); // Use a Set to track unique story IDs
+
+                for (const status of statusTypes) {
+                    try {
+                        const statusResponse = await fetch(`./../api/stories/get_stories.php?status=${status}`, {
+                            method: "GET",
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
+
+                        if (statusResponse.ok) {
+                            let responseText = await statusResponse.text();
+                            console.log(`get_stories.php?status=${status} response:`, responseText.substring(0, 200) + "..."); // Log first 200 chars
+
+                            // Check if response has PHP error markers and extract JSON if embedded
+                            if (responseText.includes('<b>')) {
+                                const jsonStart = responseText.lastIndexOf('{');
+                                const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                                if (jsonStart !== -1 && jsonEnd !== 0) {
+                                    responseText = responseText.substring(jsonStart, jsonEnd);
+                                    console.warn("Extracted JSON from mixed response:", responseText);
+                                } else {
+                                    console.error("Could not extract JSON from response:", responseText);
+                                    continue; // Try next status
+                                }
+                            }
+
+                            // Additional check for HTML tags
+                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                                continue; // Try next status
+                            }
+
+                            try {
+                                const result = JSON.parse(responseText);
+
+                                if (result.success && result.stories && Array.isArray(result.stories)) {
+                                    // Add unique story IDs to the set to avoid counting duplicates
+                                    let addedCount = 0;
+                                    for (const story of result.stories) {
+                                        if (!uniqueStoryIds.has(story.id)) {
+                                            uniqueStoryIds.add(story.id);
+                                            addedCount++;
+                                        }
+                                    }
+                                    console.log(`Found ${result.stories.length} stories with status '${status}', ${addedCount} unique additions to total`);
+                                }
+                            } catch (parseError) {
+                                console.error("Error parsing status-specific response:", parseError);
+                                continue; // Try next status
+                            }
+                        } else if (statusResponse.status === 404) {
+                            console.log(`get_stories.php?status=${status} endpoint not found, skipping...`);
+                            continue; // Try next status
+                        }
+                    } catch (err) {
+                        console.error(`Error getting stories with status ${status}:`, err);
+                        continue; // Try next status
+                    }
+                }
+
+                // If we counted unique stories by status, return the count
+                if (uniqueStoryIds.size > 0) {
+                    console.log("Total unique stories counted by status:", uniqueStoryIds.size);
+                    // Return the maximum between the direct all stories count and the unique count by status
+                    const finalCount = Math.max(allStoriesCount, uniqueStoryIds.size);
+                    console.log("Returning final total:", finalCount, "(max of allStories:", allStoriesCount, ", unique by status:", uniqueStoryIds.size, ")");
+                    return finalCount;
+                } else if (allStoriesCount > 0) {
+                    // If we couldn't count by status but got a count from all stories, return that
+                    console.log("Returning all stories count:", allStoriesCount);
+                    return allStoriesCount;
+                }
+
+                // If all else fails, try the original approach
+                const response = await fetch('./../api/stories/get_stories.php', {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return 0;
+                    }
+                    console.error(`HTTP error getting total stories: ${response.status}`);
+                    return 0;
+                }
+
+                let responseText;
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    console.log("Raw total stories response:", responseText); // Debug log
+
+                    // Check if response has PHP error markers and extract JSON if embedded
+                    if (responseText.includes('<b>')) {
+                        // Extract JSON from mixed response (PHP errors mixed with JSON)
+                        const jsonStart = responseText.lastIndexOf('{');
+                        const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                            responseText = responseText.substring(jsonStart, jsonEnd);
+                            console.warn("Extracted JSON from mixed response:", responseText);
+                        } else {
+                            console.error("Could not extract JSON from response:", responseText);
+                            return 0;
+                        }
+                    }
+
+                    // Additional check for HTML tags
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        return 0;
+                    }
+
+                    const result = JSON.parse(responseText);
+
+                    if (result.success && (result.total !== undefined || (result.stories && Array.isArray(result.stories)))) {
+                        return result.total || result.stories.length || 0;
+                    } else {
+                        console.error("Failed to get total stories count:", result.message || 'Invalid response format');
+                        return 0;
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing total stories response:", parseError);
+                    if (typeof responseText !== 'undefined') {
+                        console.error("Raw response:", responseText);
+                    }
+                    return 0;
+                }
+            } catch (error) {
+                console.error("Error getting total stories count:", error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
+                return 0;
+            }
+        }
+
+        // Helper function to get pending stories count
+        async function getPendingStoriesCount() {
+            try {
+                // Try to get stories with 'pending' status
+                const response = await fetch('./../api/stories/get_stories.php?status=pending&count_only=true', {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (response.status === 404) {
+                    // If count_only parameter doesn't work, try getting the stories and counting them
+                    const altResponse = await fetch('./../api/stories/get_stories.php?status=pending', {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+
+                    if (altResponse.ok) {
+                        let responseText = await altResponse.text();
+                        console.log("Alternative pending stories count response:", responseText); // Debug log
+
+                        try {
+                            // Check if response has PHP error markers and extract JSON if embedded
+                            if (responseText.includes('<b>')) {
+                                const jsonStart = responseText.lastIndexOf('{');
+                                const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                                if (jsonStart !== -1 && jsonEnd !== 0) {
+                                    responseText = responseText.substring(jsonStart, jsonEnd);
+                                    console.warn("Extracted JSON from mixed response:", responseText);
+                                } else {
+                                    console.error("Could not extract JSON from response:", responseText);
+                                    return 0;
+                                }
+                            }
+
+                            // Additional check for HTML tags
+                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                                return 0;
+                            }
+
+                            const result = JSON.parse(responseText);
+
+                            if (result.success && result.stories && Array.isArray(result.stories)) {
+                                return result.stories.length;
+                            } else {
+                                console.error("Failed to get pending stories count:", result.message || 'Invalid response format');
+                                return 0;
+                            }
+                        } catch (parseError) {
+                            console.error("Error parsing alternative pending stories count response:", parseError);
+                            return 0;
+                        }
+                    }
+                } else if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return 0;
+                    }
+                    console.error(`HTTP error getting pending stories count: ${response.status}`);
+                    return 0;
+                }
+
+                let responseText;
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    console.log("Raw pending stories count response:", responseText); // Debug log
+
+                    // Check if response has PHP error markers and extract JSON if embedded
+                    if (responseText.includes('<b>')) {
+                        // Extract JSON from mixed response (PHP errors mixed with JSON)
+                        const jsonStart = responseText.lastIndexOf('{');
+                        const jsonEnd = responseText.lastIndexOf('}') + 1;
+
+                        if (jsonStart !== -1 && jsonEnd !== 0) {
+                            responseText = responseText.substring(jsonStart, jsonEnd);
+                            console.warn("Extracted JSON from mixed response:", responseText);
+                        } else {
+                            console.error("Could not extract JSON from response:", responseText);
+                            return 0;
+                        }
+                    }
+
+                    // Additional check for HTML tags
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        return 0;
+                    }
+
+                    const result = JSON.parse(responseText);
+
+                    if (result.success && (result.total !== undefined || (result.stories && Array.isArray(result.stories)))) {
+                        return result.total || (result.stories ? result.stories.length : 0) || 0;
+                    } else {
+                        console.error("Failed to get pending stories count:", result.message || 'Invalid response format');
+                        return 0;
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing pending stories count response:", parseError);
+                    if (typeof responseText !== 'undefined') {
+                        console.error("Raw response:", responseText);
+                    }
+                    return 0;
+                }
+            } catch (error) {
+                console.error("Error getting pending stories count:", error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
+                return 0;
+            }
         }
     </script>
 </body>

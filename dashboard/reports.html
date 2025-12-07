@@ -770,18 +770,63 @@
                     body: JSON.stringify({ id: reportId, status })
                 });
 
-                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing update report status response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: `Report marked as ${status}`,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     closeReportDetailsModal();
-                    alert(`Report marked as ${status}`);
                     loadReportsData(); // Reload reports list
                 } else {
-                    alert(`Failed to update report: ${result.message}`);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `Failed to update report: ${result.message}`
+                    });
                 }
             } catch (error) {
                 console.error("Error updating report:", error);
-                alert("Network error. Please try again.");
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Network error. Please try again.'
+                    });
+                }
             }
         }
 
@@ -789,7 +834,19 @@
             const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
             if (!reportId) return;
 
-            if (!confirm('Are you sure you want to delete this report permanently?')) return;
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
 
             try {
                 const response = await fetch('./../api/reports/delete_report.php', {
@@ -798,18 +855,63 @@
                     body: JSON.stringify({ id: reportId })
                 });
 
-                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing delete report response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Report deleted successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     closeReportDetailsModal();
-                    alert('Report deleted successfully!');
                     loadReportsData(); // Reload reports list
                 } else {
-                    alert(`Failed to delete report: ${result.message}`);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: `Failed to delete report: ${result.message}`
+                    });
                 }
             } catch (error) {
                 console.error("Error deleting report:", error);
-                alert("Network error. Please try again.");
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Network error. Please try again.'
+                    });
+                }
             }
         }
 
@@ -825,16 +927,61 @@
                     body: JSON.stringify({ id: reportId, admin_notes: notes })
                 });
 
-                const result = await response.json();
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                let result;
+                let responseText; // Declare responseText in proper scope
+                try {
+                    // Read response as text first to check for HTML content
+                    responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing save report notes response:", parseError);
+                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
+                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
+                }
 
                 if (result.success) {
-                    alert('Notes saved successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Notes saved successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 } else {
-                    alert(result.message || 'Failed to save notes');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message || 'Failed to save notes'
+                    });
                 }
             } catch (error) {
                 console.error("Error saving notes:", error);
-                alert('Network error');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Network error'
+                    });
+                }
             }
         }
     </script>
