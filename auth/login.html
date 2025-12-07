@@ -13,47 +13,83 @@
 </head>
 <body>
     <div id="particleCanvas" class="particle-bg"></div>
-    
+
     <div class="login-container">
         <div class="login-card">
             <div class="logo-container">
                 <h1 class="brand">Connect for Peace</h1>
                 <p class="subtitle">Join our community of changemakers</p>
             </div>
-            
-            <div class="role-selection">
-                <h2>Choose Your Role</h2>
-                <p class="description">Select how you'd like to contribute to our community</p>
-                
-                <div class="role-buttons">
-                    <button class="role-btn admin-btn" id="adminBtn">
-                        <div class="role-icon">👑</div>
-                        <h3>Admin</h3>
-                        <p>Manage content, approve submissions, and oversee community</p>
-                        <div class="btn-bg"></div>
+
+            <div class="auth-tabs" id="authTabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" id="loginTab">Sign In</button>
+                    <button class="tab-btn" id="registerTab">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" name="email" placeholder="Enter your email" required>
+                        <div class="error-message" id="email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <div class="error-message" id="password-error"></div>
+                    </div>
+
+                    <div class="form-options">
+                        <div class="remember-me">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="forgot_password.html" class="forgot-password">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loading" style="display: none;">Signing in...</span>
                     </button>
-                    
-                    <button class="role-btn user-btn" id="userBtn">
-                        <div class="role-icon">👤</div>
-                        <h3>Community Member</h3>
-                        <p>Create actions, offer resources, and participate in initiatives</p>
-                        <div class="btn-bg"></div>
-                    </button>
+                </form>
+
+                <!-- Quick Access Buttons -->
+                <div class="quick-access-buttons">
+                    <h3>Quick Access (Demo)</h3>
+                    <p class="description">Use these for quick demo access</p>
+
+                    <div class="role-buttons">
+                        <button class="role-btn admin-btn" id="adminDemoBtn">
+                            <div class="role-icon">👑</div>
+                            <h3>Admin Demo</h3>
+                            <p>Login as admin for full access</p>
+                            <div class="btn-bg"></div>
+                        </button>
+
+                        <button class="role-btn user-btn" id="userDemoBtn">
+                            <div class="role-icon">👤</div>
+                            <h3>User Demo</h3>
+                            <p>Login as regular member</p>
+                            <div class="btn-bg"></div>
+                        </button>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="guest-access">
                 <p>Or continue as guest to browse public content</p>
                 <a href="../vue/index.html" class="guest-btn">Continue as Guest</a>
             </div>
         </div>
     </div>
-    
+
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader"></div>
         <p>Logging in...</p>
     </div>
-    
+
     <script src="login.js"></script>
 </body>
 </html>

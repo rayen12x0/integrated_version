@@ -157,7 +157,16 @@ function updateModalContent(item) {
     const modalLocation = document.getElementById('modalLocation');
     const modalBadge = document.getElementById('modalBadge');
 
-    if (modalImage) modalImage.src = item.image || item.image_url || 'https://via.placeholder.com/400x200?text=Image+Not+Available';
+    if (modalImage) {
+        // First try item.image, then item.image_url, then fallback to default SVG
+        const imageUrl = item.image || item.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+        modalImage.src = imageUrl;
+
+        // Add error handling for image loading
+        modalImage.onerror = function() {
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+        };
+    }
     if (modalTitle) modalTitle.textContent = item.title || item.resource_name || 'Untitled';
     if (modalDescription) modalDescription.textContent = item.description || 'No description available';
     if (modalLocation) modalLocation.textContent = item.location || `${item.latitude}, ${item.longitude}`;

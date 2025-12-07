@@ -82,7 +82,15 @@ class Action
         // Enrich data with actual counts and real values for frontend
         foreach ($actions as &$action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -140,7 +148,15 @@ class Action
         // Enrich data with actual counts and real values for frontend
         foreach ($actions as &$action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -196,7 +212,15 @@ class Action
 
         if ($action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -404,7 +428,15 @@ class Action
         // Enrich data with actual counts and real values for frontend
         foreach ($actions as &$action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -462,7 +494,15 @@ class Action
         // Enrich data with actual counts and real values for frontend
         foreach ($actions as &$action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -520,7 +560,15 @@ class Action
         // Enrich data with actual counts and real values for frontend
         foreach ($actions as &$action) {
             // Use actual image from DB if available, otherwise use default
-            $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image'; // Default image
+            if (!empty($action['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($action['image_url'], '/uploads/') === 0) {
+                    $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                }
+                $action['image'] = $action['image_url'];
+            } else {
+                $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+            }
 
             // Format creator info
             $action['creator'] = [
@@ -601,7 +649,15 @@ class Action
             // Process each action to enrich with additional information
             foreach ($results as &$action) {
                 // Use actual image from DB if available, otherwise use default
-                $action['image'] = $action['image_url'] ?? 'https://via.placeholder.com/400x200?text=Action+Image';
+                if (!empty($action['image_url'])) {
+                    // Fix the path to be relative to both vue and dashboard directories
+                    if (strpos($action['image_url'], '/uploads/') === 0) {
+                        $action['image_url'] = '../uploads/' . substr($action['image_url'], 9);
+                    }
+                    $action['image'] = $action['image_url'];
+                } else {
+                    $action['image'] = $action['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                }
 
                 // Format creator info
                 $action['creator'] = [

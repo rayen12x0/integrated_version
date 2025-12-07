@@ -21,8 +21,8 @@ class Report {
                 return ['success' => false, 'message' => 'You have already reported this item.'];
             }
 
-            $query = "INSERT INTO reports (reporter_id, reported_item_id, reported_item_type, report_category, report_reason, status, admin_notes)
-                      VALUES (:reporter_id, :reported_item_id, :reported_item_type, :report_category, :report_reason, :status, :admin_notes)";
+            $query = "INSERT INTO reports (reporter_id, reported_item_id, reported_item_type, report_category, report_reason, status)
+                      VALUES (:reporter_id, :reported_item_id, :reported_item_type, :report_category, :report_reason, :status)";
 
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':reporter_id', $data['reporter_id']);
@@ -31,7 +31,6 @@ class Report {
             $stmt->bindParam(':report_category', $data['report_category']);
             $stmt->bindParam(':report_reason', $data['report_reason']);
             $stmt->bindValue(':status', 'pending'); // Default status
-            $stmt->bindValue(':admin_notes', null, PDO::PARAM_NULL); // Default to null
 
             if ($stmt->execute()) {
                 // Create notification for admins about the new report
@@ -110,6 +109,27 @@ class Report {
         } catch (PDOException $e) {
             error_log("Get reports by status error: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function getPending() {
+        try {
+            $query = "SELECT r.*, u.name as reporter_name, u.email as reporter_email
+                      FROM reports r
+                      JOIN users u ON r.reporter_id = u.id
+                      WHERE r.status = 'pending'
+                      ORDER BY r.created_at DESC";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+
+            return $stmt; // Return the PDOStatement for rowCount() functionality
+        } catch (PDOException $e) {
+            error_log("Get pending reports error: " . $e->getMessage());
+            // Return an empty PDOStatement-like object in case of error
+            $stmt = $this->conn->prepare("SELECT NULL LIMIT 0");
+            $stmt->execute();
+            return $stmt;
         }
     }
 
@@ -211,35 +231,47 @@ class Report {
             // Determine the effective status (use current status if null is provided)
             $effectiveStatus = ($status !== null) ? $status : $report['status'];
 
-            // Only include status in the update if it's provided (not null)
-            if ($status !== null) {
-                $query = "UPDATE reports SET status = :status, admin_notes = :admin_notes, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+            // Check if admin_notes column exists in the reports table
+            $columnExists = $this->checkIfColumnExists('reports', 'admin_notes');
 
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(':id', $id);
-                $stmt->bindParam(':status', $status);
-                $stmt->bindParam(':admin_notes', $adminNotes);
+            if ($columnExists) {
+                // Only include status in the update if it's provided (not null)
+                if ($status !== null) {
+                    $query = "UPDATE reports SET status = :status, admin_notes = :admin_notes, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+
+                    $stmt = $this->conn->prepare($query);
+                    $stmt->bindParam(':id', $id);
+                    $stmt->bindParam(':status', $status);
+                    $stmt->bindParam(':admin_notes', $adminNotes);
+                } else {
+                    // Update only admin notes without changing status
+                    $query = "UPDATE reports SET admin_notes = :admin_notes, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+
+                    $stmt = $this->conn->prepare($query);
+                    $stmt->bindParam(':id', $id);
+                    $stmt->bindParam(':admin_notes', $adminNotes);
+                }
             } else {
-                // Update only admin notes without changing status
-                $query = "UPDATE reports SET admin_notes = :admin_notes, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+                // Update without admin_notes column
+                if ($status !== null) {
+                    $query = "UPDATE reports SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
 
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(':id', $id);
-                $stmt->bindParam(':admin_notes', $adminNotes);
+                    $stmt = $this->conn->prepare($query);
+                    $stmt->bindParam(':id', $id);
+                    $stmt->bindParam(':status', $status);
+                } else {
+                    // No valid update parameters
+                    return ['success' => false, 'message' => 'No valid parameters to update.'];
+                }
             }
 
             if ($stmt->execute()) {
                 // Send email notification to reporter about status change only if status actually changed
                 if ($status !== null && $status !== $report['status']) {
                     $this->sendStatusUpdateEmail($report, $effectiveStatus, $adminNotes);
-                    $message = 'Report status and notes updated successfully.';
-                } elseif ($status === null && $adminNotes !== null) {
-                    // Only notes were updated
-                    $message = 'Report admin notes updated successfully.';
+                    $message = 'Report status updated successfully.';
                 } else {
-                    // Both status and notes were updated
-                    $this->sendStatusUpdateEmail($report, $effectiveStatus, $adminNotes);
-                    $message = 'Report status and notes updated successfully.';
+                    $message = 'Report status updated successfully.';
                 }
 
                 return ['success' => true, 'message' => $message];
@@ -434,6 +466,108 @@ class Report {
 
         // Send email using EmailService
         EmailService::sendNotificationEmail($adminEmail, $adminName, $subject, $message);
+    }
+
+    private function checkIfColumnExists($tableName, $columnName) {
+        try {
+            $query = "SHOW COLUMNS FROM {$tableName} LIKE :column_name";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':column_name', $columnName);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result !== false;
+        } catch (PDOException $e) {
+            // If SHOW COLUMNS fails (e.g., not supported by database), assume column doesn't exist
+            error_log("Check column existence error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getMostReported($limit = 5) {
+        try {
+            $query = "SELECT s.id, s.title, COUNT(r.id) as report_count
+                      FROM stories s
+                      JOIN reports r ON s.id = r.reported_item_id AND r.reported_item_type = 'story'
+                      GROUP BY s.id
+                      ORDER BY report_count DESC
+                      LIMIT :limit";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt;
+        } catch (PDOException $e) {
+            error_log("Get most reported error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function getBannedUsers() {
+        try {
+            $query = "SELECT * FROM users WHERE is_active = 0 ORDER BY updated_at DESC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            return $stmt;
+        } catch (PDOException $e) {
+            error_log("Get banned users error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function banUser($userId, $adminId, $reason) {
+        try {
+            $query = "UPDATE users SET is_active = 0 WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $userId);
+
+            if ($stmt->execute()) {
+                // Log the ban action
+                $this->logBan($userId, $adminId, $reason);
+                return true;
+            }
+            return false;
+        } catch (PDOException $e) {
+            error_log("Ban user error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function unbanUser($userId) {
+        try {
+            $query = "UPDATE users SET is_active = 1 WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $userId);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Unban user error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Log ban action in ban_log table
+     */
+    private function logBan($userId, $adminId, $reason) {
+        try {
+            // Check if table exists
+            $tableCheck = $this->conn->query("SHOW TABLES LIKE 'ban_log'");
+            if ($tableCheck->rowCount() == 0) {
+                return; // Skip logging if table doesn't exist
+            }
+
+            $query = "INSERT INTO ban_log
+                     SET user_id = :user_id,
+                         banned_by = :banned_by,
+                         reason = :reason,
+                         action_type = 'ban'";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":user_id", $userId);
+            $stmt->bindParam(":banned_by", $adminId);
+            $stmt->bindParam(":reason", $reason);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error logging ban: " . $e->getMessage());
+        }
     }
 }
 ?>

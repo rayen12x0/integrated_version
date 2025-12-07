@@ -34,8 +34,19 @@ class CommentController
             return;
         }
 
-        // Required fields for comment creation
-        $required = ["user_id", "content"];
+        // Get current user from authentication system
+        $currentUser = AuthHelper::getCurrentUser();
+        if (!$currentUser || !isset($currentUser['id']) || !$currentUser['id']) {
+            error_log("User not authenticated");
+            ApiResponse::error("Authentication required", 401);
+            return;
+        }
+
+        // Set user_id from the authenticated user
+        $input['user_id'] = $currentUser['id'];
+
+        // Required fields for comment creation (excluding user_id since it's derived from auth)
+        $required = ["content"];
 
         // Check if required fields are present
         foreach ($required as $field) {
@@ -46,10 +57,10 @@ class CommentController
             }
         }
 
-        // Either action_id or resource_id must be provided
-        if (empty($input['action_id']) && empty($input['resource_id'])) {
-            error_log("Either action_id or resource_id must be provided");
-            ApiResponse::error("Either action_id or resource_id must be provided", 400);
+        // Either action_id, resource_id, or story_id must be provided
+        if (empty($input['action_id']) && empty($input['resource_id']) && empty($input['story_id'])) {
+            error_log("Either action_id, resource_id, or story_id must be provided");
+            ApiResponse::error("Either action_id, resource_id, or story_id must be provided", 400);
             return;
         }
 
@@ -57,60 +68,95 @@ class CommentController
         error_log("Attempting to create comment with data: " . print_r($input, true));
         $result = $this->comment->create($input);
 
-        if ($result) {
-            require_once __DIR__ . "/../model/notification.php"; // Include notification model
-            $notification = new Notification($this->pdo); // Initialize notification model
+        // Handle array response (new format with moderation)
+        if (is_array($result)) {
+            if ($result['success']) {
+                $lastId = $result['id'];
+                $isFlagged = $result['flagged'] ?? false;
+                $message = $result['message'] ?? "Comment created successfully";
 
-            // Success response
-            $lastId = $this->pdo->lastInsertId();
-            error_log("Comment created successfully with ID: " . $lastId);
+                // Only send notifications if NOT flagged
+                if (!$isFlagged) {
+                    require_once __DIR__ . "/../model/notification.php"; // Include notification model
+                    $notification = new Notification($this->pdo); // Initialize notification model
+                    error_log("Comment created successfully with ID: " . $lastId);
 
-            // Get item title and creator for notification
-            $itemId = null;
-            $itemTitle = '';
-            $creatorId = null;
-            $itemType = '';
+                    // Get item title and creator for notification
+                    $itemId = null;
+                    $itemTitle = '';
+                    $creatorId = null;
+                    $itemType = '';
 
-            if (!empty($input['action_id'])) {
-                $itemType = 'action';
-                $itemId = $input['action_id'];
+                    if (!empty($input['action_id'])) {
+                        $itemType = 'action';
+                        $itemId = $input['action_id'];
 
-                // Get action title and creator
-                $stmt = $this->pdo->prepare("SELECT title, creator_id FROM actions WHERE id = :id");
-                $stmt->execute([':id' => $itemId]);
-                $item = $stmt->fetch(PDO::FETCH_ASSOC);
+                        // Get action title and creator
+                        $stmt = $this->pdo->prepare("SELECT title, creator_id FROM actions WHERE id = :id");
+                        $stmt->execute([':id' => $itemId]);
+                        $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                if ($item) {
-                    $itemTitle = $item['title'];
-                    $creatorId = $item['creator_id'];
+                        if ($item) {
+                            $itemTitle = $item['title'];
+                            $creatorId = $item['creator_id'];
+                        }
+                    } elseif (!empty($input['resource_id'])) {
+                        $itemType = 'resource';
+                        $itemId = $input['resource_id'];
+
+                        // Get resource title and publisher
+                        $stmt = $this->pdo->prepare("SELECT resource_name, publisher_id FROM resources WHERE id = :id");
+                        $stmt->execute([':id' => $itemId]);
+                        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if ($item) {
+                            $itemTitle = $item['resource_name'];
+                            $creatorId = $item['publisher_id'];
+                        }
+                    } elseif (!empty($input['story_id'])) {
+                        $itemType = 'story';
+                        $itemId = $input['story_id'];
+
+                        // Get story title and creator
+                        $stmt = $this->pdo->prepare("SELECT title, creator_id FROM stories WHERE id = :id");
+                        $stmt->execute([':id' => $itemId]);
+                        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if ($item) {
+                            $itemTitle = $item['title'];
+                            $creatorId = $item['creator_id'];
+                        }
+                    }
+
+                    // Get user name who commented
+                    $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+                    $userStmt->execute([':user_id' => $input['user_id']]);
+                    $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+                    $commenterName = $user['name'] ?? 'A user';
+
+                    // Create notification for comment (only if the commenter is not the creator)
+                    if ($creatorId && $creatorId != $input['user_id']) {
+                        if ($itemType === 'story') {
+                            // Use specific story comment notification
+                            $notification->createStoryCommentAddedNotification($creatorId, $itemId, $itemTitle, $commenterName);
+                        } else {
+                            // Use existing action/resource comment notification
+                            $notification->createCommentAddedNotification($creatorId, $itemId, $itemTitle, $commenterName, $itemType);
+                        }
+                    }
                 }
-            } elseif (!empty($input['resource_id'])) {
-                $itemType = 'resource';
-                $itemId = $input['resource_id'];
 
-                // Get resource title and publisher
-                $stmt = $this->pdo->prepare("SELECT resource_name, publisher_id FROM resources WHERE id = :id");
-                $stmt->execute([':id' => $itemId]);
-                $item = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($item) {
-                    $itemTitle = $item['resource_name'];
-                    $creatorId = $item['publisher_id'];
-                }
+                ApiResponse::success(['id' => $lastId, 'flagged' => $isFlagged], $message, 201);
+            } else {
+                // Failed (rejected or error)
+                error_log("Failed to create comment: " . ($result['message'] ?? 'Unknown error'));
+                ApiResponse::error($result['message'] ?? "Failed to create comment", 400);
             }
-
-            // Get user name who commented
-            $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = :user_id");
-            $userStmt->execute([':user_id' => $input['user_id']]);
-            $user = $userStmt->fetch(PDO::FETCH_ASSOC);
-            $commenterName = $user['name'] ?? 'A user';
-
-            // Create notification for comment (only if the commenter is not the creator)
-            if ($creatorId && $creatorId != $input['user_id']) {
-                $notification->createCommentAddedNotification($creatorId, $itemId, $itemTitle, $commenterName, $itemType);
-            }
-
-            ApiResponse::success(['id' => $lastId], "Comment created successfully", 201);
+        } elseif ($result === true) {
+             // Fallback for boolean true (legacy support)
+             // ... (This part is less likely to be hit now, but good for safety if model reverted)
+             // Assuming success without ID if boolean true returned (which shouldn't happen with new model)
+             ApiResponse::success([], "Comment created successfully", 201);
         } else {
             // Error response
             error_log("Failed to create comment in model.");
@@ -130,8 +176,8 @@ class CommentController
         }
     }
 
-    // Get comments by entity (action or resource)
-    public function getByEntity($actionId = null, $resourceId = null) {
+    // Get comments by entity (action, resource, or story)
+    public function getByEntity($actionId = null, $resourceId = null, $storyId = null) {
         header("Content-Type: application/json");
 
         // If IDs are not passed as parameters, try to get from GET request
@@ -141,16 +187,19 @@ class CommentController
         if ($resourceId === null) {
             $resourceId = $_GET['resource_id'] ?? null;
         }
+        if ($storyId === null) {
+            $storyId = $_GET['story_id'] ?? null;
+        }
 
-        // Either action_id or resource_id must be provided
-        if (!$actionId && !$resourceId) {
-            error_log("Either action_id or resource_id must be provided for get by entity");
-            ApiResponse::error("Either action_id or resource_id must be provided", 400);
+        // Either action_id, resource_id, or story_id must be provided
+        if (!$actionId && !$resourceId && !$storyId) {
+            error_log("Either action_id, resource_id, or story_id must be provided for get by entity");
+            ApiResponse::error("Either action_id, resource_id, or story_id must be provided", 400);
             return;
         }
 
         try {
-            $comments = $this->comment->getByEntity($actionId, $resourceId);
+            $comments = $this->comment->getByEntity($actionId, $resourceId, $storyId);
             // Changed to match the frontend expectation:
             // Frontend expects result.data.comments structure
             ApiResponse::success(['comments' => $comments, 'count' => count($comments)], 'Comments retrieved successfully', 200);
@@ -282,6 +331,89 @@ class CommentController
                 ApiResponse::success(null, "Comment deleted successfully", 200);
             } else {
                 ApiResponse::error("Failed to delete comment or comment not found", 400);
+            }
+        } catch (Exception $e) {
+            ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    // Get flagged comments method
+    public function getFlagged() {
+        header("Content-Type: application/json");
+
+        // Check admin access
+        if (!AuthHelper::isAdmin()) {
+            ApiResponse::error("Access denied", 403);
+            return;
+        }
+
+        try {
+            $stmt = $this->comment->getFlagged();
+            $flaggedComments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            ApiResponse::success($flaggedComments, 'Flagged comments retrieved', 200);
+        } catch (Exception $e) {
+            ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    // Approve flagged comment method
+    public function approveComment() {
+        header("Content-Type: application/json");
+        $input = json_decode(file_get_contents("php://input"), true);
+
+        // Check admin access
+        if (!AuthHelper::isAdmin()) {
+            ApiResponse::error("Access denied", 403);
+            return;
+        }
+
+        if (!$input || !isset($input['id'])) {
+            ApiResponse::error("Comment ID required", 400);
+            return;
+        }
+
+        try {
+            // Update comment status to 'active'
+            $sql = "UPDATE comments SET status = 'active' WHERE id = :id";
+            $stmt = $this->pdo->prepare($sql);
+            $success = $stmt->execute([':id' => $input['id']]);
+
+            if ($success) {
+                ApiResponse::success(null, "Comment approved", 200);
+            } else {
+                ApiResponse::error("Failed to approve comment", 400);
+            }
+        } catch (Exception $e) {
+            ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    // Simple approve method to match model's approve() method
+    public function approve() {
+        header("Content-Type: application/json");
+        $input = json_decode(file_get_contents("php://input"), true);
+
+        // Check admin access
+        if (!AuthHelper::isAdmin()) {
+            ApiResponse::error("Access denied", 403);
+            return;
+        }
+
+        if (!$input || !isset($input['id'])) {
+            ApiResponse::error("Comment ID required", 400);
+            return;
+        }
+
+        // Set the ID property to match model expectation
+        $this->comment->id = $input['id'];
+
+        try {
+            $result = $this->comment->approve();
+
+            if ($result) {
+                ApiResponse::success(null, "Comment approved", 200);
+            } else {
+                ApiResponse::error("Failed to approve comment", 400);
             }
         } catch (Exception $e) {
             ApiResponse::error($e->getMessage(), 500);

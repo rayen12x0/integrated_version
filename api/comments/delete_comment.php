@@ -13,9 +13,9 @@ try {
     require_once __DIR__ . '/../../model/comment.php';
     require_once __DIR__ . '/../../utils/AuthHelper.php';
 
-    // Create controller instance and call delete by ID method
+    // Create controller instance and call delete method which reads from JSON body
     $controller = new CommentController();
-    $controller->deleteById();
+    $controller->delete();
 } catch (Exception $e) {
     // If there's any error, return proper JSON
     echo json_encode([

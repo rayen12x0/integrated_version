@@ -1,93 +1,60 @@
 <?php
 // API endpoint to set user session
-// This endpoint stores user information in PHP session
+error_reporting(0); // Suppress PHP errors that may cause JSON parsing issues
+ini_set('display_errors', 0);
 
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . '/../../utils/AuthHelper.php';
+require_once __DIR__ . '/../../utils/ApiResponse.php';
 
-// Start session if not already started
-if (session_id() == '') {
-    session_start();
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-// Check if request method is POST
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode([
-        "success" => false,
-        "message" => "Method not allowed"
-    ]);
-    exit;
-}
-
-// Get JSON input
-$input = json_decode(file_get_contents("php://input"), true);
-
-if (!$input || !isset($input['user_id'])) {
-    http_response_code(400);
-    echo json_encode([
-        "success" => false,
-        "message" => "user_id is required"
-    ]);
-    exit;
-}
-
-$user_id = (int)$input['user_id'];
-
-// Validate user_id
-if (!in_array($user_id, [1, 2])) {
-    http_response_code(400);
-    echo json_encode([
-        "success" => false,
-        "message" => "Invalid user_id. Must be 1 (admin) or 2 (user)"
-    ]);
-    exit;
-}
+// Capture any output to prevent it from corrupting JSON response
+ob_start();
 
 try {
-    // Store user_id in session
-    $_SESSION['user_id'] = $user_id;
+    // Get input data
+    $input = json_decode(file_get_contents('php://input'), true);
     
-    // Create user object based on user_id
-    if ($user_id == 1) {
-        $user = [
-            "id" => 1,
-            "name" => "Admin User",
-            "email" => "admin@example.com",
-            "role" => "admin",
-            "avatar_url" => "https://api.placeholder.com/40/40?text=AU",
-            "badge" => "Administrator"
-        ];
-    } else {
-        $user = [
-            "id" => 2,
-            "name" => "Regular User",
-            "email" => "user@example.com",
-            "role" => "user",
-            "avatar_url" => "https://api.placeholder.com/40/40?text=RU",
-            "badge" => "Community Member"
-        ];
+    if (!$input || !isset($input['user_id'])) {
+        ApiResponse::error('Invalid input data. User ID is required.', 400);
     }
     
-    // Store user object in session
-    $_SESSION['user'] = $user;
+    $userId = $input['user_id'];
     
-    // Log session creation for debugging
-    error_log("Session created for user_id: " . $user_id);
+    // Validate user ID
+    if (!in_array($userId, [1, 2])) { // Only allow IDs 1 and 2 for demo purposes
+        ApiResponse::error('Invalid user ID. Only IDs 1 and 2 are supported.', 400);
+    }
     
-    // Return success response
-    echo json_encode([
-        "success" => true,
-        "message" => "Session created successfully",
-        "user" => $user
-    ]);
+    // Start session and set user
+    $user = AuthHelper::startSession($userId);
+    
+    // Success response
+    ApiResponse::success([
+        'user' => $user,
+        'authenticated' => true
+    ], 'Session set successfully', 200);
     
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        "success" => false,
-        "message" => "Error setting session: " . $e->getMessage()
-    ]);
+    // Clean any output that might have been captured
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
+    ApiResponse::error('Error setting session: ' . $e->getMessage(), 500);
 }
+
+// Clean any output that might have been captured
+if (ob_get_level()) {
+    ob_end_clean();
+}
+?>

@@ -45,7 +45,6 @@
         let currentUser = null;
         let actionsData = [];
         let resourcesData = [];
-        let reportsData = [];
 
         // Init
         document.addEventListener('DOMContentLoaded', async () => {
@@ -90,6 +89,40 @@
             document.getElementById('searchReports')?.addEventListener('input', filterReportsTable);
             document.getElementById('statusFilter')?.addEventListener('change', filterReportsTable);
             document.getElementById('categoryFilter')?.addEventListener('change', filterReportsTable);
+
+            // Handle URL hash navigation - check if a specific page should be shown
+            const hash = window.location.hash.replace('#', '');
+            if (hash) {
+                // Map hash values to page names (they should match the section IDs and data-page values)
+                const pageMap = {
+                    'overview': 'overview',
+                    'actions': 'actions',
+                    'stories': 'stories',
+                    'challenges': 'challenges',
+                    'reminders': 'reminders',
+                    'contact': 'contact'
+                };
+
+                const targetPage = pageMap[hash];
+                if (targetPage) {
+                    // Show the requested page after a brief delay to ensure initialization is complete
+                    setTimeout(() => {
+                        showPage(targetPage);
+
+                        // Update the active state in the navigation
+                        document.querySelectorAll('.nav-item[data-page]').forEach(navItem => {
+                            navItem.classList.remove('active', 'text-zinc-900', 'dark:text-zinc-100', 'bg-zinc-100', 'dark:bg-white/5');
+                            navItem.classList.add('text-zinc-600', 'dark:text-zinc-400');
+                        });
+
+                        const activeNavItem = document.querySelector(`.nav-item[data-page="${targetPage}"]`);
+                        if (activeNavItem) {
+                            activeNavItem.classList.remove('text-zinc-600', 'dark:text-zinc-400');
+                            activeNavItem.classList.add('active', 'text-zinc-900', 'dark:text-zinc-100', 'bg-zinc-100', 'dark:bg-white/5');
+                        }
+                    }, 100);
+                }
+            }
         });
 
         // Additional initialization to ensure icons are properly loaded
@@ -180,7 +213,6 @@
             await loadUserResources();
             await loadUserStats();
             await loadRecentActivity();
-            await loadReports(); // If user is admin
             await loadUserReminders(); // Load user reminders as well
         }
 
@@ -377,14 +409,19 @@
                 page.classList.add("active", "block");
             }
 
-            if(pageName === 'reports') {
-                loadReports();
-            } else if(pageName === 'reminders') {
+            if(pageName === 'reminders') {
                 if (isUserLoggedIn) {
                     loadUserReminders(); // Load reminders when navigating to reminders page
                 } else {
                     showSwal('Login Required', 'Please log in to view your reminders.', 'info');
                 }
+            }
+
+            // Update URL hash based on current page (except for overview/dashboard)
+            if (pageName === 'overview') {
+                history.replaceState(null, null, window.location.pathname + window.location.search);
+            } else {
+                history.replaceState(null, null, window.location.pathname + window.location.search + '#' + pageName);
             }
         }
 
@@ -486,17 +523,25 @@
                     }
 
                     if(actionsStats.success) {
-                        document.getElementById('myActionsCount').textContent = actionsStats.total_actions || 0;
-                        document.getElementById('myResourcesCount').textContent = actionsStats.total_resources || 0;
+                        // Safely update elements only if they exist
+                        const myActionsCountEl = document.getElementById('myActionsCount');
+                        if(myActionsCountEl) myActionsCountEl.textContent = actionsStats.total_actions || 0;
+
+                        const myResourcesCountEl = document.getElementById('myResourcesCount');
+                        if(myResourcesCountEl) myResourcesCountEl.textContent = actionsStats.total_resources || 0;
                     } else {
                         console.error("Actions stats API error:", actionsStats.message);
-                        document.getElementById('myActionsCount').textContent = "0";
-                        document.getElementById('myResourcesCount').textContent = "0";
+                        const myActionsCountEl = document.getElementById('myActionsCount');
+                        if(myActionsCountEl) myActionsCountEl.textContent = "0";
+                        const myResourcesCountEl = document.getElementById('myResourcesCount');
+                        if(myResourcesCountEl) myResourcesCountEl.textContent = "0";
                     }
                 } else {
                     console.error("Failed to load action stats:", actionsRes.reason || "Network error");
-                    document.getElementById('myActionsCount').textContent = "0";
-                    document.getElementById('myResourcesCount').textContent = "0";
+                    const myActionsCountEl = document.getElementById('myActionsCount');
+                    if(myActionsCountEl) myActionsCountEl.textContent = "0";
+                    const myResourcesCountEl = document.getElementById('myResourcesCount');
+                    if(myResourcesCountEl) myResourcesCountEl.textContent = "0";
                 }
 
                 // Handle participation stats
@@ -511,40 +556,53 @@
                     }
 
                     if(participationStats.success) {
-                        document.getElementById('participatedCount').textContent = participationStats.count || 0;
+                        const participatedCountEl = document.getElementById('participatedCount');
+                        if(participatedCountEl) participatedCountEl.textContent = participationStats.count || 0;
                     } else {
                         console.error("Participation stats API error:", participationStats.message);
-                        document.getElementById('participatedCount').textContent = "0";
+                        const participatedCountEl = document.getElementById('participatedCount');
+                        if(participatedCountEl) participatedCountEl.textContent = "0";
                     }
                 } else {
                     console.error("Failed to load participation stats:", participationRes.reason || "Network error");
-                    document.getElementById('participatedCount').textContent = "0";
+                    const participatedCountEl = document.getElementById('participatedCount');
+                    if(participatedCountEl) participatedCountEl.textContent = "0";
                 }
 
-                // Comments count - fetch separately
-                try {
-                    const commentsRes = await fetch(`./../api/other/dashboard_stats.php?user_id=${currentUser.id}&type=comments`, {
-                        method: "GET",
-                        headers: { "Content-Type": "application/json" }
-                    });
+                // Comments/Engagement count - fetch separately (only update if element exists)
+                const engagementCountEl = document.getElementById('engagementCount');
+                if(engagementCountEl) {  // Only fetch and update if the element exists
+                    try {
+                        const commentsRes = await fetch(`./../api/other/dashboard_stats.php?user_id=${currentUser.id}&type=comments`, {
+                            method: "GET",
+                            headers: { "Content-Type": "application/json" }
+                        });
 
-                    if (commentsRes.ok) {
-                        const commentsStats = await commentsRes.json();
-                        document.getElementById('commentsCount').textContent = commentsStats.comments_count || 0;
-                    } else {
-                        document.getElementById('commentsCount').textContent = "0";
+                        if (commentsRes.ok) {
+                            const commentsStats = await commentsRes.json();
+                            engagementCountEl.textContent = commentsStats.comments_count || 0;
+                        } else {
+                            if(engagementCountEl) engagementCountEl.textContent = "0";
+                        }
+                    } catch (commentsError) {
+                        console.error("Error loading comments count:", commentsError);
+                        if(engagementCountEl) engagementCountEl.textContent = "0";
                     }
-                } catch (commentsError) {
-                    console.error("Error loading comments count:", commentsError);
-                    document.getElementById('commentsCount').textContent = "0";
                 }
             } catch (error) {
                 console.error("Error loading stats:", error);
-                // Set defaults in case of error
-                document.getElementById('myActionsCount').textContent = "0";
-                document.getElementById('myResourcesCount').textContent = "0";
-                document.getElementById('participatedCount').textContent = "0";
-                document.getElementById('commentsCount').textContent = "0";
+                // Safely set defaults only if elements exist
+                const myActionsCountEl = document.getElementById('myActionsCount');
+                if(myActionsCountEl) myActionsCountEl.textContent = "0";
+
+                const myResourcesCountEl = document.getElementById('myResourcesCount');
+                if(myResourcesCountEl) myResourcesCountEl.textContent = "0";
+
+                const participatedCountEl = document.getElementById('participatedCount');
+                if(participatedCountEl) participatedCountEl.textContent = "0";
+
+                const engagementCountEl = document.getElementById('engagementCount');
+                if(engagementCountEl) engagementCountEl.textContent = "0";
             }
         }
 
@@ -584,7 +642,7 @@
                     console.error("Failed to load activity:", result.message);
                     // Fallback to empty state
                     const activityList = document.getElementById('recentActivityList');
-                    activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No recent activity</p>';
+                    if(activityList) activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No recent activity</p>';
                 }
             } catch (error) {
                 console.error("Error loading recent activity:", error);
@@ -595,47 +653,10 @@
                     console.error("Server error detected - likely PHP error in API");
                 }
                 const activityList = document.getElementById('recentActivityList');
-                activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">Error loading activity</p>';
+                if(activityList) activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">Error loading activity</p>';
             }
         }
 
-        async function loadReports() {
-            // Only load reports if user is admin
-            if(currentUser.role !== 'admin') return;
-
-            try {
-                const response = await fetch("./../api/reports/get_reports.php");
-
-                // Check if the response is ok before trying to parse JSON
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if(result.success) {
-                    reportsData = result.reports || [];
-                    renderReports(reportsData);
-
-                    // Update stats
-                    const total = reportsData.length;
-                    const pending = reportsData.filter(r => r.status === 'pending').length;
-                    const resolved = reportsData.filter(r => r.status === 'resolved').length;
-
-                    document.getElementById('totalReportsCount').textContent = total;
-                    document.getElementById('pendingReportsCount').textContent = pending;
-                    document.getElementById('resolvedReportsCount').textContent = resolved;
-                } else {
-                    console.error("Failed to load reports:", result.message);
-                }
-            } catch (error) {
-                console.error("Error loading reports:", error);
-                // Additional check if the error is due to unexpected HTML response
-                if (error.message && error.message.includes('JSON')) {
-                    console.error("API returned HTML instead of JSON. Check for PHP errors.");
-                }
-            }
-        }
 
         // Notification functions - Facebook-style
         async function loadNotifications() {
@@ -677,6 +698,7 @@
 
         function renderNotifications(notifications) {
             const container = document.getElementById('notificationDropdown');
+            if (!container) return; // Safety check
             if (!notifications || notifications.length === 0) {
                 container.innerHTML = '<p class="text-sm text-zinc-500 text-center py-8">No notifications yet</p>';
                 return;
@@ -694,20 +716,29 @@
             `;
 
             notifications.forEach(notif => {
-                const isUnread = !notif.is_read;
+                const isUnread = !notif.is_read || notif.isRead === 0;
+
+                // Get the user name instead of the item title to match main project behavior
+                const userName = notif.user_name || notif.userName || notif.name || 'User';
+
+                // The message should be what the user did
+                const message = notif.message || notif.title || notif.notification_message || 'No message';
+
+                const timestamp = notif.created_at || notif.date || notif.timestamp || notif.createdAt;
+
                 notificationsHTML += `
                     <div class="px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 cursor-pointer ${isUnread ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}"
-                         onclick="markAsRead(${notif.id})">
+                         onclick="markAsRead(${notif.id || notif.ID || 0})">
                         <div class="flex gap-3">
                             <div class="flex-shrink-0">
                                 <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                                    <i data-lucide="${getNotificationIcon(notif.type)}" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                                    <i data-lucide="${getNotificationIcon(notif.type || 'default')}" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
                                 </div>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${notif.title}</p>
-                                <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">${notif.message}</p>
-                                <p class="text-xs text-zinc-400 mt-1">${formatTimeAgo(notif.created_at)}</p>
+                                <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${userName}</p>
+                                <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">${message}</p>
+                                <p class="text-xs text-zinc-400 mt-1">${formatTimeAgo(timestamp)}</p>
                             </div>
                             ${isUnread ? '<div class="w-2 h-2 bg-indigo-600 rounded-full"></div>' : ''}
                         </div>
@@ -785,37 +816,101 @@
         }
 
         async function clearAllNotifications() {
-            const result = await Swal.fire({
-                title: 'Clear all notifications?',
-                text: 'This action cannot be undone',
-                icon: 'warning',
-                background: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff',
-                color: document.documentElement.classList.contains('dark') ? '#e4e4e7' : '#18181b',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Yes, clear all'
-            });
+            // Show a simple confirmation without SweetAlert
+            if (!confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+                return;
+            }
 
-            if (result.isConfirmed) {
-                try {
-                    const response = await fetch(`./../api/notifications/clear_all_notifications.php`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: currentUser.id })
-                    });
+            try {
+                const response = await fetch(`./../api/notifications/clear_all_notifications.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
 
-                    if (response.ok) {
-                        loadNotifications();
-                    }
-                } catch (error) {
-                    console.error('Error clearing notifications:', error);
+                if (response.ok) {
+                    loadNotifications();
+                } else {
+                    console.error('Failed to clear notifications:', response.status);
                 }
+            } catch (error) {
+                console.error('Error clearing notifications:', error);
             }
         }
 
-        function loadMoreNotifications() {
-            // Implementation for loading more notifications
-            console.log('Loading more notifications...');
+        async function loadMoreNotifications() {
+            try {
+                // Get current notification count to use as offset for pagination
+                const currentNotificationsCount = document.querySelectorAll('#notificationsList > div').length;
+                const limit = 10; // Load 10 more notifications
+
+                const response = await fetch(`./../api/notifications/get_notifications.php?user_id=${currentUser.id}&limit=10&offset=${currentNotificationsCount}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                let result;
+                try {
+                    // Read response as text first to check for HTML content
+                    const responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing notifications response:", parseError);
+                    throw new Error("Invalid JSON response from server");
+                }
+
+                if (result.success && result.notifications && result.notifications.length > 0) {
+                    // Append new notifications to the existing list
+                    const container = document.getElementById('notificationsList');
+                    if (container) {
+                        // Add new notifications to the list (after existing ones)
+                        result.notifications.forEach(notif => {
+                            const isUnread = !notif.is_read;
+
+                            // Get the user name instead of the item title to match main project behavior
+                            const userName = notif.user_name || notif.userName || notif.name || 'User';
+
+                            // The message should be what the user did
+                            const message = notif.message || notif.title || notif.notification_message || 'No message';
+                            const timestamp = notif.created_at || notif.date || notif.timestamp || notif.createdAt;
+
+                            const notificationHTML = `
+                                <div class="px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 cursor-pointer ${isUnread ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}"
+                                     onclick="markAsRead(${notif.id || notif.ID || 0})">
+                                    <div class="flex gap-3">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                                                <i data-lucide="${getNotificationIcon(notif.type || 'default')}" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${userName}</p>
+                                            <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1">${message}</p>
+                                            <p class="text-xs text-zinc-400 mt-1">${formatTimeAgo(timestamp)}</p>
+                                        </div>
+                                        ${isUnread ? '<div class="w-2 h-2 bg-indigo-600 rounded-full"></div>' : ''}
+                                    </div>
+                                </div>
+                            `;
+                            container.insertAdjacentHTML('beforeend', notificationHTML);
+                        });
+                        lucide.createIcons();
+                    }
+                } else {
+                    alert('No more notifications to load');
+                }
+            } catch (error) {
+                console.error('Error loading more notifications:', error);
+            }
         }
 
         function updateNotificationBadge(count) {
@@ -832,6 +927,7 @@
 
         function renderUserActions(actions) {
             const tbody = document.getElementById('my-actions-table-body');
+            if(!tbody) return; // Safety check
             tbody.innerHTML = actions.map(a => {
                 let statusClass = 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700';
 
@@ -862,6 +958,9 @@
                 return `
                     <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
                         <td class="py-3 px-5 text-zinc-500">#${a.id}</td>
+                        <td class="py-3 px-5">
+                            <img src="${a.image_url || a.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4='}" alt="${a.title}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEFjdGlvbiBJbWFnZTwvdGV4dD48L3N2Zz4='">
+                        </td>
                         <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${a.title}</td>
                         <td class="py-3 px-5">${a.category}</td>
                         <td class="py-3 px-5"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${statusClass}">${a.status}</span></td>
@@ -877,6 +976,7 @@
 
         function renderUserResources(resources) {
             const tbody = document.getElementById('my-resources-table-body');
+            if(!tbody) return; // Safety check
             tbody.innerHTML = resources.map(r => {
                 let statusClass = 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50';
 
@@ -907,6 +1007,9 @@
                 return `
                     <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
                         <td class="py-3 px-5 text-zinc-500">#${r.id}</td>
+                        <td class="py-3 px-5">
+                            <img src="${r.image_url || r.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}}" alt="${r.resource_name || r.title}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                        </td>
                         <td class="py-3 px-5 font-medium text-zinc-900 dark:text-zinc-200">${r.resource_name || r.title}</td>
                         <td class="py-3 px-5">${r.category}</td>
                         <td class="py-3 px-5 uppercase text-[10px] font-bold text-zinc-500">${r.type || ''}</td>
@@ -922,26 +1025,33 @@
 
         function renderRecentActivity(activity) {
             const activityList = document.getElementById('recentActivityList');
+            if(!activityList) return; // Safety check
 
             if(activity.length === 0) {
-                activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No recent activity</p>';
+                if(activityList) activityList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No recent activity</p>';
                 return;
             }
 
-            activityList.innerHTML = activity.map(item => {
+            if(activityList) activityList.innerHTML = activity.map(item => {
                 let icon = "circle";  // Default
                 let bgClass = "bg-zinc-500/10";
                 let textClass = "text-zinc-500";
 
-                if(item.type.includes('action')) {
+                // Support multiple field name variations
+                const itemType = item.type || item.itemType || item.activityType || 'unknown';
+                const message = item.message || item.title || item.activity_message || 'No activity';
+                const details = item.details || item.description || item.content || '';
+                const timestamp = item.timestamp || item.date || item.created_at || item.createdAt;
+
+                if(itemType.includes('action')) {
                     icon = "zap";
                     bgClass = "bg-indigo-500/10";
                     textClass = "text-indigo-600";
-                } else if(item.type.includes('resource')) {
+                } else if(itemType.includes('resource')) {
                     icon = "package";
                     bgClass = "bg-emerald-500/10";
                     textClass = "text-emerald-600";
-                } else if(item.type.includes('comment')) {
+                } else if(itemType.includes('comment')) {
                     icon = "message-circle";
                     bgClass = "bg-amber-500/10";
                     textClass = "text-amber-600";
@@ -953,9 +1063,9 @@
                         <i data-lucide="${icon}" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <p class="text-sm text-zinc-900 dark:text-zinc-200 font-medium">${item.message}</p>
-                        <p class="text-xs text-zinc-500 mt-0.5">${item.details || ''}</p>
-                        <p class="text-[10px] text-zinc-500 mt-1">${new Date(item.timestamp).toLocaleString()}</p>
+                        <p class="text-sm text-zinc-900 dark:text-zinc-200 font-medium">${message}</p>
+                        <p class="text-xs text-zinc-500 mt-0.5">${details}</p>
+                        <p class="text-[10px] text-zinc-500 mt-1">${timestamp ? new Date(timestamp).toLocaleString() : ''}</p>
                     </div>
                 </div>
                 `;
@@ -964,22 +1074,6 @@
             lucide.createIcons();
         }
 
-        function renderReports(reports) {
-            const tbody = document.getElementById('reports-table-body');
-            tbody.innerHTML = reports.map(r => `
-                <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                    <td class="py-3 px-5">${r.id}</td>
-                    <td class="py-3 px-5">${r.reporter_name || 'Unknown'}</td>
-                    <td class="py-3 px-5">${r.item_title || 'Item'}</td>
-                    <td class="py-3 px-5">${r.item_type}</td>
-                    <td class="py-3 px-5"><span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] rounded">${r.category}</span></td>
-                    <td class="py-3 px-5 truncate max-w-[150px]">${r.reason || 'No reason provided'}</td>
-                    <td class="py-3 px-5">${r.status}</td>
-                    <td class="py-3 px-5">${new Date(r.created_at).toLocaleDateString()}</td>
-                    <td class="py-3 px-5"><button class="text-indigo-500 text-xs font-medium hover:underline" onclick="viewReportDetails(${r.id})">View</button></td>
-                </tr>
-            `).join('');
-        }
 
         // Filtering functions
         function filterActionsTable() {
@@ -1013,24 +1107,6 @@
             renderUserResources(filtered);
         }
 
-        function filterReportsTable() {
-            if (!reportsData || reportsData.length === 0) return;
-
-            const searchTerm = document.getElementById('searchReports').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const categoryFilter = document.getElementById('categoryFilter').value;
-
-            const filtered = reportsData.filter(report => {
-                const matchesSearch = report.reason.toLowerCase().includes(searchTerm) ||
-                                     (report.item_title && report.item_title.toLowerCase().includes(searchTerm));
-                const matchesStatus = !statusFilter || report.status === statusFilter;
-                const matchesCategory = !categoryFilter || report.category === categoryFilter;
-
-                return matchesSearch && matchesStatus && matchesCategory;
-            });
-
-            renderReports(filtered);
-        }
 
         // Edit functionality
         function openEditAction(id) {
@@ -1048,6 +1124,14 @@
                 document.getElementById('actionLocationDetails').value = action.location_details || '';
                 document.getElementById('actionLatitude').value = action.latitude || '';
                 document.getElementById('actionLongitude').value = action.longitude || '';
+
+                // Show image preview if available
+                if (action.image_url || action.image) {
+                    document.getElementById('actionImagePreview').src = action.image_url || action.image;
+                    document.getElementById('actionImagePreviewContainer').classList.remove('hidden');
+                } else {
+                    document.getElementById('actionImagePreviewContainer').classList.add('hidden');
+                }
 
                 openCreateModal('action');
             }
@@ -1067,6 +1151,14 @@
                 document.getElementById('resourceLocationDetails').value = resource.location_details || '';
                 document.getElementById('resourceLatitude').value = resource.latitude || '';
                 document.getElementById('resourceLongitude').value = resource.longitude || '';
+
+                // Show image preview if available
+                if (resource.image_url || resource.image) {
+                    document.getElementById('resourceImagePreview').src = resource.image_url || resource.image;
+                    document.getElementById('resourceImagePreviewContainer').classList.remove('hidden');
+                } else {
+                    document.getElementById('resourceImagePreviewContainer').classList.add('hidden');
+                }
 
                 openCreateModal('resource');
             }
@@ -1118,6 +1210,10 @@
             const formData = new FormData(form);
             const editId = document.getElementById('editActionId').value;
 
+            // Check if we have a file input in the form and if there's a file selected
+            const fileInput = document.getElementById('action-file-input');
+            const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
             // Get field values
             const title = document.getElementById('actionTitle').value.trim();
             const category = document.getElementById('actionCategory').value;
@@ -1154,39 +1250,80 @@
 
             if(!isValid) return;
 
-            // Prepare payload
-            const payload = {
-                id: editId ? parseInt(editId) : undefined,
-                title,
-                category,
-                theme,
-                description,
-                start_time,
-                country,
-                location_details,
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
-                creator_id: currentUser.id
-            };
-
             try {
-                const url = editId ? "./../api/actions/update_action.php" : "./../api/actions/create_action.php";
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
+                if (hasFile) {
+                    // If there's a file, submit via FormData
+                    const actionFormData = new FormData();
+                    actionFormData.append('title', title);
+                    actionFormData.append('category', category);
+                    actionFormData.append('theme', theme);
+                    actionFormData.append('description', description);
+                    actionFormData.append('start_time', start_time);
+                    actionFormData.append('country', country);
+                    actionFormData.append('location_details', location_details);
+                    actionFormData.append('latitude', latitude);
+                    actionFormData.append('longitude', longitude);
+                    actionFormData.append('creator_id', currentUser.id);
 
-                const result = await response.json();
+                    if (editId) {
+                        actionFormData.append('id', editId);
+                    }
 
-                if(result.success) {
-                    showSuccessMessage(`Action ${(editId ? 'updated' : 'created')} successfully!`);
-                    createModal.classList.add('hidden');
+                    actionFormData.append('image', fileInput.files[0]);
 
-                    // Reload data
-                    await loadAllData();
+                    const url = editId ? "./../api/actions/update_action.php" : "./../api/actions/create_action.php";
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: actionFormData
+                    });
+
+                    const result = await response.json();
+
+                    if(result.success) {
+                        showSuccessMessage(`Action ${(editId ? 'updated' : 'created')} successfully!`);
+                        createModal.classList.add('hidden');
+                        // Reset form and hide image preview
+                        document.getElementById('actionImagePreviewContainer').classList.add('hidden');
+
+                        // Reload data
+                        await loadAllData();
+                    } else {
+                        showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} action: ${result.message}`);
+                    }
                 } else {
-                    showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} action: ${result.message}`);
+                    // Prepare payload for JSON submission (when no image is uploaded)
+                    const payload = {
+                        id: editId ? parseInt(editId) : undefined,
+                        title,
+                        category,
+                        theme,
+                        description,
+                        start_time,
+                        country,
+                        location_details,
+                        latitude: latitude ? parseFloat(latitude) : null,
+                        longitude: longitude ? parseFloat(longitude) : null,
+                        creator_id: currentUser.id
+                    };
+
+                    const url = editId ? "./../api/actions/update_action.php" : "./../api/actions/create_action.php";
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if(result.success) {
+                        showSuccessMessage(`Action ${(editId ? 'updated' : 'created')} successfully!`);
+                        createModal.classList.add('hidden');
+
+                        // Reload data
+                        await loadAllData();
+                    } else {
+                        showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} action: ${result.message}`);
+                    }
                 }
             } catch (error) {
                 console.error("Error submitting action:", error);
@@ -1202,6 +1339,10 @@
             const form = e.target;
             const formData = new FormData(form);
             const editId = document.getElementById('editResourceId').value;
+
+            // Check if we have a file input in the form and if there's a file selected
+            const fileInput = document.getElementById('resource-file-input');
+            const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
 
             // Get field values
             const resource_name = document.getElementById('resourceName').value.trim();
@@ -1238,38 +1379,78 @@
 
             if(!isValid) return;
 
-            // Prepare payload
-            const payload = {
-                id: editId ? parseInt(editId) : undefined,
-                resource_name,
-                category,
-                type,
-                description,
-                country,
-                location_details,
-                latitude: latitude ? parseFloat(latitude) : null,
-                longitude: longitude ? parseFloat(longitude) : null,
-                publisher_id: currentUser.id
-            };
-
             try {
-                const url = editId ? "./../api/resources/update_resource.php" : "./../api/resources/create_resource.php";
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
+                if (hasFile) {
+                    // If there's a file, submit via FormData
+                    const resourceFormData = new FormData();
+                    resourceFormData.append('resource_name', resource_name);
+                    resourceFormData.append('category', category);
+                    resourceFormData.append('type', type);
+                    resourceFormData.append('description', description);
+                    resourceFormData.append('country', country);
+                    resourceFormData.append('location_details', location_details);
+                    resourceFormData.append('latitude', latitude);
+                    resourceFormData.append('longitude', longitude);
+                    resourceFormData.append('publisher_id', currentUser.id);
 
-                const result = await response.json();
+                    if (editId) {
+                        resourceFormData.append('id', editId);
+                    }
 
-                if(result.success) {
-                    showSuccessMessage(`Resource ${(editId ? 'updated' : 'created')} successfully!`);
-                    createModal.classList.add('hidden');
+                    resourceFormData.append('image', fileInput.files[0]);
 
-                    // Reload data
-                    await loadAllData();
+                    const url = editId ? "./../api/resources/update_resource.php" : "./../api/resources/create_resource.php";
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: resourceFormData
+                    });
+
+                    const result = await response.json();
+
+                    if(result.success) {
+                        showSuccessMessage(`Resource ${(editId ? 'updated' : 'created')} successfully!`);
+                        createModal.classList.add('hidden');
+                        // Reset form and hide image preview
+                        document.getElementById('resourceImagePreviewContainer').classList.add('hidden');
+
+                        // Reload data
+                        await loadAllData();
+                    } else {
+                        showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} resource: ${result.message}`);
+                    }
                 } else {
-                    showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} resource: ${result.message}`);
+                    // Prepare payload for JSON submission (when no image is uploaded)
+                    const payload = {
+                        id: editId ? parseInt(editId) : undefined,
+                        resource_name,
+                        category,
+                        type,
+                        description,
+                        country,
+                        location_details,
+                        latitude: latitude ? parseFloat(latitude) : null,
+                        longitude: longitude ? parseFloat(longitude) : null,
+                        publisher_id: currentUser.id
+                    };
+
+                    const url = editId ? "./../api/resources/update_resource.php" : "./../api/resources/create_resource.php";
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if(result.success) {
+                        showSuccessMessage(`Resource ${(editId ? 'updated' : 'created')} successfully!`);
+                        createModal.classList.add('hidden');
+
+                        // Reload data
+                        await loadAllData();
+                    } else {
+                        showErrorMessage(`Failed to ${(editId ? 'update' : 'create')} resource: ${result.message}`);
+                    }
                 }
             } catch (error) {
                 console.error("Error submitting resource:", error);
@@ -1532,96 +1713,6 @@
             });
         }
 
-        // Report functionality
-        function viewReportDetails(id) {
-            const report = reportsData.find(r => r.id == id);
-            if(report) {
-                document.getElementById('reportIdDetail').textContent = "#" + report.id;
-                document.getElementById('reporterNameDetail').textContent = report.reporter_name || 'Unknown';
-                document.getElementById('reporterEmailDetail').textContent = report.reporter_email || 'No email';
-                document.getElementById('reportedItemTypeDetail').textContent = report.item_type || 'Unknown';
-                document.getElementById('reportedItemTitleDetail').textContent = report.item_title || 'Untitled';
-                document.getElementById('reportReasonDetail').textContent = report.reason || 'No reason provided';
-                document.getElementById('reportCategoryDetail').textContent = report.category || 'Uncategorized';
-                document.getElementById('reportStatusDetail').textContent = report.status || 'Unknown';
-                document.getElementById('reportDateDetail').textContent = new Date(report.created_at).toLocaleString();
-
-                // Set the ID for later actions
-                document.getElementById('reportDetailsModal').dataset.reportId = report.id;
-
-                const modal = document.getElementById('reportDetailsModal');
-                modal.classList.remove('hidden');
-            }
-        }
-
-        function closeReportDetailsModal() {
-            document.getElementById('reportDetailsModal').classList.add('hidden');
-        }
-
-        async function updateReportStatus(status) {
-            const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
-            if(!reportId) return;
-
-            try {
-                const response = await fetch("./../api/reports/update_report_status.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: reportId, status })
-                });
-
-                const result = await response.json();
-
-                if(result.success) {
-                    closeReportDetailsModal();
-                    showSuccessMessage(`Report marked as ${status}`);
-                    loadReports(); // Reload reports list
-                } else {
-                    showErrorMessage(`Failed to update report: ${result.message}`);
-                }
-            } catch (error) {
-                console.error("Error updating report:", error);
-                showErrorMessage("Network error. Please try again.");
-            }
-        }
-
-        async function deleteReport() {
-            const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
-            if(!reportId) return;
-
-            const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "This will permanently delete the report!",
-                icon: 'warning',
-                background: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff',
-                color: document.documentElement.classList.contains('dark') ? '#e4e4e7' : '#18181b',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            });
-
-            if (result.isConfirmed) {
-                try {
-                    const response = await fetch("./../api/reports/delete_report.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: reportId })
-                    });
-
-                    const result = await response.json();
-
-                    if(result.success) {
-                        closeReportDetailsModal();
-                        showSuccessMessage('Report deleted successfully!');
-                        loadReports(); // Reload reports list
-                    } else {
-                        showErrorMessage(`Failed to delete report: ${result.message}`);
-                    }
-                } catch (error) {
-                    console.error("Error deleting report:", error);
-                    showErrorMessage("Network error. Please try again.");
-                }
-            }
-        }
 
         // --- Location Map Logic ---
         function initLocationPickerMap(lat = 48.8566, lng = 2.3522) {
@@ -1721,15 +1812,19 @@
 
                 if (result.success) {
                     const reminders = result.data || [];
-                    document.getElementById('totalRemindersCount').textContent = reminders.length;
+                    const totalRemindersCountEl = document.getElementById('totalRemindersCount');
+                    if(totalRemindersCountEl) totalRemindersCountEl.textContent = reminders.length;
 
                     // Calculate upcoming and overdue reminders
                     const now = new Date();
                     const upcoming = reminders.filter(reminder => new Date(reminder.reminder_time) > now).length;
                     const overdue = reminders.filter(reminder => new Date(reminder.reminder_time) <= now && !reminder.sent).length;
 
-                    document.getElementById('upcomingRemindersCount').textContent = upcoming;
-                    document.getElementById('pastRemindersCount').textContent = overdue;
+                    const upcomingRemindersCountEl = document.getElementById('upcomingRemindersCount');
+                    if(upcomingRemindersCountEl) upcomingRemindersCountEl.textContent = upcoming;
+
+                    const pastRemindersCountEl = document.getElementById('pastRemindersCount');
+                    if(pastRemindersCountEl) pastRemindersCountEl.textContent = overdue;
 
                     renderRemindersTable(reminders);
                 } else {

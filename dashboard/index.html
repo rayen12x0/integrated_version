@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,12 +37,31 @@
 
     <style>
         /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
-        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d4d4d8;
+            border-radius: 3px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
 
         .glass {
             background: rgba(255, 255, 255, 0.7);
@@ -49,22 +69,81 @@
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
+
         .dark .glass {
             background: rgba(9, 9, 11, 0.6);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Functional overrides */
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease-out; }
+        .page {
+            display: none;
+        }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        /* Stories Moderation Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .dark .glass-card {
+            background: rgba(9, 9, 11, 0.75);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+        }
+
+        .dark .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid #334155;
+        }
+
+        /* Table styling to match admin_stories.html */
+        .divide-y > * + * {
+            border-top: 1px solid #f1f5f9; /* light mode divider */
+        }
+
+        .dark .divide-y > * + * {
+            border-top: 1px solid #3f3f46; /* dark mode divider */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* Map Fixes */
-        #locationPickerMap { height: 300px; width: 100%; border-radius: 0.5rem; z-index: 1; }
+        #locationPickerMap {
+            height: 300px;
+            width: 100%;
+            border-radius: 0.5rem;
+            z-index: 1;
+        }
 
         /* SweetAlert Customization */
         body.dark .swal2-popup-custom {
@@ -72,6 +151,7 @@
             border: 1px solid #27272a !important;
             color: #e4e4e7 !important;
         }
+
         body:not(.dark) .swal2-popup-custom {
             background: #ffffff !important;
             color: #18181b !important;
@@ -80,84 +160,153 @@
 
         /* Pulse Animation for Notifications */
         @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+            }
         }
-        .pulse-animation { animation: pulse-red 1.5s infinite; }
+
+        .pulse-animation {
+            animation: pulse-red 1.5s infinite;
+        }
 
         /* Form validation styles */
-        .input-error { border-color: #ef4444 !important; }
-        .error-message { display: none; color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
-        .error-message.show { display: block; }
-        .error-border { border: 1px solid #ef4444 !important; border-radius: 0.5rem; }
+        .input-error {
+            border-color: #ef4444 !important;
+        }
+
+        .error-message {
+            display: none;
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-border {
+            border: 1px solid #ef4444 !important;
+            border-radius: 0.5rem;
+        }
     </style>
 </head>
 
-<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-400 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-600 dark:selection:text-indigo-200 overflow-hidden transition-colors duration-300">
+<body
+    class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-400 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-600 dark:selection:text-indigo-200 overflow-hidden transition-colors duration-300">
 
     <!-- Background Glow -->
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-40 dark:opacity-100 transition-opacity">
-        <div class="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-900/10 rounded-full blur-[100px]"></div>
-        <div class="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-emerald-500/10 dark:bg-emerald-900/10 rounded-full blur-[100px]"></div>
+    <div
+        class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-40 dark:opacity-100 transition-opacity">
+        <div
+            class="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-900/10 rounded-full blur-[100px]">
+        </div>
+        <div
+            class="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-emerald-500/10 dark:bg-emerald-900/10 rounded-full blur-[100px]">
+        </div>
     </div>
 
     <div class="flex h-screen w-full">
 
         <!-- Sidebar Navigation -->
-        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-zinc-950/50 border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 sidebar flex flex-col" id="sidebar">
+        <aside
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-zinc-950/50 border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 sidebar flex flex-col"
+            id="sidebar">
             <div class="flex items-center justify-between h-16 px-6 border-b border-zinc-200 dark:border-zinc-800/50">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-gradient-to-tr from-indigo-600 to-emerald-500 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <div
+                        class="w-8 h-8 bg-gradient-to-tr from-indigo-600 to-emerald-500 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                         <span class="font-bold text-xs">CP</span>
                     </div>
                     <h1 class="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                         Connect<span class="text-zinc-500 font-normal">Peace</span>
                     </h1>
                 </div>
-                <button class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none" id="sidebarToggle">
+                <button
+                    class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none"
+                    id="sidebarToggle">
                     <i data-lucide="x" class="stroke-[1.5] w-5 h-5"></i>
                 </button>
             </div>
 
             <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                <div class="px-3 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Menu</div>
+                <div
+                    class="px-3 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Menu</div>
 
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item active text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-zinc-800/50" data-page="overview">
-                    <i data-lucide="layout-dashboard" class="stroke-[1.5] w-4 h-4 mr-3 text-indigo-600 dark:text-indigo-400"></i>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item active text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-zinc-800/50"
+                    data-page="overview">
+                    <i data-lucide="layout-dashboard"
+                        class="stroke-[1.5] w-4 h-4 mr-3 text-indigo-600 dark:text-indigo-400"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="actions">
-                    <i data-lucide="leaf" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"></i>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                    data-page="actions">
+                    <i data-lucide="leaf"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"></i>
                     <span>Actions & Resources</span>
                 </a>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="stories">
-                    <i data-lucide="book-open" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"></i>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                    data-page="stories">
+                    <i data-lucide="book-open"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"></i>
                     <span>Stories</span>
                 </a>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="challenges">
-                    <i data-lucide="trophy" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                <a href="./stories_moderation.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="shield"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                    <span>Stories Moderation</span>
+                </a>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                    data-page="challenges">
+                    <i data-lucide="trophy"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
                     <span>Challenges</span>
                 </a>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="reminders">
-                    <i data-lucide="bell" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                    data-page="reminders">
+                    <i data-lucide="bell"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
                     <span>Reminders</span>
                 </a>
 
-                <div class="px-3 mt-6 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Support</div>
+                <div
+                    class="px-3 mt-6 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Support</div>
 
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="reports">
-                    <i data-lucide="flag" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
+                <a href="./reports.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="flag"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
                     <span>Reports</span>
                 </a>
-                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all" data-page="contact">
-                    <i data-lucide="life-buoy" class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                <a href="#"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                    data-page="contact">
+                    <i data-lucide="life-buoy"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
                     <span>Help Center</span>
                 </a>
             </nav>
 
             <div class="p-4 border-t border-zinc-200 dark:border-zinc-800/50">
-                <button class="flex w-full items-center px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors logout nav-item" data-page="logout">
+                <button
+                    class="flex w-full items-center px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors logout nav-item"
+                    data-page="logout">
                     <i data-lucide="log-out" class="stroke-[1.5] w-4 h-4 mr-3"></i>
                     <span>Sign out</span>
                 </button>
@@ -165,18 +314,23 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-300" id="mainContent">
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-300"
+            id="mainContent">
 
             <!-- Header -->
-            <header class="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800/50 glass z-20 sticky top-0 transition-colors duration-300">
+            <header
+                class="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800/50 glass z-20 sticky top-0 transition-colors duration-300">
                 <div class="flex items-center gap-4">
-                    <button class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none" id="headerToggle">
+                    <button
+                        class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none"
+                        id="headerToggle">
                         <i data-lucide="menu" class="stroke-[1.5] w-5 h-5"></i>
                     </button>
                     <!-- Search -->
                     <div class="relative hidden md:block group w-full max-w-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="search" class="h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors"></i>
+                            <i data-lucide="search"
+                                class="h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors"></i>
                         </div>
                         <input type="text"
                             class="block w-full pl-10 pr-3 py-1.5 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg leading-5 text-zinc-900 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 sm:text-sm transition-all"
@@ -186,18 +340,24 @@
 
                 <div class="flex items-center gap-3">
                     <!-- Theme Toggle -->
-                    <button onclick="toggleTheme()" class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none" id="themeToggle">
+                    <button onclick="toggleTheme()"
+                        class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none"
+                        id="themeToggle">
                         <i data-lucide="sun" class="hidden dark:block stroke-[1.5] w-5 h-5"></i>
                         <i data-lucide="moon" class="block dark:hidden stroke-[1.5] w-5 h-5"></i>
                     </button>
 
                     <!-- Notifications -->
                     <div class="relative">
-                        <button class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none notification-btn" id="notificationBtn">
+                        <button
+                            class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none notification-btn"
+                            id="notificationBtn">
                             <i data-lucide="bell" class="stroke-[1.5] w-5 h-5"></i>
-                            <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full badge" style="display: none;"></span>
+                            <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full badge"
+                                style="display: none;"></span>
                         </button>
-                        <div class="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden" id="notificationDropdown">
+                        <div class="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden"
+                            id="notificationDropdown">
                             <!-- Dynamic content injected by JS -->
                         </div>
                     </div>
@@ -206,27 +366,37 @@
 
                     <!-- User Menu -->
                     <div class="relative" id="userMenu">
-                        <button class="flex items-center gap-3 focus:outline-none group p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
-                            <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=felix" alt="User" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                            class="flex items-center gap-3 focus:outline-none group p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+                            <div
+                                class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=felix" alt="User"
+                                    class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
                             </div>
-                            <span class="text-xs font-medium text-zinc-700 dark:text-zinc-300 hidden sm:block">Alex J.</span>
-                            <i data-lucide="chevron-down" class="stroke-[1.5] w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors"></i>
+                            <span class="text-xs font-medium text-zinc-700 dark:text-zinc-300 hidden sm:block">Alex
+                                J.</span>
+                            <i data-lucide="chevron-down"
+                                class="stroke-[1.5] w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors"></i>
                         </button>
-                        <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden" id="userDropdown">
-                            <div class="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                        <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden"
+                            id="userDropdown">
+                            <div
+                                class="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
                                 <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Alex Johnson</p>
                                 <p class="text-[10px] text-zinc-500 truncate">alex@connectpeace.org</p>
                             </div>
                             <div class="py-1">
-                                <button class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
                                     <i data-lucide="user" class="w-4 h-4"></i> Profile Settings
                                 </button>
-                                <button class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
                                     <i data-lucide="settings" class="w-4 h-4"></i> Preferences
                                 </button>
                                 <div class="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
-                                <button class="w-full px-4 py-2 text-sm text-left text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors logout flex items-center gap-2">
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors logout flex items-center gap-2">
                                     <i data-lucide="log-out" class="w-4 h-4"></i> Sign out
                                 </button>
                             </div>
@@ -236,71 +406,89 @@
             </header>
 
             <!-- Page Content -->
-            <div class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+            <div
+                class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
 
                 <!-- Overview Page -->
                 <section id="overview" class="page active space-y-8">
                     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
-                            <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Dashboard</h2>
+                            <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Dashboard
+                            </h2>
                             <p class="text-sm text-zinc-500 mt-1">Welcome back, here's your impact overview.</p>
                         </div>
                         <div class="flex gap-2">
-                             <button id="createActionBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2">
+                            <button id="createActionBtn"
+                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2">
                                 <i data-lucide="plus" class="w-4 h-4"></i> New Action
-                             </button>
+                            </button>
                         </div>
                     </div>
 
                     <!-- Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <!-- Stat 1 -->
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-indigo-500/30 transition-colors shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-indigo-500/30 transition-colors shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">My Actions</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="myActionsCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">My Actions
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="myActionsCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                                <div
+                                    class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
                                     <i data-lucide="zap" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Stat 2 -->
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-emerald-500/30 transition-colors shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-emerald-500/30 transition-colors shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Resources</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="myResourcesCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Resources
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="myResourcesCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
+                                <div
+                                    class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
                                     <i data-lucide="package" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Stat 3 -->
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 transition-colors shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 transition-colors shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
                                     <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Joined</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="participatedCount">0</h3>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="participatedCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg border border-purple-500/20">
+                                <div
+                                    class="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg border border-purple-500/20">
                                     <i data-lucide="users" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Stat 4 -->
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 transition-colors shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 transition-colors shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Engagement</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="commentsCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Engagement
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="engagementCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
+                                <div
+                                    class="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
                                     <i data-lucide="message-circle" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
@@ -309,7 +497,8 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Recent Activity -->
-                        <div class="lg:col-span-3 bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 flex flex-col shadow-sm dark:shadow-none">
+                        <div
+                            class="lg:col-span-3 bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 flex flex-col shadow-sm dark:shadow-none">
                             <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-6">Recent Activity</h3>
                             <div class="flex-1 space-y-6" id="recentActivityList">
                                 <!-- Dynamic items injected by JS -->
@@ -322,43 +511,56 @@
                 <!-- Reminders Page -->
                 <section id="reminders" class="page space-y-8">
                     <div>
-                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">My Reminders</h2>
+                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">My Reminders
+                        </h2>
                         <p class="text-sm text-zinc-500 mt-1">Manage your upcoming events and deadlines.</p>
                     </div>
 
                     <!-- Reminders Stats -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total Reminders</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="totalRemindersCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total
+                                        Reminders</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="totalRemindersCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                                <div
+                                    class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
                                     <i data-lucide="bell" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Upcoming</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="upcomingRemindersCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Upcoming
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="upcomingRemindersCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
+                                <div
+                                    class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
                                     <i data-lucide="calendar-clock" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Past Due</p>
-                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="pastRemindersCount">0</h3>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Past Due
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="pastRemindersCount">0</h3>
                                 </div>
-                                <div class="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/20">
+                                <div
+                                    class="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/20">
                                     <i data-lucide="clock-alert" class="stroke-[1.5] w-5 h-5"></i>
                                 </div>
                             </div>
@@ -366,40 +568,63 @@
                     </div>
 
                     <!-- Reminders Table -->
-                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
-                        <div class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div
+                        class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl shadow-sm dark:shadow-none overflow-hidden">
+                        <div
+                            class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">Reminder List</h3>
                             <div class="flex gap-3">
-                                <select id="reminderStatusFilter" class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
+                                <select id="reminderStatusFilter"
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
                                     <option value="">All Statuses</option>
                                     <option value="upcoming">Upcoming</option>
                                     <option value="overdue">Overdue</option>
                                     <option value="sent">Sent</option>
                                 </select>
-                                <input type="text" id="remindersSearch" placeholder="Search reminders..." class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
+                                <input type="text" id="remindersSearch" placeholder="Search reminders..."
+                                    class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
                             </div>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse admin-table text-zinc-700 dark:text-zinc-300">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                            <table
+                                class="w-full text-left border-collapse admin-table text-zinc-700 dark:text-zinc-300">
+                                <thead
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Event</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Type</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Reminder Time</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Created At</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            ID</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Event</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Type</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Reminder Time</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Status</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Created At</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="remindersTableBody" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
+                                <tbody id="remindersTableBody"
+                                    class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
                                     <!-- Reminders will be populated by JS -->
                                     <tr>
                                         <td colspan="7" class="py-8 text-center text-zinc-500">
                                             <div class="flex flex-col items-center justify-center">
-                                                <i data-lucide="bell-off" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                                <i data-lucide="bell-off"
+                                                    class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
                                                 <p class="text-sm">No reminders set yet</p>
-                                                <p class="text-xs text-zinc-400 mt-1">Create your first reminder from the calendar</p>
+                                                <p class="text-xs text-zinc-400 mt-1">Create your first reminder from
+                                                    the calendar</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -412,40 +637,66 @@
                 <!-- Actions & Resources Page -->
                 <section id="actions" class="page space-y-8">
                     <div>
-                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Actions & Resources</h2>
+                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Actions &
+                            Resources</h2>
                         <p class="text-sm text-zinc-500 mt-1">Manage your contributions.</p>
                     </div>
 
                     <!-- Actions Table Section -->
-                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                        <div class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div
+                        class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                        <div
+                            class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">My Actions</h3>
                             <div class="flex gap-3">
-                                <select id="my-actions-status-filter" class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
+                                <select id="my-actions-status-filter"
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
                                     <option value="">All Status</option>
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
                                 </select>
-                                <input type="text" id="my-actions-search" placeholder="Search actions..." class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
-                                <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2" onclick="openCreateModal('action')">
+                                <input type="text" id="my-actions-search" placeholder="Search actions..."
+                                    class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
+                                <button
+                                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"
+                                    onclick="openCreateModal('action')">
                                     <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create
                                 </button>
                             </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse admin-table">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                                <thead
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Title</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Category</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Participants</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Manage</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            ID</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                            Image</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Title</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Category</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Status</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Participants</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Date</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Manage</th>
                                     </tr>
                                 </thead>
-                                <tbody id="my-actions-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
+                                <tbody id="my-actions-table-body"
+                                    class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
                                     <!-- Populated by JS -->
                                 </tbody>
                             </table>
@@ -453,35 +704,60 @@
                     </div>
 
                     <!-- Resources Table Section -->
-                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                        <div class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div
+                        class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                        <div
+                            class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">My Resources</h3>
-                             <div class="flex gap-3">
-                                <select id="my-resources-status-filter" class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-emerald-500">
+                            <div class="flex gap-3">
+                                <select id="my-resources-status-filter"
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-emerald-500">
                                     <option value="">All Status</option>
                                     <option value="available">Available</option>
                                     <option value="claimed">Claimed</option>
                                 </select>
-                                <input type="text" id="my-resources-search" placeholder="Search resources..." class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-emerald-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
-                                <button class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2" onclick="openCreateModal('resource')">
+                                <input type="text" id="my-resources-search" placeholder="Search resources..."
+                                    class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-emerald-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
+                                <button
+                                    class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2"
+                                    onclick="openCreateModal('resource')">
                                     <i data-lucide="package-plus" class="w-3.5 h-3.5"></i> Add
                                 </button>
                             </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse admin-table">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                                <thead
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Name</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Category</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Type</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Location</th>
-                                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Manage</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                            ID</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                            Image</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Name</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Category</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Type</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Status</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Location</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Manage</th>
                                     </tr>
                                 </thead>
-                                <tbody id="my-resources-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
+                                <tbody id="my-resources-table-body"
+                                    class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
                                     <!-- Populated by JS -->
                                 </tbody>
                             </table>
@@ -489,136 +765,250 @@
                     </div>
                 </section>
 
-                <!-- Reports Page -->
-                <section id="reports" class="page space-y-8">
-                     <div>
-                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Reports Management</h2>
-                        <p class="text-sm text-zinc-500 mt-1">Admin moderation tools.</p>
+                <!-- Stories Page -->
+                <section id="stories" class="page space-y-8">
+                    <div>
+                        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">My Stories
+                        </h2>
+                        <p class="text-sm text-zinc-500 mt-1">Share your journey and inspire others.</p>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
-                            <div class="text-2xl font-bold text-zinc-900 dark:text-zinc-100" id="totalReportsCount">0</div>
-                            <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Total</div>
+                    <!-- Stories Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total
+                                        Stories</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="myTotalStoriesCount">0</h3>
+                                </div>
+                                <div
+                                    class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                                    <i data-lucide="book-open" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
                         </div>
-                         <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
-                            <div class="text-2xl font-bold text-amber-500" id="pendingReportsCount">0</div>
-                            <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Pending</div>
+
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Published
+                                    </p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="myPublishedStoriesCount">0</h3>
+                                </div>
+                                <div
+                                    class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
+                                    <i data-lucide="check-circle" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
                         </div>
-                         <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
-                            <div class="text-2xl font-bold text-emerald-500" id="resolvedReportsCount">0</div>
-                            <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Resolved</div>
+
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total
+                                        Views</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight"
+                                        id="myStoriesViewsCount">0</h3>
+                                </div>
+                                <div
+                                    class="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
+                                    <i data-lucide="eye" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                         <div class="p-4 border-b border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-900/30 flex flex-wrap gap-4">
-                             <input type="text" id="searchReports" placeholder="Search reports..." class="w-full sm:w-64 p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200">
-                             <select id="statusFilter" class="p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 focus:outline-none">
-                                 <option value="">All Statuses</option>
-                                 <option value="pending">Pending</option>
-                                 <option value="resolved">Resolved</option>
-                             </select>
-                             <select id="categoryFilter" class="p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 focus:outline-none">
-                                 <option value="">All Categories</option>
-                                 <option value="spam">Spam</option>
-                                 <option value="inappropriate">Inappropriate</option>
-                             </select>
-                         </div>
-                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse reports-table admin-table text-zinc-700 dark:text-zinc-300">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                    <!-- Stories Table Section -->
+                    <div
+                        class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                        <div
+                            class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">My Stories List</h3>
+                            <div class="flex gap-3">
+                                <select id="my-stories-status-filter"
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none focus:border-indigo-500">
+                                    <option value="">All Status</option>
+                                    <option value="published">Published</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="draft">Draft</option>
+                                </select>
+                                <input type="text" id="my-stories-search" placeholder="Search stories..."
+                                    class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200 w-full sm:w-48 placeholder:text-zinc-500">
+                                <button
+                                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"
+                                    onclick="window.location.href='../vue/stories.html?create=true'">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse admin-table">
+                                <thead
+                                    class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">ID</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Reporter</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Item</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Type</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Category</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Reason</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Status</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Date</th>
-                                        <th class="py-3 px-5 text-xs text-zinc-500 uppercase">Actions</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Title</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Theme</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Status</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Views</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Date</th>
+                                        <th
+                                            class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                            Manage</th>
                                     </tr>
                                 </thead>
-                                <tbody id="reports-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
-                                    <!-- Reports JS Load -->
+                                <tbody id="my-stories-table-body"
+                                    class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
+                                    <!-- Populated by JS -->
                                 </tbody>
                             </table>
-                         </div>
-                    </div>
-                </section>
-
-                <!-- Contact & Settings (Simplified for this view) -->
-                <section id="contact" class="page space-y-8">
-                     <div><h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Help Center</h2></div>
-                     <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 shadow-sm dark:shadow-none">
-                        <form id="contactForm" class="space-y-4 max-w-lg">
-                            <input type="text" placeholder="Subject" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
-                            <textarea placeholder="Message" rows="4" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"></textarea>
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">Send</button>
-                        </form>
-                     </div>
-                </section>
-
-                <!-- Hidden Modals -->
-
-                <!-- Report Details Modal -->
-                <div id="reportDetailsModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
-                    <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 transition-all">
-                         <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                            <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Report Details</h2>
-                            <button class="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" onclick="closeReportDetailsModal()">
-                                <i data-lucide="x" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                        <div class="p-6 space-y-6">
-                             <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1">
-                                    <label class="text-xs font-semibold text-zinc-500 uppercase">ID: <span id="reportIdDetail" class="text-zinc-900 dark:text-zinc-200">#</span></label>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-xs font-semibold text-zinc-500 uppercase">Status: <span id="reportStatusDetail" class="text-zinc-900 dark:text-zinc-200">Pending</span></label>
-                                </div>
-                                 <div class="space-y-1"><label class="text-xs font-semibold text-zinc-500 uppercase">Category: <span id="reportCategoryDetail" class="text-zinc-900 dark:text-zinc-200"></span></label></div>
-                                 <div class="space-y-1"><label class="text-xs font-semibold text-zinc-500 uppercase">Date: <span id="reportDateDetail" class="text-zinc-900 dark:text-zinc-200"></span></label></div>
-                             </div>
-
-                             <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                                <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">Reporter</h3>
-                                <p id="reporterNameDetail" class="text-sm text-zinc-700 dark:text-zinc-400"></p>
-                                <p id="reporterEmailDetail" class="text-xs text-zinc-500"></p>
-                             </div>
-
-                             <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                                <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">Reported Item</h3>
-                                <p class="text-sm"><span class="text-zinc-500">Type:</span> <span id="reportedItemTypeDetail" class="text-zinc-700 dark:text-zinc-300"></span></p>
-                                <p class="text-sm"><span class="text-zinc-500">Title:</span> <span id="reportedItemTitleDetail" class="text-zinc-700 dark:text-zinc-300"></span></p>
-                                <a href="#" id="reportedItemLink" class="text-xs text-indigo-500 hover:underline mt-1 inline-block">View Item</a>
-                                <p class="mt-2 text-sm text-zinc-500 font-semibold">Reason:</p>
-                                <p id="reportReasonDetail" class="text-sm text-zinc-700 dark:text-zinc-300 italic"></p>
-                             </div>
-
-                             <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                                <label class="text-xs font-semibold text-zinc-500 uppercase">Admin Notes</label>
-                                <textarea id="adminNotesTextarea" class="w-full mt-2 p-3 text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:ring-1 focus:ring-indigo-500/50 focus:outline-none text-zinc-900 dark:text-zinc-200" placeholder="Internal notes..."></textarea>
-                                <button onclick="saveReportNotes()" class="mt-2 text-xs text-indigo-500 hover:text-indigo-400">Save Notes</button>
-                             </div>
-                        </div>
-                        <div class="p-6 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 flex justify-end gap-3">
-                            <button class="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800" onclick="updateReportStatus('reviewed')">Mark Reviewed</button>
-                            <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-500" onclick="updateReportStatus('resolved')">Resolve</button>
-                            <button class="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm hover:bg-rose-500" onclick="deleteReport()">Delete</button>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
 
+<!-- Challenges Page -->
+<section id="challenges" class="page space-y-8">
+    <div>
+        <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Challenges</h2>
+        <p class="text-sm text-zinc-500 mt-1">Track your impact goals and achievements.</p>
+    </div>
+
+    <!-- Challenges Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Active Challenges</p>
+                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight">0</h3>
+                </div>
+                <div class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                    <i data-lucide="trophy" class="stroke-[1.5] w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Completed</p>
+                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight">0</h3>
+                </div>
+                <div class="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20">
+                    <i data-lucide="check-circle" class="stroke-[1.5] w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 shadow-sm dark:shadow-none">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Points Earned</p>
+                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight">0</h3>
+                </div>
+                <div class="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-500/20">
+                    <i data-lucide="star" class="stroke-[1.5] w-5 h-5"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Challenges List Section -->
+    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+        <div class="p-5 border-b border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 class="font-semibold text-zinc-900 dark:text-zinc-200 text-sm">My Challenges</h3>
+            <div class="flex gap-3">
+                <select id="my-challenges-status-filter"
+                    class="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 py-2 px-3 focus:outline-none">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                </select>
+                <input type="text" id="my-challenges-search" placeholder="Search challenges..."
+                    class="px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none text-zinc-900 dark:text-zinc-200">
+                <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Join
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse admin-table">
+                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                    <tr>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Challenge Name</th>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Category</th>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Progress</th>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Deadline</th>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+                        <th class="py-3 px-5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="my-challenges-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-zinc-700 dark:text-zinc-300 text-sm">
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-zinc-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="trophy" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No challenges available yet</p>
+                                <p class="text-xs text-zinc-400 mt-1">Join your first challenge to start tracking progress!</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Contact & Settings (Simplified for this view) -->
+<section id="contact" class="page space-y-8">
+                        <div>
+                            <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Help
+                                Center</h2>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-6 shadow-sm dark:shadow-none">
+                            <form id="contactForm" class="space-y-4 max-w-lg">
+                                <input type="text" placeholder="Subject"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
+                                <textarea placeholder="Message" rows="4"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"></textarea>
+                                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">Send</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <!-- Hidden Modals -->
+
+                    
             </div>
         </main>
     </div>
 
     <!-- Create Modal -->
-    <div id="createModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
-        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden m-4 max-h-[90vh] flex flex-col transform scale-95 transition-all">
+    <div id="createModal"
+        class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
+        <div
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden m-4 max-h-[90vh] flex flex-col transform scale-95 transition-all">
             <div class="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-zinc-800">
                 <h2 id="modalTitle" class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Create New</h2>
                 <button class="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" id="closeModal">
@@ -627,8 +1017,15 @@
             </div>
 
             <div class="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30">
-                <button class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn active" data-tab="action-tab">Action</button>
-                <button class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn" data-tab="resource-tab">Resource</button>
+                <button
+                    class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn active"
+                    data-tab="action-tab">Action</button>
+                <button
+                    class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn"
+                    data-tab="resource-tab">Resource</button>
+                <button
+                    class="flex-1 py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 border-b-2 border-transparent transition-colors tab-btn"
+                    data-tab="story-tab">Story</button>
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-zinc-950">
@@ -639,136 +1036,320 @@
 
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Title</label>
-                            <input type="text" id="actionTitle" name="title" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none" placeholder="e.g. Beach Cleanup">
+                            <input type="text" id="actionTitle" name="title"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"
+                                placeholder="e.g. Beach Cleanup">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                             <div class="space-y-1">
+                            <div class="space-y-1">
                                 <label class="text-xs font-semibold text-zinc-500 uppercase">Category</label>
-                                <select id="actionCategory" name="category" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
+                                <select id="actionCategory" name="category"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
                                     <option value="">Select</option>
                                     <option value="environment">Environment</option>
                                     <option value="education">Education</option>
                                     <option value="social">Social</option>
                                 </select>
-                             </div>
-                             <div class="space-y-1">
+                            </div>
+                            <div class="space-y-1">
                                 <label class="text-xs font-semibold text-zinc-500 uppercase">Theme</label>
-                                <input type="text" id="actionTheme" name="theme" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
-                             </div>
+                                <input type="text" id="actionTheme" name="theme"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none">
+                            </div>
                         </div>
 
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Date & Time</label>
-                            <input type="datetime-local" id="actionDateTime" name="start_time" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none dark:[color-scheme:dark]">
+                            <input type="datetime-local" id="actionDateTime" name="start_time"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none dark:[color-scheme:dark]">
                         </div>
 
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Description</label>
-                            <textarea id="actionDescription" name="description" rows="3" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"></textarea>
+                            <textarea id="actionDescription" name="description" rows="3"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-indigo-500/50 outline-none"></textarea>
                         </div>
 
                         <!-- Location Inputs -->
                         <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                             <label class="text-xs font-semibold text-zinc-500 uppercase">Location</label>
-                             <div class="grid grid-cols-2 gap-2">
-                                 <select id="actionCountrySelect" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200"></select>
-                                 <input type="text" id="actionLocationDetails" placeholder="City/Street" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200">
-                             </div>
-                             <input type="hidden" id="actionLatitude" name="latitude">
-                             <input type="hidden" id="actionLongitude" name="longitude">
-                             <input type="hidden" id="actionCountry" name="country">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Location</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="actionCountrySelect"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200"></select>
+                                <input type="text" id="actionLocationDetails" placeholder="City/Street"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200">
+                            </div>
+                            <input type="hidden" id="actionLatitude" name="latitude">
+                            <input type="hidden" id="actionLongitude" name="longitude">
+                            <input type="hidden" id="actionCountry" name="country">
 
-                             <button type="button" class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn" data-form="action">
+                            <button type="button"
+                                class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn"
+                                data-form="action">
                                 <i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i> Pick on Map
-                             </button>
+                            </button>
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all mt-4 btn-large">Create Action</button>
+                        <button type="submit"
+                            class="w-full py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all mt-4 btn-large">Create
+                            Action</button>
                     </form>
                 </div>
 
                 <!-- Resource Form -->
                 <div id="resource-tab" class="tab-content hidden space-y-4">
-                     <form id="resourceForm" class="space-y-4">
+                    <form id="resourceForm" class="space-y-4">
                         <input type="hidden" id="editResourceId" value="">
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Resource Name</label>
-                            <input type="text" id="resourceName" name="resource_name" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none">
+                            <input type="text" id="resourceName" name="resource_name"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Category</label>
-                            <input type="text" id="resourceCategory" name="category" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none">
+                            <input type="text" id="resourceCategory" name="category"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none">
                         </div>
-                         <div class="space-y-1">
-                             <label class="text-xs font-semibold text-zinc-500 uppercase">Type</label>
-                             <div class="flex gap-4 p-2 radio-group" id="resourceType">
-                                 <label class="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"><input type="radio" name="type" value="offer" checked class="text-emerald-600 dark:text-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500/50"> Offer</label>
-                                 <label class="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"><input type="radio" name="type" value="request" class="text-emerald-600 dark:text-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500/50"> Request</label>
-                             </div>
-                         </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Type</label>
+                            <div class="flex gap-4 p-2 radio-group" id="resourceType">
+                                <label
+                                    class="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"><input
+                                        type="radio" name="type" value="offer" checked
+                                        class="text-emerald-600 dark:text-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500/50">
+                                    Offer</label>
+                                <label
+                                    class="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"><input
+                                        type="radio" name="type" value="request"
+                                        class="text-emerald-600 dark:text-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500/50">
+                                    Request</label>
+                            </div>
+                        </div>
 
-                         <div class="space-y-1">
+                        <div class="space-y-1">
                             <label class="text-xs font-semibold text-zinc-500 uppercase">Description</label>
-                            <textarea id="resourceDescription" name="description" rows="2" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none"></textarea>
+                            <textarea id="resourceDescription" name="description" rows="2"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-emerald-500/50 outline-none"></textarea>
                         </div>
 
-                         <!-- Location Inputs -->
-                         <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                             <label class="text-xs font-semibold text-zinc-500 uppercase">Location</label>
-                             <div class="grid grid-cols-2 gap-2">
-                                 <select id="resourceCountrySelect" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200"></select>
-                                 <input type="text" id="resourceLocationDetails" placeholder="Details" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200">
-                             </div>
-                             <input type="hidden" id="resourceLatitude" name="latitude">
-                             <input type="hidden" id="resourceLongitude" name="longitude">
-                             <input type="hidden" id="resourceCountry" name="country">
+                        <!-- Location Inputs -->
+                        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Location</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="resourceCountrySelect"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200"></select>
+                                <input type="text" id="resourceLocationDetails" placeholder="Details"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200">
+                            </div>
+                            <input type="hidden" id="resourceLatitude" name="latitude">
+                            <input type="hidden" id="resourceLongitude" name="longitude">
+                            <input type="hidden" id="resourceCountry" name="country">
 
-                             <button type="button" class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn" data-form="resource">
+                            <button type="button"
+                                class="w-full py-2 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm font-medium hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors pick-location-btn"
+                                data-form="resource">
                                 <i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i> Pick on Map
-                             </button>
-                         </div>
+                            </button>
+                        </div>
 
-                         <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition-all mt-4 btn-large">Create Resource</button>
-                     </form>
+                        <button type="submit"
+                            class="w-full py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:bg-emerald-500 transition-all mt-4 btn-large">Create
+                            Resource</button>
+                    </form>
+                </div>
+
+                <!-- Story Form -->
+                <div id="story-tab" class="tab-content hidden space-y-4">
+                    <form id="storyForm" class="space-y-4">
+                        <input type="hidden" id="editStoryId" value="">
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Title</label>
+                            <input type="text" id="storyTitle" name="title"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-amber-500/50 outline-none"
+                                placeholder="My Inspiring Story">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-zinc-500 uppercase">Theme</label>
+                                <select id="storyTheme" name="theme"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-amber-500/50 outline-none">
+                                    <option value="">Select Theme</option>
+                                    <option value="peace">Peace Building</option>
+                                    <option value="community">Community</option>
+                                    <option value="education">Education</option>
+                                    <option value="resilience">Resilience</option>
+                                    <option value="innovation">Innovation</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-zinc-500 uppercase">Language</label>
+                                <select id="storyLanguage" name="language"
+                                    class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-amber-500/50 outline-none">
+                                    <option value="en">English</option>
+                                    <option value="fr">French</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="ar">Arabic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Content</label>
+                            <textarea id="storyContent" name="content" rows="6"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-amber-500/50 outline-none"
+                                placeholder="Share your story..."></textarea>
+                            <p class="text-xs text-zinc-500 text-right"><span id="wordCount">0</span> words</p>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Cover Image (Optional)</label>
+                            <input type="file" id="storyImage" name="image" accept="image/*"
+                                class="w-full p-2 text-sm text-zinc-500 border border-zinc-200 dark:border-zinc-800 rounded-lg cursor-pointer bg-zinc-50 dark:bg-zinc-900 focus:outline-none">
+                            <div id="storyImagePreviewContainer" class="mt-2 hidden">
+                                <img id="storyImagePreview" class="w-full h-40 object-cover rounded-lg" alt="Preview">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-zinc-500 uppercase">Author Name (Public)</label>
+                            <input type="text" id="storyAuthorName" name="author_name"
+                                class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:ring-1 focus:ring-amber-500/50 outline-none">
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-2.5 bg-amber-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-amber-500/20 hover:bg-amber-500 transition-all mt-4 btn-large">
+                            Submit Story
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Location Picker Modal -->
-    <div id="locationPickerModal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
-        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-full max-w-2xl rounded-xl shadow-2xl p-0 transform scale-95 transition-all">
+    <div id="locationPickerModal"
+        class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
+        <div
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-full max-w-2xl rounded-xl shadow-2xl p-0 transform scale-95 transition-all">
             <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">Select Location</h2>
+                <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">Select Location
+                </h2>
                 <button class="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300" id="closeLocationPicker">
-                     <i data-lucide="x" class="w-5 h-5"></i>
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             <div class="relative bg-zinc-100 dark:bg-zinc-900">
-                 <div id="locationPickerMap"></div>
+                <div id="locationPickerMap"></div>
             </div>
             <div class="p-4 bg-zinc-50 dark:bg-zinc-900/30 flex justify-between items-center">
-                 <div class="text-xs text-zinc-500">
-                     <span id="selectedCoords">No location selected</span>
-                     <span id="detectedCountry" class="ml-2 font-semibold text-indigo-500"></span>
-                 </div>
-                 <div class="flex gap-2">
-                     <button id="cancelLocationBtn" class="px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">Cancel</button>
-                     <button id="confirmLocationBtn" class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirm</button>
-                 </div>
+                <div class="text-xs text-zinc-500">
+                    <span id="selectedCoords">No location selected</span>
+                    <span id="detectedCountry" class="ml-2 font-semibold text-indigo-500"></span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="cancelLocationBtn"
+                        class="px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200">Cancel</button>
+                    <button id="confirmLocationBtn"
+                        class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-500 shadow-lg shadow-indigo-500/20">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Story Details Modal -->
+    <div id="storyDetailsModal"
+        class="fixed inset-0 z-[80] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
+        <div
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden m-4 max-h-[90vh] flex flex-col transform scale-95 transition-all">
 
-    <!-- Import main app functionality -->
-    <script src="./assets/js/countries.js"></script>
-    <script src="script.js"></script>
+            <div class="relative h-48 md:h-64 bg-zinc-200 dark:bg-zinc-800">
+                <img id="storyDetailImage" src="" alt="Story Cover" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                <button
+                    class="absolute top-4 right-4 text-white hover:text-zinc-200 bg-black/20 hover:bg-black/40 rounded-full p-1 backdrop-blur-sm transition-all"
+                    id="closeStoryDetailsModal">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+                <div class="absolute bottom-6 left-6 right-6">
+                    <span id="storyDetailTheme"
+                        class="px-2 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-xs font-medium backdrop-blur-sm mb-2 inline-block">Theme</span>
+                    <h2 id="storyDetailTitle" class="text-2xl md:text-3xl font-bold text-white leading-tight">Story
+                        Title</h2>
+                    <div class="flex items-center gap-3 mt-2 text-zinc-300 text-sm">
+                        <span id="storyDetailAuthor">Author</span>
+                        <span>•</span>
+                        <span id="storyDetailDate">Date</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto bg-white dark:bg-zinc-950">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:divide-x dark:divide-zinc-800">
+                    <!-- Story Content -->
+                    <div class="lg:col-span-2 p-6 md:p-8 space-y-6">
+                        <div id="storyDetailContent"
+                            class="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                            <!-- Content injected here -->
+                        </div>
+
+                        <!-- Reactions Section -->
+                        <div class="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                            <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Reactions</h3>
+                            <div class="flex flex-wrap gap-3" id="storyReactionsContainer">
+                                <!-- Reactions injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="lg:col-span-1 bg-zinc-50 dark:bg-zinc-900/30 flex flex-col h-[500px] lg:h-auto">
+                        <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                            <h3 class="font-semibold text-zinc-900 dark:text-zinc-100">Comments (<span
+                                    id="storyCommentsCount">0</span>)</h3>
+                        </div>
+
+                        <div id="storyCommentsList" class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <!-- Comments injected here -->
+                            <p class="text-center text-zinc-500 text-sm py-4">No comments yet. Be the first to share
+                                your thoughts!</p>
+                        </div>
+
+                        <div class="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                            <form id="storyCommentForm" class="relative">
+                                <input type="hidden" id="commentStoryId" value="">
+                                <textarea id="storyCommentInput" rows="2"
+                                    class="w-full p-3 pr-10 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500/50 outline-none resize-none"
+                                    placeholder="Write a comment..."></textarea>
+                                <button type="submit"
+                                    class="absolute bottom-2 right-2 p-1.5 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">
+                                    <i data-lucide="send" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add image preview elements to modals -->
+        <div id="actionImagePreviewContainer" class="mt-2 hidden"><img id="actionImagePreview"
+                class="w-32 h-32 object-cover rounded" alt="Preview"></div>
+        <div id="resourceImagePreviewContainer" class="mt-2 hidden"><img id="resourceImagePreview"
+                class="w-32 h-32 object-cover rounded" alt="Preview"></div>
+
+        <!-- Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <!-- Import main app functionality -->
+        <script src="./assets/js/countries.js"></script>
+        <script src="script.js"></script>
+
 
 </body>
+
 </html>

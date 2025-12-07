@@ -55,12 +55,10 @@
         }
     </style>
     <!-- jQuery - Load with integrity check and fallback -->
-    <script
-        src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-        crossorigin="anonymous"
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"
         onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'">
-    </script>
+        </script>
     <script>
         if (typeof jQuery === 'undefined') {
             alert('Application error: Required libraries failed to load. Please refresh the page.');
@@ -81,13 +79,13 @@
                         class="text-zinc-400">Peace</span></span>
             </div>
             <ul class="nav-menu hidden items-center gap-8 md:flex">
-                <li><a href="#"
+                <li><a href="index.html"
                         class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Home</a>
                 </li>
-                <li><a href="#"
+                <li><a href="index.html"
                         class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Actions
                         & Aide</a></li>
-                <li><a href="#"
+                <li><a href="stories.html"
                         class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Stories</a>
                 </li>
                 <li><a href="#"
@@ -131,7 +129,8 @@
             <h1 class="mb-6 font-sans text-5xl font-semibold tracking-tight text-white md:text-7xl">Small Acts,
                 <br /><span
                     class="bg-gradient-to-r from-primary via-accent-green to-coral bg-clip-text text-transparent">Big
-                    Impact</span></h1>
+                    Impact</span>
+            </h1>
             <div
                 class="mb-6 inline-flex items-center rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 backdrop-blur-sm">
                 <span class="text-xs font-medium text-zinc-300">Connect for Peace Community</span>
@@ -269,11 +268,13 @@
                 </div>
                 <div class="flex flex-1 flex-col overflow-hidden p-8 min-h-0">
                     <div class="flex-1 overflow-y-auto max-h-[calc(90vh-250px)] pr-2">
-                        <h2 id="modalTitle" class="mb-4 text-2xl font-semibold tracking-tight text-zinc-900">Action Title
+                        <h2 id="modalTitle" class="mb-4 text-2xl font-semibold tracking-tight text-zinc-900">Action
+                            Title
                         </h2>
                         <div class="mb-8 grid grid-cols-2 gap-4 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
                             <div>
-                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">📍 Location</span>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">📍
+                                    Location</span>
                                 <p id="modalLocation" class="mt-1 text-sm font-medium text-zinc-700">Location</p>
                             </div>
                             <div>
@@ -286,7 +287,8 @@
                                 <p id="modalParticipants" class="mt-1 text-sm font-medium text-zinc-700">0 people</p>
                             </div>
                             <div>
-                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">⏱️ Duration</span>
+                                <span class="text-xs font-medium text-zinc-400 uppercase tracking-wider">⏱️
+                                    Duration</span>
                                 <p id="modalDuration" class="mt-1 text-sm font-medium text-zinc-700">Duration</p>
                             </div>
                         </div>
@@ -312,9 +314,11 @@
                                 </div>
                                 <div class="add-comment-section">
                                     <div class="flex items-center gap-3 mb-3">
-                                        <img id="commentUserAvatar" src="/placeholder.svg" alt="" class="h-8 w-8 rounded-full border border-zinc-200">
+                                        <img id="commentUserAvatar" src="/placeholder.svg" alt=""
+                                            class="h-8 w-8 rounded-full border border-zinc-200">
                                         <div>
-                                            <p id="commentUserName" class="text-sm font-medium text-zinc-700">User Name</p>
+                                            <p id="commentUserName" class="text-sm font-medium text-zinc-700">User Name
+                                            </p>
                                         </div>
                                     </div>
                                     <textarea id="commentInput" placeholder="Add a comment..."
@@ -349,7 +353,8 @@
     </div>
 
     <!-- Report Modal -->
-    <div id="reportModal" class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+    <div id="reportModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
         <div class="modal-content relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl p-6">
             <button class="modal-close text-zinc-500 hover:text-zinc-900" onclick="closeReportModal()">
                 <i data-lucide="x" class="h-5 w-5"></i>
@@ -395,7 +400,8 @@
     </div>
 
     <!-- Reminder Modal -->
-    <div id="reminderModal" class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
+    <div id="reminderModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
         <div class="modal-content relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl p-6">
             <button class="modal-close text-zinc-500 hover:text-zinc-900" onclick="closeReminderModal()">
                 <i data-lucide="x" class="h-5 w-5"></i>
@@ -406,18 +412,22 @@
                     <input type="hidden" id="reminderItemId" value="">
                     <input type="hidden" id="reminderItemType" value="">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-2">When would you like to be reminded?</label>
+                        <label class="block text-xs font-medium text-zinc-500 mb-2">When would you like to be
+                            reminded?</label>
                         <div class="space-y-2">
                             <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
-                                <input type="radio" name="reminderTime" value="1h" class="text-zinc-900 focus:ring-zinc-900">
+                                <input type="radio" name="reminderTime" value="1h"
+                                    class="text-zinc-900 focus:ring-zinc-900">
                                 1 hour before
                             </label>
                             <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
-                                <input type="radio" name="reminderTime" value="1d" class="text-zinc-900 focus:ring-zinc-900">
+                                <input type="radio" name="reminderTime" value="1d"
+                                    class="text-zinc-900 focus:ring-zinc-900">
                                 1 day before
                             </label>
                             <label class="flex items-center gap-3 text-sm text-zinc-600 cursor-pointer">
-                                <input type="radio" name="reminderTime" value="1w" class="text-zinc-900 focus:ring-zinc-900">
+                                <input type="radio" name="reminderTime" value="1w"
+                                    class="text-zinc-900 focus:ring-zinc-900">
                                 1 week before
                             </label>
                         </div>
@@ -428,7 +438,8 @@
                             class="btn btn-outline px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
                             onclick="closeReminderModal()">Cancel</button>
                         <button type="submit"
-                            class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg">Create Reminder</button>
+                            class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg">Create
+                            Reminder</button>
                     </div>
                 </form>
             </div>
@@ -446,11 +457,13 @@
                 </button>
             </div>
             <div class="tabs flex border-b border-zinc-200 px-6">
-                <button class="tab-btn active mr-6 border-b-2 border-zinc-900 py-3 text-sm font-medium text-zinc-900" data-tab="action-tab">
+                <button class="tab-btn active mr-6 border-b-2 border-zinc-900 py-3 text-sm font-medium text-zinc-900"
+                    data-tab="action-tab">
                     <i data-lucide="eco" class="h-4 w-4 mr-2"></i> Create Action
                 </button>
                 <button
-                    class="tab-btn border-b-2 border-transparent py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700" data-tab="resource-tab">
+                    class="tab-btn border-b-2 border-transparent py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700"
+                    data-tab="resource-tab">
                     <i data-lucide="inventory" class="h-4 w-4 mr-2"></i> Offer/Request Resource
                 </button>
             </div>
@@ -765,8 +778,15 @@
     <script src="assets/js/map.js"></script>
     <script src="assets/js/script.js"></script>
     <script src="assets/js/fish.js"></script>
+    <script src="assets/js/ai_features.js"></script>
     <script>
         lucide.createIcons();
+        // Initialize AI Chatbot
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AI_Features) {
+                window.AI_Features.initChatbot();
+            }
+        });
     </script>
     <script type="module" src="https://unpkg.com/@splinetool/viewer@1.11.2/build/spline-viewer.js"></script>
 </body>

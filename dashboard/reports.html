@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports Management - Connect for Peace</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        border: 'rgba(255, 255, 255, 0.08)',
+                        surface: 'rgba(255, 255, 255, 0.02)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d4d4d8;
+            border-radius: 3px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1aa;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .glass {
+            background: rgba(9, 9, 11, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Functional overrides */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Map Fixes */
+        #locationPickerMap {
+            height: 300px;
+            width: 100%;
+            border-radius: 0.5rem;
+            z-index: 1;
+        }
+
+        /* SweetAlert Customization */
+        body.dark .swal2-popup-custom {
+            background: #18181b !important;
+            border: 1px solid #27272a !important;
+            color: #e4e4e7 !important;
+        }
+
+        body:not(.dark) .swal2-popup-custom {
+            background: #ffffff !important;
+            color: #18181b !important;
+            border: 1px solid #e4e4e7 !important;
+        }
+
+        /* Pulse Animation for Notifications */
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(244, 63, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        /* Form validation styles */
+        .input-error {
+            border-color: #ef4444 !important;
+        }
+
+        .error-message {
+            display: none;
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-border {
+            border: 1px solid #ef4444 !important;
+            border-radius: 0.5rem;
+        }
+
+        /* Admin table styling */
+        .admin-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .admin-table thead {
+            background-color: #f8fafc;
+        }
+
+        .dark .admin-table thead {
+            background-color: #1d1d1f;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        
+        .divide-y > * + * {
+            border-top: 1px solid #f1f5f9; /* light mode divider */
+        }
+        
+        .dark .divide-y > * + * {
+            border-top: 1px solid #3f3f46; /* dark mode divider */
+        }
+    </style>
+</head>
+
+<body
+    class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-400 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-600 dark:selection:text-indigo-200 overflow-hidden transition-colors duration-300">
+
+    <!-- Background Glow -->
+    <div
+        class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-40 dark:opacity-100 transition-opacity">
+        <div
+            class="absolute top-[-10%] left-[20%] w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-900/10 rounded-full blur-[100px]">
+        </div>
+        <div
+            class="absolute bottom-[-10%] right-[10%] w-[600px] h-[600px] bg-emerald-500/10 dark:bg-emerald-900/10 rounded-full blur-[100px]">
+        </div>
+    </div>
+
+    <div class="flex h-screen w-full">
+
+        <!-- Sidebar Navigation -->
+         <aside
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-zinc-950/50 border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 sidebar flex flex-col"
+            id="sidebar">
+            <div class="flex items-center justify-between h-16 px-6 border-b border-zinc-200 dark:border-zinc-800/50">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 bg-gradient-to-tr from-indigo-600 to-emerald-500 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                        <span class="font-bold text-xs">CP</span>
+                    </div>
+                    <h1 class="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                        Connect<span class="text-zinc-500 font-normal">Peace</span>
+                    </h1>
+                </div>
+                <button
+                    class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none"
+                    id="sidebarToggle">
+                    <i data-lucide="x" class="stroke-[1.5] w-5 h-5"></i>
+                </button>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <div
+                    class="px-3 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Menu</div>
+
+                <a href="./index.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="layout-dashboard"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="./index.html#actions"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="leaf"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"></i>
+                    <span>Actions & Resources</span>
+                </a>
+                <a href="./index.html#stories"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="book-open"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors"></i>
+                    <span>Stories</span>
+                </a>
+                <a href="./stories_moderation.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="shield"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                    <span>Stories Moderation</span>
+                </a>
+                <a href="./index.html#challenges"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="trophy"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors"></i>
+                    <span>Challenges</span>
+                </a>
+                <a href="./index.html#reminders"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="bell"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors"></i>
+                    <span>Reminders</span>
+                </a>
+
+                <div
+                    class="px-3 mt-6 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                    Support</div>
+
+                <a href="./reports.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="flag"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="./index.html#contact"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="life-buoy"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                    <span>Help Center</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-zinc-200 dark:border-zinc-800/50">
+                <button
+                    class="flex w-full items-center px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors logout nav-item"
+                    data-page="logout">
+                    <i data-lucide="log-out" class="stroke-[1.5] w-4 h-4 mr-3"></i>
+                    <span>Sign out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative transition-colors duration-300"
+            id="mainContent">
+
+            <!-- Header -->
+            <header
+                class="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800/50 glass z-20 sticky top-0 transition-colors duration-300">
+                <div class="flex items-center gap-4">
+                    <button
+                        class="lg:hidden text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none"
+                        id="headerToggle">
+                        <i data-lucide="menu" class="stroke-[1.5] w-5 h-5"></i>
+                    </button>
+                    <h1 class="text-lg font-semibold text-zinc-900 dark:text-zinc-200">Reports Management</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Theme Toggle -->
+                    <button onclick="toggleTheme()"
+                        class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none"
+                        id="themeToggle">
+                        <i data-lucide="sun" class="hidden dark:block stroke-[1.5] w-5 h-5"></i>
+                        <i data-lucide="moon" class="block dark:hidden stroke-[1.5] w-5 h-5"></i>
+                    </button>
+
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button
+                            class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 rounded-lg transition-all focus:outline-none notification-btn"
+                            id="notificationBtn">
+                            <i data-lucide="bell" class="stroke-[1.5] w-5 h-5"></i>
+                            <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full badge"
+                                style="display: none;"></span>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-80 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden"
+                            id="notificationDropdown">
+                            <!-- Dynamic content injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+
+                    <!-- User Menu -->
+                    <div class="relative" id="userMenu">
+                        <button
+                            class="flex items-center gap-3 focus:outline-none group p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+                            <div
+                                class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=felix" alt="User"
+                                    class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                            </div>
+                            <span class="text-xs font-medium text-zinc-700 dark:text-zinc-300 hidden sm:block">Admin User</span>
+                            <i data-lucide="chevron-down"
+                                class="stroke-[1.5] w-3 h-3 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl shadow-zinc-200/50 dark:shadow-black/50 overflow-hidden z-50 hidden"
+                            id="userDropdown">
+                            <div
+                                class="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                                <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Admin User</p>
+                                <p class="text-[10px] text-zinc-500 truncate">admin@connectpeace.org</p>
+                            </div>
+                            <div class="py-1">
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                    <i data-lucide="user" class="w-4 h-4"></i> Profile Settings
+                                </button>
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-2">
+                                    <i data-lucide="settings" class="w-4 h-4"></i> Preferences
+                                </button>
+                                <div class="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
+                                <button
+                                    class="w-full px-4 py-2 text-sm text-left text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors logout flex items-center gap-2">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i> Sign out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div
+                class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+                
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
+                        <div class="text-2xl font-bold text-zinc-900 dark:text-zinc-100" id="totalReportsCount">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Total</div>
+                    </div>
+                     <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
+                        <div class="text-2xl font-bold text-amber-500" id="pendingReportsCount">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Pending</div>
+                    </div>
+                     <div class="bg-white dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800/60 p-4 rounded-xl text-center shadow-sm dark:shadow-none">
+                        <div class="text-2xl font-bold text-emerald-500" id="resolvedReportsCount">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Resolved</div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                     <div class="p-4 border-b border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-900/30 flex flex-wrap gap-4">
+                         <input type="text" id="searchReports" placeholder="Search reports..." class="w-full sm:w-64 p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:border-indigo-500/50 text-zinc-900 dark:text-zinc-200">
+                         <select id="statusFilter" class="p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 focus:outline-none">
+                             <option value="">All Statuses</option>
+                             <option value="pending">Pending</option>
+                             <option value="resolved">Resolved</option>
+                         </select>
+                         <select id="categoryFilter" class="p-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 focus:outline-none">
+                             <option value="">All Categories</option>
+                             <option value="spam">Spam</option>
+                             <option value="inappropriate">Inappropriate</option>
+                         </select>
+                     </div>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left admin-table text-zinc-700 dark:text-zinc-300">
+                            <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                                <tr>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">ID</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Reporter</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Item</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Type</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Category</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Reason</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Status</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Date</th>
+                                    <th class="py-3 px-4 text-xs text-zinc-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
+                                <!-- Reports will be loaded here -->
+                            </tbody>
+                        </table>
+                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Report Details Modal -->
+    <div id="reportDetailsModal"
+        class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-200">
+        <div
+            class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95 transition-all">
+            <div
+                class="p-6 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Report Details</h2>
+                <button class="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    onclick="closeReportDetailsModal()">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-zinc-500 uppercase">ID: <span
+                                id="reportIdDetail"
+                                class="text-zinc-900 dark:text-zinc-200">#</span></label>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-zinc-500 uppercase">Status: <span
+                                id="reportStatusDetail"
+                                class="text-zinc-900 dark:text-zinc-200">Pending</span></label>
+                    </div>
+                    <div class="space-y-1"><label
+                            class="text-xs font-semibold text-zinc-500 uppercase">Category: <span
+                                id="reportCategoryDetail"
+                                class="text-zinc-900 dark:text-zinc-200"></span></label></div>
+                    <div class="space-y-1"><label
+                            class="text-xs font-semibold text-zinc-500 uppercase">Date: <span
+                                id="reportDateDetail"
+                                class="text-zinc-900 dark:text-zinc-200"></span></label></div>
+                </div>
+
+                <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                    <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">
+                    Reporter</h3>
+                    <p id="reporterNameDetail" class="text-sm text-zinc-700 dark:text-zinc-400"></p>
+                    <p id="reporterEmailDetail" class="text-xs text-zinc-500"></p>
+                </div>
+
+                <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                    <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">Reported
+                        Item</h3>
+                    <p class="text-sm"><span class="text-zinc-500">Type:</span> <span
+                            id="reportedItemTypeDetail" class="text-zinc-700 dark:text-zinc-300"></span>
+                    </p>
+                    <p class="text-sm"><span class="text-zinc-500">Title:</span> <span
+                            id="reportedItemTitleDetail"
+                            class="text-zinc-700 dark:text-zinc-300"></span></p>
+                    <a href="#" id="reportedItemLink"
+                        class="text-xs text-indigo-500 hover:underline mt-1 inline-block">View Item</a>
+                    <p class="mt-2 text-sm text-zinc-500 font-semibold">Reason:</p>
+                    <p id="reportReasonDetail" class="text-sm text-zinc-700 dark:text-zinc-300 italic">
+                    </p>
+                </div>
+
+                <div class="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                    <label class="text-xs font-semibold text-zinc-500 uppercase">Admin Notes</label>
+                    <textarea id="adminNotesTextarea"
+                        class="w-full mt-2 p-3 text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:ring-1 focus:ring-indigo-500/50 focus:outline-none text-zinc-900 dark:text-zinc-200"
+                        placeholder="Internal notes..."></textarea>
+                    <button onclick="saveReportNotes()"
+                        class="mt-2 text-xs text-indigo-500 hover:text-indigo-400">Save Notes</button>
+                </div>
+            </div>
+            <div
+                class="p-6 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 flex justify-end gap-3">
+                <button
+                    class="px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 rounded-lg text-sm hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    onclick="updateReportStatus('reviewed')">Mark Reviewed</button>
+                <button
+                    class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-500"
+                    onclick="updateReportStatus('resolved')">Resolve</button>
+                <button class="px-4 py-2 bg-rose-600 text-white rounded-lg text-sm hover:bg-rose-500"
+                    onclick="deleteReport()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./assets/js/countries.js"></script>
+    <script src="./script.js"></script>
+
+    <script>
+        // Initialize variables for reports
+        let reportsData = [];
+
+        // Theme toggle function
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Initialize theme from localStorage or system preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        // Initialize icons and event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
+            // Initialize event listeners
+            initializeEventListeners();
+            
+            // Load reports data
+            loadReportsData();
+        });
+
+        function initializeEventListeners() {
+            // Mobile sidebar toggle
+            document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
+            });
+
+            document.getElementById('headerToggle')?.addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
+            });
+
+            // Notification dropdown
+            document.getElementById('notificationBtn')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('notificationDropdown').classList.toggle('hidden');
+                document.getElementById('userDropdown').classList.add('hidden');
+            });
+
+            // User menu dropdown
+            document.getElementById('userMenu')?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.getElementById('userDropdown').classList.toggle('hidden');
+                document.getElementById('notificationDropdown').classList.add('hidden');
+            });
+
+            // Close dropdowns when clicking elsewhere
+            document.addEventListener('click', function() {
+                document.getElementById('notificationDropdown')?.classList.add('hidden');
+                document.getElementById('userDropdown')?.classList.add('hidden');
+            });
+
+            // Add event listeners for filters
+            document.getElementById('searchReports')?.addEventListener('input', filterReportsTable);
+            document.getElementById('statusFilter')?.addEventListener('change', filterReportsTable);
+            document.getElementById('categoryFilter')?.addEventListener('change', filterReportsTable);
+        }
+
+        // Load reports data
+        async function loadReportsData() {
+            try {
+                // Load dashboard stats for moderation overview
+                const dashboardResponse = await fetch("./../api/moderation/dashboard.php");
+                if (dashboardResponse.ok) {
+                    const dashboardResult = await dashboardResponse.json();
+                    if (dashboardResult.success) {
+                        const stats = dashboardResult.data;
+
+                        // Update stats - use the counts from moderation API instead of filtering reports
+                        document.getElementById('totalReportsCount').textContent = stats.report_stats.total || 0;
+                        document.getElementById('pendingReportsCount').textContent = stats.pending_reports_count || 0;
+                        document.getElementById('resolvedReportsCount').textContent = stats.report_stats.by_status?.resolved || 0;
+                    }
+                }
+
+                // Load reports data
+                const response = await fetch("./../api/reports/get_reports.php");
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    reportsData = result.data || result.reports || [];
+                    renderReports(reportsData);
+                } else {
+                    console.error("Failed to load reports:", result.message);
+                    document.getElementById('reports-table-body').innerHTML = `<tr><td colspan="9" class="py-8 text-center text-rose-500">Error: ${result.message}</td></tr>`;
+                }
+            } catch (error) {
+                console.error("Error loading reports:", error);
+            }
+        }
+
+        // Render reports table
+        function renderReports(reports) {
+            const tbody = document.getElementById('reports-table-body');
+            if (!tbody) return; // Safety check
+
+            if (!reports || reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-zinc-500 dark:text-zinc-400">No reports found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = reports.map(r => {
+                // Determine proper item type with extended fallback options
+                let itemType = r.item_type || r.itemType || r.type || r.reported_item_type || r.itemType || r.reportedItemType || '';
+
+                // If still empty or N/A, try to extract from message or related item
+                if (!itemType || itemType === 'N/A' || itemType === '') {
+                    // If we know the reported item type from other fields, use that
+                    if (r.item_title || r.itemTitle || r.title) {
+                        // If the item title suggests it's an action or resource
+                        if ((r.item_title || r.title || '').toLowerCase().includes('action') || r.item_type === 'action') {
+                            itemType = 'action';
+                        } else if ((r.item_title || r.title || '').toLowerCase().includes('resource') || r.item_type === 'resource') {
+                            itemType = 'resource';
+                        } else {
+                            itemType = r.reported_item_type || r.reportedItemType || 'item';
+                        }
+                    } else {
+                        itemType = r.reported_item_type || r.reportedItemType || 'item';
+                    }
+                }
+
+                // Capitalize the first letter for better display
+                itemType = itemType.charAt(0).toUpperCase() + itemType.slice(1);
+
+                return `
+                <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                    <td class="py-3 px-4 text-sm">${r.id}</td>
+                    <td class="py-3 px-4 text-sm">${r.reporter_name || r.reporterName || r.user_name || 'Unknown'}</td>
+                    <td class="py-3 px-4 text-sm font-medium">${r.item_title || r.itemTitle || r.title || r.related_item || 'Item'}</td>
+                    <td class="py-3 px-4 text-sm uppercase text-[10px] font-bold text-zinc-500">${itemType}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] rounded">${r.category || r.report_category || r.category || 'N/A'}</span></td>
+                    <td class="py-3 px-4 text-sm truncate max-w-[150px]">${r.reason || r.report_reason || r.message || 'No reason provided'}</td>
+                    <td class="py-3 px-4 text-sm">${r.status}</td>
+                    <td class="py-3 px-4 text-sm">${r.created_at || r.date ? new Date(r.created_at || r.date).toLocaleDateString() : 'N/A'}</td>
+                    <td class="py-3 px-4"><button class="text-sm text-indigo-500 hover:underline" onclick="viewReportDetails(${r.id})">View</button></td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Filtering function
+        function filterReportsTable() {
+            if (!reportsData || reportsData.length === 0) return;
+
+            const searchTerm = document.getElementById('searchReports').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            const filtered = reportsData.filter(report => {
+                const matchesSearch = report.reason.toLowerCase().includes(searchTerm) ||
+                    (report.item_title && report.item_title.toLowerCase().includes(searchTerm));
+                const matchesStatus = !statusFilter || report.status === statusFilter;
+                const matchesCategory = !categoryFilter || report.category === categoryFilter;
+
+                return matchesSearch && matchesStatus && matchesCategory;
+            });
+
+            renderReports(filtered);
+        }
+
+        // Report functionality
+        function viewReportDetails(id) {
+            const report = reportsData.find(r => r.id == id);
+            if (report) {
+                document.getElementById('reportIdDetail').textContent = "#" + report.id;
+
+                document.getElementById('reporterNameDetail').textContent = report.reporter_name || report.reporterName || report.user_name || 'Unknown';
+
+                document.getElementById('reporterEmailDetail').textContent = report.reporter_email || report.reporterEmail || report.user_email || 'No email';
+
+                document.getElementById('reportedItemTypeDetail').textContent = report.item_type || report.itemType || report.type || 'Unknown';
+
+                document.getElementById('reportedItemTitleDetail').textContent = report.item_title || report.itemTitle || report.title || 'Untitled';
+
+                document.getElementById('reportReasonDetail').textContent = report.reason || report.report_reason || report.message || 'No reason provided';
+
+                document.getElementById('reportCategoryDetail').textContent = report.category || report.report_category || 'Uncategorized';
+
+                document.getElementById('reportStatusDetail').textContent = report.status || 'Unknown';
+
+                const dateValue = report.created_at || report.date || report.createdAt;
+                if (dateValue) document.getElementById('reportDateDetail').textContent = new Date(dateValue).toLocaleString();
+                else document.getElementById('reportDateDetail').textContent = 'Unknown date';
+
+                // Set the ID for later actions
+                document.getElementById('reportDetailsModal').dataset.reportId = report.id;
+
+                document.getElementById('reportDetailsModal').classList.remove('hidden');
+            }
+        }
+
+        function closeReportDetailsModal() {
+            document.getElementById('reportDetailsModal').classList.add('hidden');
+        }
+
+        async function updateReportStatus(status) {
+            const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
+            if (!reportId) return;
+
+            try {
+                const response = await fetch("./../api/reports/update_report_status.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: reportId, status })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeReportDetailsModal();
+                    alert(`Report marked as ${status}`);
+                    loadReportsData(); // Reload reports list
+                } else {
+                    alert(`Failed to update report: ${result.message}`);
+                }
+            } catch (error) {
+                console.error("Error updating report:", error);
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function deleteReport() {
+            const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
+            if (!reportId) return;
+
+            if (!confirm('Are you sure you want to delete this report permanently?')) return;
+
+            try {
+                const response = await fetch('./../api/reports/delete_report.php', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: reportId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    closeReportDetailsModal();
+                    alert('Report deleted successfully!');
+                    loadReportsData(); // Reload reports list
+                } else {
+                    alert(`Failed to delete report: ${result.message}`);
+                }
+            } catch (error) {
+                console.error("Error deleting report:", error);
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function saveReportNotes() {
+            const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
+            const notes = document.getElementById('adminNotesTextarea').value;
+            if (!reportId) return;
+
+            try {
+                const response = await fetch("./../api/reports/update_report_status.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: reportId, admin_notes: notes })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Notes saved successfully');
+                } else {
+                    alert(result.message || 'Failed to save notes');
+                }
+            } catch (error) {
+                console.error("Error saving notes:", error);
+                alert('Network error');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -49,7 +49,7 @@ class ImageUpload {
         if (move_uploaded_file($file['tmp_name'], $destination)) {
             return [
                 'success' => true,
-                'image_url' => '/uploads/' . $category . '/' . $filename
+                'image_url' => '../uploads/' . $category . '/' . $filename
             ];
         } else {
             return ['success' => false, 'message' => 'Failed to move uploaded file'];
@@ -61,8 +61,19 @@ class ImageUpload {
      * @param string $imageUrl The URL of the image to delete
      */
     public static function deleteImage($imageUrl) {
-        if ($imageUrl && !empty($imageUrl) && strpos($imageUrl, '/uploads/') !== false) {
-            $filePath = $_SERVER['DOCUMENT_ROOT'] . $imageUrl;
+        if ($imageUrl && !empty($imageUrl)) {
+            // Handle both relative and absolute paths
+            if (strpos($imageUrl, '../uploads/') === 0) {
+                // Relative path: ../uploads/category/filename
+                $filePath = __DIR__ . '/..' . $imageUrl;
+            } elseif (strpos($imageUrl, '/uploads/') === 0) {
+                // Absolute path: /uploads/category/filename
+                $filePath = $_SERVER['DOCUMENT_ROOT'] . $imageUrl;
+            } else {
+                // Unexpected path format
+                return;
+            }
+
             if (file_exists($filePath)) {
                 unlink($filePath);
             }

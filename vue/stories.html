@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories - Connect for Peace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/story_style.css">
+    <link rel="stylesheet" href="assets/css/story_modal.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#AEE1F9',
+                        'accent-green': '#C3E6CB',
+                        coral: '#FFB6A0',
+                        'light-beige': '#FFF9F0',
+                        'accent-blue': '#AEE1F9'  // Same as primary for consistency
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .error-border {
+            border: 2px solid red !important;
+        }
+
+        .radio-group.error-border {
+            border: 2px solid red;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* SweetAlert2 custom styles to appear above modals */
+        .swal2-popup-custom {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #e1e1e1 !important;
+        }
+
+        .swal2-title-custom {
+            font-size: 1.1rem !important;
+            font-weight: 600 !important;
+        }
+
+        .swal2-content-custom {
+            font-size: 0.9rem !important;
+        }
+    </style>
+    <!-- jQuery - Load with integrity check and fallback -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"
+        onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'">
+        </script>
+    <script>
+        if (typeof jQuery === 'undefined') {
+            alert('Application error: Required libraries failed to load. Please refresh the page.');
+        }
+    </script>
+</head>
+
+<body class="bg-zinc-50 text-zinc-900 antialiased">
+    <!-- Navigation Bar -->
+    <nav class="navbar fixed top-0 z-40 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md transition-all duration-300"
+        id="navbar">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div class="navbar-logo flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
+                    <i data-lucide="zap" class="h-5 w-5"></i>
+                </div>
+                <span class="font-sans text-lg font-semibold tracking-tight text-zinc-900">Connect<span
+                        class="text-zinc-400">Peace</span></span>
+            </div>
+            <ul class="nav-menu hidden items-center gap-8 md:flex">
+                <li><a href="index.html"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Home</a>
+                </li>
+                <li><a href="index.html"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Actions
+                        & Aide</a></li>
+                <li><a href="stories.html"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Stories</a>
+                </li>
+                <li><a href="#"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">Défis</a>
+                </li>
+                <li><a href="about.html"
+                        class="nav-link text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900">about</a>
+                </li>
+            </ul>
+            <div class="profile-menu relative">
+                <button
+                    class="profile-avatar flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 ring-offset-2 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-zinc-900">
+                    <img src="https://api.placeholder.com/40/40?text=User" alt="Profile"
+                        class="h-full w-full rounded-full object-cover">
+                </button>
+                <div
+                    class="dropdown absolute right-0 mt-2 hidden w-48 origin-top-right transform rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black ring-opacity-5 transition-all">
+                    <a href="profile"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="user" class="h-4 w-4"></i> Profile</a>
+                    <a href="../dashboard/index.html"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="settings" class="h-4 w-4"></i> Settings</a>
+                    <a href="#"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"><i
+                            data-lucide="log-out" class="h-4 w-4"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Stories Section -->
+    <section class="stories-section bg-zinc-50 py-16">
+        <div class="container mx-auto max-w-7xl px-6">
+            <!-- Hero Section -->
+            <div class="hero mb-12 text-center">
+                <h1 class="mb-4 text-4xl font-bold tracking-tight text-zinc-900 md:text-5xl">Voices of Peace</h1>
+                <p class="text-lg text-zinc-600 max-w-2xl mx-auto">Share your stories of hope, peace, and community
+                    impact</p>
+            </div>
+
+            <!-- Filter & Search Section -->
+            <div
+                class="filter-section sticky top-[73px] z-30 border-b border-zinc-200 bg-white/80 backdrop-blur-md mb-8">
+                <div class="filter-container mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 py-4">
+                    <div class="search-box relative flex-1 min-w-[200px]">
+                        <i data-lucide="search"
+                            class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"></i>
+                        <input type="text" id="storiesSearchInput" placeholder="Search stories..."
+                            class="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-4 text-sm outline-none transition-all focus:border-zinc-400 focus:bg-white focus:ring-1 focus:ring-zinc-400">
+                    </div>
+                    <div class="filters flex items-center gap-3 overflow-x-auto">
+                        <select id="storiesThemeFilter"
+                            class="appearance-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-600 hover:border-zinc-300 focus:outline-none">
+                            <option value="">All Themes</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Community">Community</option>
+                            <option value="Inspirational">Inspirational</option>
+                            <option value="Educational">Educational</option>
+                            <option value="Social Help">Social Help</option>
+                            <option value="Environment">Environment</option>
+                            <option value="Art & Culture">Art & Culture</option>
+                        </select>
+                        <select id="storiesLanguageFilter"
+                            class="appearance-none rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-600 hover:border-zinc-300 focus:outline-none">
+                            <option value="">All Languages</option>
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                            <option value="es">Spanish</option>
+                        </select>
+                        <button class="btn-clear text-xs font-medium text-zinc-400 hover:text-zinc-600 hover:underline"
+                            onclick="clearStoriesFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Story Button -->
+            <div class="flex justify-end mb-6">
+                <button id="createStoryBtn"
+                    class="create-story-btn flex items-center gap-2 rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-1">
+                    <i data-lucide="plus" class="h-4 w-4"></i> Share Your Story
+                </button>
+            </div>
+
+            <!-- Stories Grid -->
+            <div class="stories-grid grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="storiesContainer">
+                <!-- Stories will be loaded here by JavaScript -->
+            </div>
+
+            <!-- Load More Button -->
+            <div class="flex justify-center mt-8">
+                <button id="loadMoreStoriesBtn"
+                    class="btn btn-outline px-6 py-2 rounded-full text-sm font-medium hidden">
+                    Load More Stories
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Story Details Modal -->
+    <div id="storyDetailsModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 hidden">
+        <div
+            class="modal-content relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <button
+                class="modal-close absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-zinc-600 hover:bg-zinc-100"
+                onclick="closeStoryDetailsModal()">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+            <div class="flex h-full flex-col md:flex-row">
+                <div class="relative h-64 w-full md:h-auto md:w-2/5 flex-shrink-0">
+                    <img id="storyModalImage" src="https://placehold.co/400x200" alt="Story Image"
+                        class="h-full w-full object-cover">
+                    <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-6">
+                        <span id="storyModalTheme"
+                            class="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
+                            Story
+                        </span>
+                        <div class="flex items-center gap-3">
+                            <div id="storyModalAvatar"
+                                class="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                S
+                            </div>
+                            <div>
+                                <p id="storyModalAuthor" class="text-sm font-medium text-white">Author Name</p>
+                                <p id="storyModalBadge" class="text-xs text-zinc-300">Community Member</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-1 flex-col overflow-hidden p-8 min-h-0">
+                    <div class="flex-1 overflow-y-auto max-h-[calc(90vh-250px)] pr-2">
+                        <h2 id="storyModalTitle" class="mb-4 text-2xl font-semibold tracking-tight text-zinc-900">Story
+                            Title</h2>
+                        <div class="mb-4 flex items-center justify-between">
+                            <div id="storyModalDate" class="text-sm text-zinc-500">Date</div>
+                        </div>
+                        <div class="mb-6">
+                            <p id="storyModalContent" class="text-sm leading-relaxed text-zinc-600">Story content will
+                                appear here...</p>
+                        </div>
+
+                        <!-- Comments Section -->
+                        <div class="mb-6">
+                            <h3 class="mb-3 text-sm font-semibold text-zinc-900">Comments</h3>
+                            <div id="storyCommentsList">
+                                <!-- Comments will be loaded here -->
+                            </div>
+                            <div class="mt-4 add-comment-section">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div
+                                        class="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold"
+                                        id="commentUserAvatar">
+                                        U
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-zinc-700" id="commentUserName">User Name</p>
+                                    </div>
+                                </div>
+                                <textarea id="storyCommentInput" placeholder="Add a comment..."
+                                    class="w-full rounded-lg border border-zinc-200 p-2 text-sm mb-2"></textarea>
+                                <button id="addStoryCommentBtn"
+                                    class="btn btn-primary px-4 py-2 text-sm font-medium">Post Comment</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reactions at bottom -->
+                    <div class="border-t border-zinc-100 pt-4 pb-2">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-medium text-zinc-500 mr-2">React:</span>
+                            <button class="reaction-btn-small" data-story-id="" data-reaction="heart" title="Love">
+                                ❤️ <span class="reaction-count" id="heartCount">0</span>
+                            </button>
+                            <button class="reaction-btn-small" data-story-id="" data-reaction="support" title="Support">
+                                👍 <span class="reaction-count" id="supportCount">0</span>
+                            </button>
+                            <button class="reaction-btn-small" data-story-id="" data-reaction="inspiration"
+                                title="Inspiration">
+                                💡 <span class="reaction-count" id="inspirationCount">0</span>
+                            </button>
+                            <button class="reaction-btn-small" data-story-id="" data-reaction="solidarity"
+                                title="Solidarity">
+                                🤝 <span class="reaction-count" id="solidarityCount">0</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto flex gap-3 border-t border-zinc-100 pt-6">
+                        <div id="storyModalActions" class="flex gap-2 mr-auto">
+                            <!-- Edit and Delete buttons will be inserted here by JavaScript if user owns the story -->
+                        </div>
+                        <button
+                            class="btn btn-outline rounded-lg border border-zinc-200 px-4 py-2.5 text-zinc-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                            onclick="openReportModal()">
+                            <i data-lucide="flag" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Story Modal -->
+    <div id="createStoryModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 hidden">
+        <div class="modal-content relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4 flex justify-between items-center">
+                <h2 id="createStoryModalTitle" class="text-lg font-semibold text-zinc-900">Share Your Story</h2>
+                <button class="text-zinc-500 hover:text-zinc-900" onclick="closeCreateStoryModal()">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="storyForm" class="space-y-4">
+                    <input type="hidden" id="storyId" value="">
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Title</label>
+                        <input type="text" id="storyTitle"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                            placeholder="Enter story title..." maxlength="255">
+                        <small class="error-message text-red-500 text-xs mt-1 hidden" id="storyTitle-error"></small>
+                        <div class="text-xs text-zinc-400 mt-1"><span id="titleCounter">0</span>/255 characters</div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Author Name</label>
+                        <input type="text" id="storyAuthorName"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                            placeholder="Your name..." value="Anonymous" maxlength="100">
+                        <small class="error-message text-red-500 text-xs mt-1 hidden" id="storyAuthorName-error"></small>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Theme</label>
+                        <select id="storyTheme"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                            <option value="">Select Theme</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Community">Community</option>
+                            <option value="Inspirational">Inspirational</option>
+                            <option value="Educational">Educational</option>
+                            <option value="Social Help">Social Help</option>
+                            <option value="Environment">Environment</option>
+                            <option value="Art & Culture">Art & Culture</option>
+                        </select>
+                        <small class="error-message text-red-500 text-xs mt-1 hidden" id="storyTheme-error"></small>
+                        <div id="tagSuggestions"></div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Language</label>
+                        <select id="storyLanguage"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                            <option value="es">Spanish</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Privacy</label>
+                        <select id="storyPrivacy"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white">
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+
+                    <div class="relative">
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Content</label>
+                        <textarea id="storyContent"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                            placeholder="Share your story..." rows="8" maxlength="5000"></textarea>
+                        <small class="error-message text-red-500 text-xs mt-1 hidden" id="storyContent-error"></small>
+                        <div class="flex justify-between text-xs text-zinc-500 mt-1">
+                            <span>Minimum 50 characters, maximum 500 words</span>
+                            <span><span id="contentCounter">0</span>/5000 characters · <span id="wordCounter">0</span>
+                                words</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-zinc-500">Upload Image</label>
+                        <input type="file" id="storyImage"
+                            class="w-full text-xs text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
+                            name="image" accept="image/*">
+                        <small class="error-message text-red-500 text-xs mt-1 hidden" id="storyImage-error"></small>
+                        <div id="imagePreviewContainer" class="hidden mt-3">
+                            <div class="image-preview relative">
+                                <img id="imagePreview" src="" alt="Preview"
+                                    class="w-full h-auto max-h-64 object-cover rounded-lg">
+                                <button type="button" class="image-preview-remove" onclick="removeImagePreview()">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 justify-end pt-4">
+                        <button type="button"
+                            class="btn btn-outline px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
+                            onclick="closeCreateStoryModal()">Cancel</button>
+                        <button type="submit"
+                            class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg"
+                            id="saveStoryBtn">Publish Story</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Story Modal -->
+    <div id="reportModal"
+        class="modal fixed inset-0 z-[2000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4 hidden">
+        <div class="modal-content relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-zinc-900">Report Story</h2>
+                <button class="text-zinc-500 hover:text-zinc-900" onclick="closeReportModal()">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="reportForm" class="space-y-4">
+                    <input type="hidden" id="reportStoryId" value="">
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-zinc-700">Reason for reporting</label>
+                        <select id="reportReason" required
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Select a reason...</option>
+                            <option value="spam">Spam or misleading</option>
+                            <option value="hate_speech">Hate speech or harassment</option>
+                            <option value="violence">Violence or dangerous content</option>
+                            <option value="inappropriate">Inappropriate content</option>
+                            <option value="false_information">False information</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-zinc-700">Additional details
+                            (optional)</label>
+                        <textarea id="reportDetails" rows="4"
+                            class="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                            placeholder="Please provide more information..."></textarea>
+                    </div>
+
+                    <div class="flex gap-2 justify-end pt-4">
+                        <button type="button"
+                            class="btn btn-outline px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 rounded-lg"
+                            onclick="closeReportModal()">Cancel</button>
+                        <button type="submit"
+                            class="btn btn-primary px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">
+                            Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer border-t border-zinc-200 bg-white py-12">
+        <div class="container mx-auto max-w-7xl px-6 text-center">
+            <p class="text-sm text-zinc-500">&copy; 2025 Connect for Peace. Building communities through action.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/ai_features.js"></script>
+    <script src="assets/js/stories.js"></script>
+
+    <script>
+        // Debug script to identify issues
+        console.log('=== DEBUGGING STORIES.HTML ===');
+        console.log('1. Page loaded');
+        console.log('2. storiesContainer element:', document.getElementById('storiesContainer'));
+        console.log('3. createStoryBtn element:', document.getElementById('createStoryBtn'));
+        console.log('4. storyDetailsModal element:', document.getElementById('storyDetailsModal'));
+        console.log('5. createStoryModal element:', document.getElementById('createStoryModal'));
+        console.log('6. jQuery loaded:', typeof jQuery !== 'undefined');
+        console.log('7. Lucide loaded:', typeof lucide !== 'undefined');
+        console.log('8. AI_Features loaded:', typeof AI_Features !== 'undefined');
+        console.log('9. loadStories function exists:', typeof loadStories !== 'undefined');
+        console.log('10. openCreateStoryModal function exists:', typeof openCreateStoryModal !== 'undefined');
+    </script>
+</body>
+
+</html>

@@ -74,7 +74,7 @@ class ReportController {
             }
 
             // Validate report category is one of the allowed options
-            $allowedCategories = ['scam', 'spam', 'inappropriate', 'fake', 'other'];
+            $allowedCategories = ['scam', 'spam', 'inappropriate', 'fake', 'hate_speech', 'harassment', 'other', 'violence', 'false_information'];
             if (!in_array($data['report_category'], $allowedCategories)) {
                 error_log("Invalid report category: " . $data['report_category']);
                 echo json_encode(['success' => false, 'message' => 'Invalid report category. Allowed values are: ' . implode(', ', $allowedCategories)]);
@@ -82,7 +82,7 @@ class ReportController {
             }
 
             // Validate reported item type is one of the allowed options
-            $allowedTypes = ['action', 'resource'];
+            $allowedTypes = ['action', 'resource', 'story', 'comment', 'user'];
             if (!in_array($data['reported_item_type'], $allowedTypes)) {
                 error_log("Invalid reported item type: " . $data['reported_item_type']);
                 echo json_encode(['success' => false, 'message' => 'Invalid item type. Allowed values are: ' . implode(', ', $allowedTypes)]);
@@ -93,8 +93,18 @@ class ReportController {
             $itemCheckStmt = null;
             if ($data['reported_item_type'] === 'action') {
                 $itemCheckStmt = $this->conn->prepare("SELECT id FROM actions WHERE id = :item_id");
-            } else {
+            } elseif ($data['reported_item_type'] === 'resource') {
                 $itemCheckStmt = $this->conn->prepare("SELECT id FROM resources WHERE id = :item_id");
+            } elseif ($data['reported_item_type'] === 'story') {
+                $itemCheckStmt = $this->conn->prepare("SELECT id FROM stories WHERE id = :item_id");
+            } elseif ($data['reported_item_type'] === 'comment') {
+                $itemCheckStmt = $this->conn->prepare("SELECT id FROM comments WHERE id = :item_id");
+            } elseif ($data['reported_item_type'] === 'user') {
+                $itemCheckStmt = $this->conn->prepare("SELECT id FROM users WHERE id = :item_id");
+            } else {
+                error_log("Unsupported reported item type: " . $data['reported_item_type']);
+                echo json_encode(['success' => false, 'message' => 'Unsupported item type: ' . $data['reported_item_type']]);
+                return;
             }
 
             $itemCheckStmt->execute([':item_id' => $data['reported_item_id']]);
@@ -126,7 +136,9 @@ class ReportController {
     public function getAll() {
         // Only allow admin access
         if (!AuthHelper::isAdmin()) {
-            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            $user = AuthHelper::getCurrentUser();
+            $role = isset($user['role']) ? $user['role'] : 'none';
+            echo json_encode(['success' => false, 'message' => "Access denied. Role: $role"]);
             return;
         }
 

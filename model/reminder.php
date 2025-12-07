@@ -32,6 +32,25 @@ class Reminder {
             $stmt->bindParam(':reminder_time', $data['reminder_time']);
 
             if ($stmt->execute()) {
+                // If this is an action reminder, also send notifications to all participants
+                if ($data['item_type'] === 'action') {
+                    // Get action details to use for notification
+                    $actionQuery = "SELECT title, start_time FROM actions WHERE id = :action_id";
+                    $actionStmt = $this->conn->prepare($actionQuery);
+                    $actionStmt->bindParam(':action_id', $data['item_id']);
+                    $actionStmt->execute();
+                    $action = $actionStmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($action) {
+                        // Send notifications to all participants
+                        $this->notificationModel->createActionReminderNotificationForAllParticipants(
+                            $data['item_id'],
+                            $action['title'],
+                            $action['start_time']
+                        );
+                    }
+                }
+
                 return ['success' => true, 'message' => 'Reminder created successfully.'];
             } else {
                 return ['success' => false, 'message' => 'Failed to create reminder.'];

@@ -43,10 +43,10 @@ class Config {
     public static function getConnexion() {
         if (!isset(self::$pdo)) {
             $servername = "127.0.0.1"; // localhost works too
-            $port = 3307;               // <--- specify the correct port
+            $port = 3306;               // <--- specify the correct port (XAMPP default)
             $username = "root";
             $password = "";
-            $dbname = "connect_for_peace";
+            $dbname = "integrated_version";
 
             try {
                 self::$pdo = new PDO(

@@ -20,40 +20,86 @@ class Comment
             $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'comments'");
             if ($tableCheck->rowCount() == 0) {
                 error_log("Comments table does not exist");
-                return false; // Return false if table doesn't exist
+                return ['success' => false, 'message' => 'Comments table does not exist'];
             }
 
-            // SQL query to insert new comment
-            $sql = "INSERT INTO comments (user_id, action_id, resource_id, content)
-                    VALUES (:user_id, :action_id, :resource_id, :content)";
+            $content = $data['content'] ?? '';
+            $userId = $data['user_id'] ?? null;
+            $status = 'active';
+
+            // Check for flagged words
+            $flaggedWords = $this->checkForFlaggedWords($content);
+            
+            if (!empty($flaggedWords)) {
+                $criticalFound = false;
+                
+                foreach ($flaggedWords as $flagged) {
+                    // Log the violation
+                    $this->logViolation($userId, $flagged);
+                    
+                    // Check if any critical word requires rejection
+                    if ($flagged['auto_action'] === 'reject') {
+                        $criticalFound = true;
+                    }
+                }
+                
+                // Reject if critical words found
+                if ($criticalFound) {
+                    return [
+                        'success' => false,
+                        'message' => 'Your comment contains inappropriate language and cannot be posted.',
+                        'flagged' => true,
+                        'rejected' => true
+                    ];
+                }
+                
+                // Flag but allow if non-critical
+                $status = 'flagged';
+            }
+
+            // Determine which entity type is being commented on and build appropriate query
+            $sql = "INSERT INTO comments (user_id, action_id, resource_id, story_id, content, status)
+                    VALUES (:user_id, :action_id, :resource_id, :story_id, :content, :status)";
 
             // Prepare the statement
             $stmt = $this->pdo->prepare($sql);
 
             // Execute with data provided
             $params = [
-                ':user_id' => $data['user_id'] ?? null,
+                ':user_id' => $userId,
                 ':action_id' => $data['action_id'] ?? null,
                 ':resource_id' => $data['resource_id'] ?? null,
-                ':content' => $data['content'] ?? ''
+                ':story_id' => $data['story_id'] ?? null,
+                ':content' => $content,
+                ':status' => $status
             ];
 
             $success = $stmt->execute($params);
             if (!$success) {
                 error_log("Comment::create() - SQL Error: " . print_r($stmt->errorInfo(), true));
+                return ['success' => false, 'message' => 'Database error'];
             }
-            return $success;
+            
+            $lastId = $this->pdo->lastInsertId();
+            
+            return [
+                'success' => true,
+                'id' => $lastId,
+                'flagged' => $status === 'flagged',
+                'message' => $status === 'flagged' ? 'Your comment has been flagged for review.' : 'Comment posted successfully.'
+            ];
+
         } catch (PDOException $e) {
             error_log("Database error in create: " . $e->getMessage());
-            return false;
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         } catch (Exception $e) {
             error_log("Error in create: " . $e->getMessage());
-            return false;
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
 
-    // Get comments by entity (action or resource) ID
-    public function getByEntity($actionId = null, $resourceId = null) {
+    // Get comments by entity (action, resource, or story) ID
+    public function getByEntity($actionId = null, $resourceId = null, $storyId = null) {
         try {
             // Check if the comments table exists first
             $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'comments'");
@@ -63,8 +109,8 @@ class Comment
             }
 
             // Validate that at least one ID is provided
-            if (!$actionId && !$resourceId) {
-                error_log("No action_id or resource_id provided to getByEntity");
+            if (!$actionId && !$resourceId && !$storyId) {
+                error_log("No action_id, resource_id, or story_id provided to getByEntity");
                 return [];
             }
 
@@ -82,6 +128,9 @@ class Comment
             } elseif ($resourceId) {
                 $sql .= "c.resource_id = :entity_id AND c.resource_id IS NOT NULL";
                 $params[':entity_id'] = $resourceId;
+            } elseif ($storyId) {
+                $sql .= "c.story_id = :entity_id AND c.story_id IS NOT NULL";
+                $params[':entity_id'] = $storyId;
             }
 
             $sql .= " ORDER BY c.created_at DESC";
@@ -139,11 +188,12 @@ class Comment
             }
 
             $sql = "SELECT c.*, u.name as user_name, u.avatar_url as user_avatar, u.badge as user_badge,
-                           a.title as action_title, r.resource_name as resource_name
+                           a.title as action_title, r.resource_name as resource_name, s.title as story_title
                     FROM comments c
                     LEFT JOIN users u ON c.user_id = u.id
                     LEFT JOIN actions a ON c.action_id = a.id
                     LEFT JOIN resources r ON c.resource_id = r.id
+                    LEFT JOIN stories s ON c.story_id = s.id
                     ORDER BY c.created_at DESC";
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute();
@@ -312,11 +362,12 @@ class Comment
             }
 
             $sql = "SELECT c.*, u.name as user_name, u.avatar_url as user_avatar, u.badge as user_badge,
-                           a.title as action_title, r.resource_name as resource_name
+                           a.title as action_title, r.resource_name as resource_name, s.title as story_title
                     FROM comments c
                     LEFT JOIN users u ON c.user_id = u.id
                     LEFT JOIN actions a ON c.action_id = a.id
                     LEFT JOIN resources r ON c.resource_id = r.id
+                    LEFT JOIN stories s ON c.story_id = s.id
                     WHERE c.user_id = :user_id
                     ORDER BY c.created_at DESC";
             $stmt = $this->pdo->prepare($sql);
@@ -362,6 +413,9 @@ class Comment
                 } elseif ($comment['resource_id']) {
                     $comment['target_type'] = 'resource';
                     $comment['target_title'] = $comment['resource_name'] ?: 'Untitled Resource';
+                } elseif ($comment['story_id']) {
+                    $comment['target_type'] = 'story';
+                    $comment['target_title'] = $comment['story_title'] ?: 'Untitled Story';
                 } else {
                     $comment['target_type'] = 'unknown';
                     $comment['target_title'] = 'Unknown';
@@ -376,5 +430,119 @@ class Comment
             error_log("Error in getByUser: " . $e->getMessage());
             return []; // Return empty array on error
         }
+    }
+
+    /**
+     * Check for flagged words in content
+     */
+    private function checkForFlaggedWords($content) {
+        try {
+            // Check if table exists first
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'flagged_words'");
+            if ($tableCheck->rowCount() == 0) {
+                return [];
+            }
+
+            $query = "SELECT word, category, severity, auto_action 
+                    FROM flagged_words";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            
+            $flaggedWords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $found = [];
+            
+            $contentLower = strtolower($content);
+            
+            foreach ($flaggedWords as $flagged) {
+                if (stripos($contentLower, strtolower($flagged['word'])) !== false) {
+                    $found[] = $flagged;
+                }
+            }
+            
+            return $found;
+        } catch (PDOException $e) {
+            error_log("Error checking flagged words: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Log content violation
+     */
+    private function logViolation($userId, $flaggedWord) {
+        try {
+            // Check if table exists
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'content_violations'");
+            if ($tableCheck->rowCount() == 0) {
+                return;
+            }
+
+            $query = "INSERT INTO content_violations 
+                    SET content_type = 'comment',
+                        content_id = 0,
+                        user_id = :user_id,
+                        flagged_word = :word,
+                        word_category = :category,
+                        severity = :severity,
+                        status = 'pending'";
+
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(":user_id", $userId);
+            $stmt->bindParam(":word", $flaggedWord['word']);
+            $stmt->bindParam(":category", $flaggedWord['category']);
+            $stmt->bindParam(":severity", $flaggedWord['severity']);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error logging violation: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get flagged comments (admin)
+     */
+    public function getFlagged() {
+        $query = "SELECT 
+                    c.*,
+                    u.name as user_name,
+                    u.avatar_url as user_avatar,
+                    s.title as story_title
+                FROM comments c
+                INNER JOIN users u ON c.user_id = u.id
+                LEFT JOIN stories s ON c.story_id = s.id
+                WHERE c.status = 'flagged'
+                ORDER BY c.created_at DESC";
+
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute();
+
+        return $stmt;
+    }
+
+    /**
+     * Approve flagged comment
+     */
+    public function approve() {
+        $query = "UPDATE comments 
+                SET status = 'active' 
+                WHERE id = :id";
+
+        $stmt = $this->pdo->prepare($query);
+        $stmt->bindParam(":id", $this->id);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * HARD DELETE - Permanently delete comment
+     */
+    public function hardDelete() {
+        $query = "DELETE FROM comments WHERE id = :id";
+
+        $stmt = $this->pdo->prepare($query);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(":id", $this->id);
+
+        return $stmt->execute();
     }
 }

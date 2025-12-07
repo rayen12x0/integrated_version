@@ -111,8 +111,14 @@ class ActionParticipantController
                     $userStmt->execute([':user_id' => $userId]);
                     $user = $userStmt->fetch(PDO::FETCH_ASSOC);
 
-                    if ($action && $user && $action['creator_id'] != $userId) { // Don't notify the user if they're joining their own action
-                        $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
+                    if ($action && $user) {
+                        // Don't notify the user if they're joining their own action
+                        if ($action['creator_id'] != $userId) {
+                            $notification->createActionJoinedNotification($action['creator_id'], $actionId, $action['title'], $user['name']);
+                        }
+
+                        // Notify all other participants about the new joiner
+                        $notification->createActionJoinedOtherParticipantsNotification($actionId, $userId, $action['title'], $user['name']);
                     }
 
                     ApiResponse::success(['joined' => true], "You've successfully joined this action!", 200);

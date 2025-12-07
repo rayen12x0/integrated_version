@@ -65,6 +65,9 @@ class Notification
                     case 'resource_rejected':
                         EmailService::sendNotificationEmail($userEmail, $userName, "Your Resource Has Been Rejected", $data['message'], null, null);
                         break;
+                    case 'action_joined':
+                        EmailService::sendNotificationEmail($userEmail, $userName, "Action Participant Update", $data['message'], null, null);
+                        break;
                     case 'action_comment_added':
                     case 'resource_comment_added':
                         $itemType = strpos($data['type'], 'action') === 0 ? 'action' : 'resource';
@@ -245,6 +248,50 @@ class Notification
         return $this->create($data);
     }
 
+    // Create notifications for all other participants when a user joins an action
+    public function createActionJoinedOtherParticipantsNotification($actionId, $joiningUserId, $actionTitle, $joiningUserName) {
+        // Get all other participants in the action (excluding the user who just joined)
+        $sql = "SELECT ap.user_id, u.email, u.name
+                FROM action_participants ap
+                JOIN users u ON ap.user_id = u.id
+                WHERE ap.action_id = :action_id AND ap.user_id != :joining_user_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':action_id', $actionId, PDO::PARAM_INT);
+        $stmt->bindParam(':joining_user_id', $joiningUserId, PDO::PARAM_INT);
+        $stmt->execute();
+        $otherParticipants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $successCount = 0;
+        foreach ($otherParticipants as $participant) {
+            $data = [
+                'user_id' => $participant['user_id'],
+                'type' => 'action_joined',
+                'message' => "{$joiningUserName} has joined the action '{$actionTitle}'.",
+                'related_id' => $actionId
+            ];
+
+            // Create in-app notification
+            $this->create($data);
+
+            // Send email notification
+            if ($participant['email'] && $participant['name']) {
+                $emailSuccess = EmailService::sendNotificationEmail(
+                    $participant['email'],
+                    $participant['name'],
+                    "New Participant in Action '{$actionTitle}'",
+                    "{$joiningUserName} has joined the action '{$actionTitle}' that you're participating in.",
+                    null,
+                    null
+                );
+                if ($emailSuccess) {
+                    $successCount++;
+                }
+            }
+        }
+
+        return count($otherParticipants) > 0 ? true : true; // Return true as it's successful even if no other participants exist
+    }
+
     // Resource notifications
     public function createResourceCreatedNotification($userId, $resourceId, $resourceName) {
         $data = [
@@ -299,6 +346,114 @@ class Notification
             'type' => 'reminder',
             'message' => "Reminder: Your {$itemType} '{$itemTitle}' is scheduled for {$formattedDate}",
             'related_id' => $itemId
+        ];
+        return $this->create($data);
+    }
+
+    /**
+     * Create reminder notifications for all participants of an action
+     */
+    public function createActionReminderNotificationForAllParticipants($actionId, $actionTitle, $itemDate) {
+        // Get all participants in the action
+        $sql = "SELECT ap.user_id, u.email, u.name
+                FROM action_participants ap
+                JOIN users u ON ap.user_id = u.id
+                WHERE ap.action_id = :action_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindParam(':action_id', $actionId, PDO::PARAM_INT);
+        $stmt->execute();
+        $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $successCount = 0;
+        foreach ($participants as $participant) {
+            $formattedDate = date('F j, Y \a\t g:i A', strtotime($itemDate));
+            $data = [
+                'user_id' => $participant['user_id'],
+                'type' => 'reminder',
+                'message' => "Reminder: Action '{$actionTitle}' is scheduled for {$formattedDate}",
+                'related_id' => $actionId
+            ];
+
+            // Create in-app notification
+            $this->create($data);
+
+            // Send email notification
+            if ($participant['email'] && $participant['name']) {
+                $emailSuccess = EmailService::sendReminderEmail(
+                    $participant['email'],
+                    $participant['name'],
+                    $actionTitle,
+                    'action',
+                    $itemDate,
+                    '' // No specific location in this context
+                );
+                if ($emailSuccess) {
+                    $successCount++;
+                }
+            }
+        }
+
+        return count($participants) > 0 ? true : true; // Return true as it's successful even if no participants exist
+    }
+
+    // Story notifications
+    public function createStoryCreatedNotification($userId, $storyId, $storyTitle) {
+        $data = [
+            'user_id' => $userId,
+            'type' => 'story_created',
+            'message' => "Your story '{$storyTitle}' has been created successfully and is pending approval.",
+            'related_id' => $storyId
+        ];
+        return $this->create($data);
+    }
+
+    public function createStoryUpdatedNotification($userId, $storyId, $storyTitle) {
+        $data = [
+            'user_id' => $userId,
+            'type' => 'story_updated',
+            'message' => "Your story '{$storyTitle}' has been updated successfully.",
+            'related_id' => $storyId
+        ];
+        return $this->create($data);
+    }
+
+    public function createStoryDeletedNotification($userId, $storyTitle) {
+        $data = [
+            'user_id' => $userId,
+            'type' => 'story_deleted',
+            'message' => "Your story '{$storyTitle}' has been deleted successfully.",
+            'related_id' => null
+        ];
+        return $this->create($data);
+    }
+
+    public function createStoryApprovedNotification($userId, $storyId, $storyTitle) {
+        $data = [
+            'user_id' => $userId,
+            'type' => 'story_approved',
+            'message' => "Your story '{$storyTitle}' has been approved.",
+            'related_id' => $storyId
+        ];
+        return $this->create($data);
+    }
+
+    public function createStoryRejectedNotification($userId, $storyId, $storyTitle) {
+        $data = [
+            'user_id' => $userId,
+            'type' => 'story_rejected',
+            'message' => "Your story '{$storyTitle}' has been rejected.",
+            'related_id' => $storyId
+        ];
+        return $this->create($data);
+    }
+
+    // Comment notifications for stories
+    public function createStoryCommentAddedNotification($creatorId, $storyId, $storyTitle, $commenterName) {
+        $data = [
+            'user_id' => $creatorId,
+            'type' => 'story_comment_added',
+            'message' => "{$commenterName} commented on your story '{$storyTitle}'.",
+            'related_id' => $storyId
         ];
         return $this->create($data);
     }

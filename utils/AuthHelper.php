@@ -9,6 +9,16 @@ class AuthHelper {
         self::$pdo = $pdo;
     }
 
+    // Initialize PDO connection if not already set
+    private static function initializePdo() {
+        if (!self::$pdo) {
+            // If PDO connection isn't set, try to get it from config
+            if (class_exists('Config')) {
+                self::$pdo = Config::getConnexion();
+            }
+        }
+    }
+
     // Get current user based on session, URL parameter for testing, or default
     public static function getCurrentUser($userIdOverride = null) {
         // Start session if not already started
@@ -31,26 +41,33 @@ class AuthHelper {
         }
 
         if ($testUserId) {
-            // Testing mode - return mock user based on ID
-            if ($testUserId == 1) {
-                return [
-                    'id' => 1,
-                    'name' => 'Admin User',
-                    'email' => 'admin@example.com',
-                    'role' => 'admin',
-                    'avatar_url' => 'https://api.placeholder.com/40/40?text=AU',
-                    'badge' => 'Administrator'
-                ];
-            } else {
-                return [
-                    'id' => 2,
-                    'name' => 'Regular User',
-                    'email' => 'user@example.com',
-                    'role' => 'user',
-                    'avatar_url' => 'https://api.placeholder.com/40/40?text=RU',
-                    'badge' => 'Community Member'
-                ];
+            // Try to get real user data from database first
+            $user = self::getUserById($testUserId);
+
+            if (!$user) {
+                // Testing mode - return mock user based on ID
+                if ($testUserId == 1) {
+                    $user = [
+                        'id' => 1,
+                        'name' => 'Admin User',
+                        'email' => 'admin@connectforpeace.com',
+                        'role' => 'admin',
+                        'avatar_url' => 'https://api.placeholder.com/40/40?text=AU',
+                        'badge' => 'Administrator'
+                    ];
+                } else {
+                    $user = [
+                        'id' => 2,
+                        'name' => 'Regular User',
+                        'email' => 'user@connectforpeace.com',
+                        'role' => 'user',
+                        'avatar_url' => 'https://api.placeholder.com/40/40?text=RU',
+                        'badge' => 'Community Member'
+                    ];
+                }
             }
+
+            return $user;
         }
 
         // If no session data and no URL override, return default user
@@ -99,25 +116,30 @@ class AuthHelper {
             session_start();
         }
 
-        // Create user object based on user_id
-        if ($userId == 1) {
-            $user = [
-                'id' => 1,
-                'name' => 'Admin User',
-                'email' => 'admin@example.com',
-                'role' => 'admin',
-                'avatar_url' => 'https://api.placeholder.com/40/40?text=AU',
-                'badge' => 'Administrator'
-            ];
-        } else {
-            $user = [
-                'id' => 2,
-                'name' => 'Regular User',
-                'email' => 'user@example.com',
-                'role' => 'user',
-                'avatar_url' => 'https://api.placeholder.com/40/40?text=RU',
-                'badge' => 'Community Member'
-            ];
+        // Try to get real user data from database first
+        $user = self::getUserById($userId);
+
+        if (!$user) {
+            // Fallback to mock data if user doesn't exist in DB
+            if ($userId == 1) {
+                $user = [
+                    'id' => 1,
+                    'name' => 'Admin User',
+                    'email' => 'admin@connectforpeace.com',
+                    'role' => 'admin',
+                    'avatar_url' => 'https://api.placeholder.com/40/40?text=AU',
+                    'badge' => 'Administrator'
+                ];
+            } else {
+                $user = [
+                    'id' => 2,
+                    'name' => 'Regular User',
+                    'email' => 'user@connectforpeace.com',
+                    'role' => 'user',
+                    'avatar_url' => 'https://api.placeholder.com/40/40?text=RU',
+                    'badge' => 'Community Member'
+                ];
+            }
         }
 
         // Store user object in session
@@ -125,6 +147,34 @@ class AuthHelper {
         $_SESSION['user_id'] = $user['id'];
 
         return $user;
+    }
+
+    // Get user by ID from database if available
+    private static function getUserById($userId) {
+        self::initializePdo(); // Initialize PDO if not already set
+
+        if (self::$pdo) {
+            try {
+                $stmt = self::$pdo->prepare("SELECT id, name, email, role, avatar_url FROM users WHERE id = :id");
+                $stmt->execute([':id' => $userId]);
+                $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($userData) {
+                    return [
+                        'id' => $userData['id'],
+                        'name' => $userData['name'],
+                        'email' => $userData['email'],
+                        'role' => $userData['role'],
+                        'avatar_url' => $userData['avatar_url'],
+                        'badge' => $userData['role'] === 'admin' ? 'Administrator' : 'Community Member'
+                    ];
+                }
+            } catch (Exception $e) {
+                error_log("Error fetching user by ID: " . $e->getMessage());
+            }
+        }
+
+        return null;
     }
 
     // Destroy the current session

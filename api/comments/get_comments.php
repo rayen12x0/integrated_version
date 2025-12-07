@@ -1,22 +1,26 @@
 <?php
-// API endpoint to get comments for an action or resource
-// This file connects the frontend to the comment controller
+// Turn off error display to prevent HTML from being output
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors in API responses
+ini_set('log_errors', 1); // Log errors to file
 
-// Set the content type header first
-header('Content-Type: application/json; charset=utf-8');
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Create controller and handle request
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 try {
-    // Require statements - According to the analysis, these paths need to be fixed
     require_once __DIR__ . '/../../controllers/CommentController.php';
-    require_once __DIR__ . '/../../config/config.php';
-    require_once __DIR__ . '/../../model/comment.php';
-    require_once __DIR__ . '/../../utils/AuthHelper.php';
 
     // Get input parameters
     $actionId = $_GET['action_id'] ?? null;
     $resourceId = $_GET['resource_id'] ?? null;
-
 
     $controller = new CommentController();
 
@@ -27,7 +31,8 @@ try {
         $controller->getAll();
     }
 } catch (Exception $e) {
-    // If there's any error, return proper JSON
+    error_log("Error in get_comments.php: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         "success" => false,
         "message" => "Server error occurred: " . $e->getMessage()

@@ -71,7 +71,15 @@ class Resource
         // Enrich data with actual counts and real values for frontend
         foreach ($resources as &$resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -113,7 +121,15 @@ class Resource
         // Enrich data with actual counts and real values for frontend
         foreach ($resources as &$resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -153,7 +169,15 @@ class Resource
 
         if ($resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -334,7 +358,15 @@ class Resource
         // Enrich data with actual counts and real values for frontend
         foreach ($resources as &$resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -376,7 +408,15 @@ class Resource
         // Enrich data with actual counts and real values for frontend
         foreach ($resources as &$resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -418,7 +458,15 @@ class Resource
         // Enrich data with actual counts and real values for frontend
         foreach ($resources as &$resource) {
             // Use actual image from DB if available, otherwise use default
-            $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image'; // Default image
+            if (!empty($resource['image_url'])) {
+                // Fix the path to be relative to both vue and dashboard directories
+                if (strpos($resource['image_url'], '/uploads/') === 0) {
+                    $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                }
+                $resource['image'] = $resource['image_url'];
+            } else {
+                $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            }
 
             // Format publisher info
             $resource['creator'] = [
@@ -483,7 +531,15 @@ class Resource
             // Process each resource to enrich with additional information
             foreach ($results as &$resource) {
                 // Use actual image from DB if available, otherwise use default
-                $resource['image'] = $resource['image_url'] ?? 'https://via.placeholder.com/400x200?text=Resource+Image';
+                if (!empty($resource['image_url'])) {
+                    // Fix the path to be relative to both vue and dashboard directories
+                    if (strpos($resource['image_url'], '/uploads/') === 0) {
+                        $resource['image_url'] = '../uploads/' . substr($resource['image_url'], 9);
+                    }
+                    $resource['image'] = $resource['image_url'];
+                } else {
+                    $resource['image'] = $resource['image_url'] = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFJlc291cmNlIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                }
 
                 // Format publisher info
                 $resource['creator'] = [

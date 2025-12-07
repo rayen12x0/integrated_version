@@ -37,6 +37,7 @@ try {
         $itemLocation = $reminder['item_location'];
         $reminderType = $reminder['reminder_type'];
         $reminderId = $reminder['id'];
+        $itemId = $reminder['item_id'];
 
         error_log("Processing reminder ID: {$reminderId} for user {$userId}, item {$itemTitle}");
 
@@ -44,27 +45,75 @@ try {
             $emailSent = false;
             $notificationSent = false;
 
-            // Send email if requested
-            if ($reminderType === 'email' || $reminderType === 'both') {
-                error_log("Sending email reminder to {$userEmail} for {$itemTitle}");
-                $emailResult = EmailService::sendReminderEmail($userEmail, $userName, $itemTitle, $itemType, $itemDate, $itemLocation);
-                $emailSent = $emailResult;
-                error_log("Email result for reminder {$reminderId}: " . ($emailResult ? "SUCCESS" : "FAILED"));
-            }
+            // If it's an action reminder, send to all participants
+            if ($itemType === 'action') {
+                // Get all participants for this action
+                $sql = "SELECT u.id, u.email, u.name
+                        FROM action_participants ap
+                        JOIN users u ON ap.user_id = u.id
+                        WHERE ap.action_id = :item_id";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':item_id', $itemId, PDO::PARAM_INT);
+                $stmt->execute();
+                $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Create in-app notification if requested
-            if ($reminderType === 'in_app' || $reminderType === 'both') {
-                error_log("Creating in-app notification for user {$userId} for {$itemTitle}");
-                $notificationMessage = "Reminder: Upcoming {$itemType} - {$itemTitle}";
-                $notificationData = [
-                    'user_id' => $userId,
-                    'type' => 'reminder',
-                    'message' => $notificationMessage,
-                    'related_id' => $reminder['item_id']
-                ];
-                $result = $notificationModel->create($notificationData);
-                $notificationSent = $result;
-                error_log("Notification result for reminder {$reminderId}: " . ($result ? "SUCCESS" : "FAILED"));
+                // Process reminder for each participant
+                foreach ($participants as $participant) {
+                    $participantEmail = $participant['email'];
+                    $participantName = $participant['name'];
+                    $participantId = $participant['id'];
+
+                    // Send email if requested
+                    if ($reminderType === 'email' || $reminderType === 'both') {
+                        error_log("Sending email reminder to {$participantEmail} for action {$itemTitle}");
+                        $emailResult = EmailService::sendReminderEmail($participantEmail, $participantName, $itemTitle, $itemType, $itemDate, $itemLocation);
+                        if ($emailResult) {
+                            $emailSent = true; // Mark as sent if at least one email was sent
+                        }
+                        error_log("Email result for action reminder to user {$participantId}: " . ($emailResult ? "SUCCESS" : "FAILED"));
+                    }
+
+                    // Create in-app notification if requested
+                    if ($reminderType === 'in_app' || $reminderType === 'both') {
+                        error_log("Creating in-app notification for user {$participantId} for action {$itemTitle}");
+                        $notificationMessage = "Reminder: Upcoming {$itemType} - {$itemTitle}";
+                        $notificationData = [
+                            'user_id' => $participantId,
+                            'type' => 'reminder',
+                            'message' => $notificationMessage,
+                            'related_id' => $itemId
+                        ];
+                        $result = $notificationModel->create($notificationData);
+                        if ($result) {
+                            $notificationSent = true; // Mark as sent if at least one notification was created
+                        }
+                        error_log("Notification result for action reminder to user {$participantId}: " . ($result ? "SUCCESS" : "FAILED"));
+                    }
+                }
+            } else {
+                // For non-action items (like resources), send to the original reminder creator
+                // Send email if requested
+                if ($reminderType === 'email' || $reminderType === 'both') {
+                    error_log("Sending email reminder to {$userEmail} for {$itemTitle}");
+                    $emailResult = EmailService::sendReminderEmail($userEmail, $userName, $itemTitle, $itemType, $itemDate, $itemLocation);
+                    $emailSent = $emailResult;
+                    error_log("Email result for reminder {$reminderId}: " . ($emailResult ? "SUCCESS" : "FAILED"));
+                }
+
+                // Create in-app notification if requested
+                if ($reminderType === 'in_app' || $reminderType === 'both') {
+                    error_log("Creating in-app notification for user {$userId} for {$itemTitle}");
+                    $notificationMessage = "Reminder: Upcoming {$itemType} - {$itemTitle}";
+                    $notificationData = [
+                        'user_id' => $userId,
+                        'type' => 'reminder',
+                        'message' => $notificationMessage,
+                        'related_id' => $itemId
+                    ];
+                    $result = $notificationModel->create($notificationData);
+                    $notificationSent = $result;
+                    error_log("Notification result for reminder {$reminderId}: " . ($result ? "SUCCESS" : "FAILED"));
+                }
             }
 
             // Mark as sent if either email or notification was successful
