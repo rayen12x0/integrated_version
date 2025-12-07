@@ -339,7 +339,16 @@
                         id="headerToggle">
                         <i data-lucide="menu" class="stroke-[1.5] w-5 h-5"></i>
                     </button>
-                    <h1 class="text-lg font-semibold text-zinc-900 dark:text-zinc-200">Stories Moderation</h1>
+                    <!-- Search -->
+                    <div class="relative hidden md:block group w-full max-w-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="search"
+                                class="h-4 w-4 text-zinc-400 dark:text-zinc-600 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors"></i>
+                        </div>
+                        <input type="text"
+                            class="block w-full pl-10 pr-3 py-1.5 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg leading-5 text-zinc-900 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-600 focus:outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 sm:text-sm transition-all"
+                            placeholder="Search workspace...">
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <!-- Theme Toggle -->
@@ -411,56 +420,67 @@
             <div
                 class="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
                 
-                <!-- Dashboard Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="stat-card rounded-xl p-6 glass-card bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 shadow-sm dark:shadow-none">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-zinc-600">Total Stories</p>
-                                <p class="text-2xl font-semibold text-zinc-900" id="totalStories">0</p>
-                            </div>
-                            <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center dark:bg-blue-900/30">
-                                <i data-lucide="book-open" class="h-6 w-6 text-blue-600 dark:text-blue-400"></i>
-                            </div>
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Stories Moderation</h2>
+                            <p class="text-sm text-zinc-500 mt-1">Moderate stories, comments, and user reports.</p>
                         </div>
                     </div>
 
-                    <div class="stat-card rounded-xl p-6 glass-card bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 shadow-sm dark:shadow-none">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-zinc-600">Pending Approval</p>
-                                <p class="text-2xl font-semibold text-zinc-900" id="pendingStories">0</p>
-                            </div>
-                            <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center dark:bg-yellow-900/30">
-                                <i data-lucide="clock" class="h-6 w-6 text-yellow-600 dark:text-yellow-400"></i>
+                    <!-- Dashboard Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <!-- Stat 1 -->
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-indigo-500/30 transition-colors shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Total Stories</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="totalStories">0</h3>
+                                </div>
+                                <div class="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-500/20">
+                                    <i data-lucide="book-open" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="stat-card rounded-xl p-6 glass-card bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 shadow-sm dark:shadow-none">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-zinc-600">Flagged Comments</p>
-                                <p class="text-2xl font-semibold text-zinc-900" id="flaggedComments">0</p>
-                            </div>
-                            <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center dark:bg-red-900/30">
-                                <i data-lucide="flag" class="h-6 w-6 text-red-600 dark:text-red-400"></i>
+                        <!-- Stat 2 -->
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-yellow-500/30 transition-colors shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Pending Approval</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="pendingStories">0</h3>
+                                </div>
+                                <div class="p-2 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-lg border border-yellow-500/20">
+                                    <i data-lucide="clock" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="stat-card rounded-xl p-6 glass-card bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 shadow-sm dark:shadow-none">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-zinc-600">Banned Users</p>
-                                <p class="text-2xl font-semibold text-zinc-900" id="bannedUsers">0</p>
+                        <!-- Stat 3 -->
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-rose-500/30 transition-colors shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Flagged Comments</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="flaggedComments">0</h3>
+                                </div>
+                                <div class="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/20">
+                                    <i data-lucide="flag" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
                             </div>
-                            <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center dark:bg-gray-700">
-                                <i data-lucide="user-x" class="h-6 w-6 text-gray-600 dark:text-gray-400"></i>
+                        </div>
+
+                        <!-- Stat 4 -->
+                        <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl p-5 hover:border-gray-500/30 transition-colors shadow-sm dark:shadow-none">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Banned Users</p>
+                                    <h3 class="text-2xl font-medium text-zinc-900 dark:text-zinc-100 mt-2 tracking-tight" id="bannedUsers">0</h3>
+                                </div>
+                                <div class="p-2 bg-gray-500/10 text-gray-600 dark:text-gray-400 rounded-lg border border-gray-500/20">
+                                    <i data-lucide="user-x" class="stroke-[1.5] w-5 h-5"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
                 <!-- Pending Stories Section -->
                 <div class="mb-8">
@@ -472,19 +492,19 @@
                     </div>
                     <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                         <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50">
+                            <table class="w-full text-left border-collapse admin-table">
+                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">ID</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Image</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Title</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Author</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Theme</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Date</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Actions</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Image</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Title</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Author</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Theme</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="pendingStoriesTable" class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                <tbody id="pendingStoriesTable" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
                                     <!-- Pending stories will be loaded here -->
                                 </tbody>
                             </table>
@@ -502,19 +522,19 @@
                     </div>
                     <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                         <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50">
+                            <table class="w-full text-left border-collapse admin-table">
+                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">ID</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Story</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">User</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Content</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Flagged</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Date</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Actions</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Story</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">User</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Content</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Flagged</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="flaggedCommentsTable" class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                <tbody id="flaggedCommentsTable" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
                                     <!-- Flagged comments will be loaded here -->
                                 </tbody>
                             </table>
@@ -532,18 +552,18 @@
                     </div>
                     <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                         <div class="overflow-x-auto">
-                            <table class="w-full">
-                                <thead class="bg-zinc-50 dark:bg-zinc-900/50">
+                            <table class="w-full text-left border-collapse admin-table">
+                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                                     <tr>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">ID</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Name</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Email</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Banned Date</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Reason</th>
-                                        <th class="py-3 px-4 text-left text-sm font-medium text-zinc-500">Actions</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">ID</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Name</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Email</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Banned Date</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Reason</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="bannedUsersTable" class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                <tbody id="bannedUsersTable" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
                                     <!-- Banned users will be loaded here -->
                                 </tbody>
                             </table>
@@ -552,10 +572,25 @@
                 </div>
 
                 <!-- Most Reported Stories Section -->
-                <div>
+                <div class="mb-8">
                     <h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-200 mb-4">Most Reported Stories</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="mostReportedStories">
-                        <!-- Most reported stories will be loaded here -->
+                    <div class="bg-white dark:bg-zinc-900/20 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse admin-table text-zinc-700 dark:text-zinc-300">
+                                <thead class="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
+                                    <tr>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Image</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Title</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Reports</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Status</th>
+                                        <th class="py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mostReportedStories" class="divide-y divide-zinc-200 dark:divide-zinc-800/30 text-sm">
+                                    <!-- Most reported stories will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -575,6 +610,8 @@
         let flaggedComments = [];
         let bannedUsers = [];
         let mostReportedStories = [];
+        let isAuthenticated = false;
+        let currentUser = null;
 
         // Theme toggle function
         function toggleTheme() {
@@ -595,15 +632,80 @@
             document.documentElement.classList.remove('dark')
         }
 
+        // Check authentication status
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch("./../api/users/check_auth.php");
+
+                if (!response.ok) {
+                    // Handle non-2xx HTTP responses (like 401)
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                let result;
+                try {
+                    // Read response as text first to check for HTML content
+                    const responseText = await response.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("Auth API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
+
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing auth response:", parseError);
+                    throw new Error("Invalid JSON response from server");
+                }
+
+                if (result.authenticated) {
+                    isAuthenticated = true;
+                    currentUser = result.user;
+                    window.currentUser = currentUser;
+
+                    // Check if user has admin role
+                    if (currentUser.role !== 'admin') {
+                        // Non-admin users should not access moderation page
+                        // Redirect to stories page
+                        window.location.href = '../vue/stories.html';
+                        return;
+                    }
+                } else {
+                    isAuthenticated = false;
+                    currentUser = null;
+                    // Redirect to login if not authenticated
+                    window.location.href = '../auth/login.html';
+                }
+            } catch (error) {
+                console.error("Failed to check authentication status:", error);
+                // Redirect to login if there's any error
+                window.location.href = '../auth/login.html';
+                isAuthenticated = false;
+                currentUser = null;
+            }
+        }
+
         // Initialize icons and event listeners
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             lucide.createIcons();
-            
-            // Initialize event listeners
-            initializeEventListeners();
-            
-            // Load dashboard data
-            loadStoriesModerationData();
+
+            // Check authentication first before proceeding
+            await checkAuthStatus();
+
+            if (isAuthenticated && currentUser && currentUser.role === 'admin') {
+                // Initialize event listeners
+                initializeEventListeners();
+
+                // Load dashboard data only if user is admin
+                loadStoriesModerationData();
+            }
         });
 
         function initializeEventListeners() {
@@ -639,44 +741,64 @@
 
         // Load stories moderation dashboard data
         async function loadStoriesModerationData() {
-            // Only load if user is admin (in a real implementation, check auth)
-            // For now, we'll load the data since this page is meant for moderation
-
             try {
                 // Load dashboard stats
-                const statsResponse = await fetch("./../api/moderation/dashboard.php");
-                
-                if (statsResponse.ok) {
-                    let statsResult;
-                    try {
-                        // Read response as text first to check for HTML content
-                        const responseText = await statsResponse.text();
+                const statsResponse = await fetch("./../api/moderation/dashboard.php", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
 
-                        // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                            responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                            console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                            throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                        }
+                if (!statsResponse.ok) {
+                    if (statsResponse.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${statsResponse.status}`);
+                }
 
-                        statsResult = JSON.parse(responseText);
-                    } catch (parseError) {
-                        console.error("Error parsing dashboard stats response:", parseError);
-                        throw new Error("Invalid JSON response from server");
+                let statsResult;
+                try {
+                    // Read response as text first to check for HTML content
+                    const responseText = await statsResponse.text();
+
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
+                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
+                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    if (statsResult.success) {
-                        dashboardStats = statsResult.data;
+                    statsResult = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error("Error parsing dashboard stats response:", parseError);
+                    throw new Error("Invalid JSON response from server");
+                }
 
-                        // Update stat cards
-                        document.getElementById('totalStories').textContent = statsResult.data.report_stats.total || 0;
-                        document.getElementById('pendingStories').textContent = statsResult.data.pending_reports_count || 0;
-                        document.getElementById('flaggedComments').textContent = statsResult.data.flagged_comments_count || 0;
-                        document.getElementById('bannedUsers').textContent = statsResult.data.banned_users_count || 0;
+                if (statsResult.success) {
+                    dashboardStats = statsResult.data;
 
-                        // Load most reported stories
-                        loadMostReportedStories(statsResult.data.most_reported_stories || []);
-                    }
+                    // Update stat cards - fix total stories to show actual stories, not reports
+                    document.getElementById('totalStories').textContent = statsResult.data.total_stories || statsResult.data.report_stats?.total || 0;
+                    document.getElementById('pendingStories').textContent = statsResult.data.pending_stories_count || statsResult.data.pending_reports_count || 0;
+                    document.getElementById('flaggedComments').textContent = statsResult.data.flagged_comments_count || 0;
+                    document.getElementById('bannedUsers').textContent = statsResult.data.banned_users_count || 0;
+
+                    // Load most reported stories
+                    loadMostReportedStories(statsResult.data.most_reported_stories || []);
+                } else {
+                    console.error("Failed to load dashboard stats:", statsResult.message);
+
+                    // Set defaults if API returns error
+                    document.getElementById('totalStories').textContent = 0;
+                    document.getElementById('pendingStories').textContent = 0;
+                    document.getElementById('flaggedComments').textContent = 0;
+                    document.getElementById('bannedUsers').textContent = 0;
+
+                    // Still try to load individual data
+                    loadMostReportedStories([]);
                 }
 
                 // Load pending stories
@@ -690,18 +812,32 @@
 
             } catch (error) {
                 console.error("Error loading stories moderation data:", error);
+                // Show error message to user
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
         // Load pending stories
         async function loadPendingStories() {
             try {
-                const response = await fetch("./../api/stories/get_pending.php");
-                
+                const response = await fetch("./../api/stories/get_pending.php", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 let result;
                 try {
                     // Read response as text first to check for HTML content
@@ -728,6 +864,9 @@
                 }
             } catch (error) {
                 console.error("Failed to load pending stories:", error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
@@ -736,38 +875,68 @@
             const pendingStoriesTable = document.getElementById('pendingStoriesTable');
             if (!pendingStoriesTable) return;
 
+            if (!pendingStories || pendingStories.length === 0) {
+                pendingStoriesTable.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="book-open" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No pending stories</p>
+                                <p class="text-xs text-zinc-400 mt-1">Stories awaiting moderation will appear here</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Recreate icons after DOM update
+                lucide.createIcons();
+                return;
+            }
+
             pendingStoriesTable.innerHTML = pendingStories.map(story => {
                 return `
-                    <tr class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        <td class="py-3 px-4 text-sm text-zinc-900">${story.id}</td>
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td class="py-3 px-4 text-zinc-500">#${story.id}</td>
                         <td class="py-3 px-4">
-                            <img src="${story.image_url || 'https://placehold.co/40x40?text=Img'}" alt="Story" class="h-10 w-10 rounded object-cover" onerror="this.src='https://placehold.co/40x40?text=No+Image'">
+                            <img src="${story.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}" alt="${story.title || 'Story'}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
                         </td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${story.title || 'No Title'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${story.author_name || story.creator?.name || 'Anonymous'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${story.theme || 'Uncategorized'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-500">${formatDate(story.created_at)}</td>
+                        <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${story.title || 'No Title'}</td>
+                        <td class="py-3 px-4 text-zinc-700 dark:text-zinc-300">${story.author_name || story.creator?.name || 'Anonymous'}</td>
+                        <td class="py-3 px-4">${story.theme || 'Uncategorized'}</td>
+                        <td class="py-3 px-4 text-zinc-500">${formatDate(story.created_at)}</td>
                         <td class="py-3 px-4">
                             <div class="flex gap-2">
-                                <button onclick="approveStory(${story.id})" class="text-xs bg-green-600 text-white px-3 py-1 rounded">Approve</button>
-                                <button onclick="rejectStory(${story.id})" class="text-xs bg-red-600 text-white px-3 py-1 rounded">Reject</button>
-                                <button onclick="viewStoryDetails(${story.id})" class="text-xs bg-blue-600 text-white px-3 py-1 rounded">View</button>
+                                <button onclick="approveStory(${story.id})" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Approve</button>
+                                <button onclick="rejectStory(${story.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Reject</button>
+                                <button onclick="viewStoryDetails(${story.id})" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            // Recreate icons after DOM update
+            lucide.createIcons();
         }
 
         // Load flagged comments
         async function loadFlaggedComments() {
             try {
-                const response = await fetch("./../api/comments/get_flagged.php");
-                
+                const response = await fetch("./../api/comments/get_flagged.php", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 let result;
                 try {
                     // Read response as text first to check for HTML content
@@ -794,6 +963,9 @@
                 }
             } catch (error) {
                 console.error("Failed to load flagged comments:", error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
@@ -802,35 +974,65 @@
             const flaggedCommentsTable = document.getElementById('flaggedCommentsTable');
             if (!flaggedCommentsTable) return;
 
+            if (!flaggedComments || flaggedComments.length === 0) {
+                flaggedCommentsTable.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="flag" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No flagged comments</p>
+                                <p class="text-xs text-zinc-400 mt-1">Flagged comments will appear here</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Recreate icons after DOM update
+                lucide.createIcons();
+                return;
+            }
+
             flaggedCommentsTable.innerHTML = flaggedComments.map(comment => {
                 return `
-                    <tr class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        <td class="py-3 px-4 text-sm text-zinc-900">${comment.id}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${comment.story_title || 'N/A'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${comment.user_name || 'Anonymous'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-700 max-w-xs truncate">${comment.content || ''}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-700">${comment.flagged_word || 'N/A'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-500">${formatDate(comment.created_at)}</td>
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td class="py-3 px-4 text-zinc-500">#${comment.id}</td>
+                        <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${comment.story_title || 'N/A'}</td>
+                        <td class="py-3 px-4 text-zinc-700 dark:text-zinc-300">${comment.user_name || 'Anonymous'}</td>
+                        <td class="py-3 px-4 max-w-xs truncate">${comment.content || ''}</td>
+                        <td class="py-3 px-4">${comment.flagged_word || 'N/A'}</td>
+                        <td class="py-3 px-4 text-zinc-500">${formatDate(comment.created_at)}</td>
                         <td class="py-3 px-4">
                             <div class="flex gap-2">
-                                <button onclick="approveComment(${comment.id})" class="text-xs bg-green-600 text-white px-3 py-1 rounded">Approve</button>
-                                <button onclick="deleteComment(${comment.id})" class="text-xs bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+                                <button onclick="approveComment(${comment.id})" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Approve</button>
+                                <button onclick="deleteComment(${comment.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Delete</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            // Recreate icons after DOM update
+            lucide.createIcons();
         }
 
         // Load banned users
         async function loadBannedUsers() {
             try {
-                const response = await fetch("./../api/moderation/get_banned_users.php");
-                
+                const response = await fetch("./../api/moderation/get_banned_users.php", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 let result;
                 try {
                     // Read response as text first to check for HTML content
@@ -857,6 +1059,9 @@
                 }
             } catch (error) {
                 console.error("Failed to load banned users:", error);
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                }
             }
         }
 
@@ -865,9 +1070,26 @@
             const bannedUsersTable = document.getElementById('bannedUsersTable');
             if (!bannedUsersTable) return;
 
+            if (!bannedUsers || bannedUsers.length === 0) {
+                bannedUsersTable.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="user-x" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No banned users</p>
+                                <p class="text-xs text-zinc-400 mt-1">Banned users will appear here</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Recreate icons after DOM update
+                lucide.createIcons();
+                return;
+            }
+
             bannedUsersTable.innerHTML = bannedUsers.map(user => {
                 return `
-                    <tr class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
                         <td class="py-3 px-4 text-sm text-zinc-900">${user.id}</td>
                         <td class="py-3 px-4 text-sm text-zinc-900">${user.name || 'Anonymous'}</td>
                         <td class="py-3 px-4 text-sm text-zinc-900">${user.email || 'N/A'}</td>
@@ -882,6 +1104,9 @@
                     </tr>
                 `;
             }).join('');
+
+            // Recreate icons after DOM update
+            lucide.createIcons();
         }
 
         // Load and render most reported stories
@@ -889,30 +1114,46 @@
             const mostReportedStoriesEl = document.getElementById('mostReportedStories');
             if (!mostReportedStoriesEl) return;
 
-            mostReportedStories = stories;
+            mostReportedStories = stories || [];
 
-            if (stories.length === 0) {
-                mostReportedStoriesEl.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No reported stories</p>';
+            if (!stories || stories.length === 0) {
+                mostReportedStoriesEl.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="trending-up" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
+                                <p class="text-sm">No reported stories</p>
+                                <p class="text-xs text-zinc-400 mt-1">Most reported stories will appear here</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Recreate icons after DOM update
+                lucide.createIcons();
                 return;
             }
 
             mostReportedStoriesEl.innerHTML = stories.map(story => {
                 return `
-                    <div class="bg-white rounded-xl border border-zinc-200 p-4">
-                        <div class="flex items-start gap-3">
-                            <img src="${story.image_url || 'https://placehold.co/60x60?text=Img'}" alt="Story" class="h-15 w-15 rounded object-cover flex-shrink-0" onerror="this.src='https://placehold.co/60x60?text=No+Image'">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-medium text-zinc-900 text-sm mb-1 truncate">${story.title || 'No Title'}</h3>
-                                <p class="text-xs text-zinc-500 mb-2">Reports: ${story.report_count || 0}</p>
-                                <div class="flex gap-2">
-                                    <button onclick="viewStoryDetails(${story.id})" class="text-xs bg-blue-600 text-white px-2 py-1 rounded">View</button>
-                                    <button onclick="takeAction(${story.id})" class="text-xs bg-red-600 text-white px-2 py-1 rounded">Act</button>
-                                </div>
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
+                        <td class="py-3 px-4">
+                            <img src="${story.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}" alt="${story.title || 'Story'}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                        </td>
+                        <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${story.title || 'No Title'}</td>
+                        <td class="py-3 px-4">${story.report_count || 0}</td>
+                        <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">${story.status || 'N/A'}</span></td>
+                        <td class="py-3 px-4">
+                            <div class="flex gap-2">
+                                <button onclick="viewStoryDetails(${story.id})" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View</button>
+                                <button onclick="takeAction(${story.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Act</button>
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                 `;
             }).join('');
+
+            // Recreate icons after DOM update
+            lucide.createIcons();
         }
 
         // Approve story
@@ -924,31 +1165,75 @@
             try {
                 const response = await fetch('./../api/stories/approve_story.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         id: storyId,
                         status: 'approved'
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Story approved successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Story approved successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadPendingStories(); // Refresh the list
                     loadStoriesModerationData(); // Refresh all stats
                 } else {
-                    alert('Error approving story: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error approving story: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error approving story:', error);
-                alert('Failed to approve story');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to approve story'
+                    });
+                }
             }
         }
 
         // Reject story
         async function rejectStory(storyId) {
-            const reason = prompt('Enter reason for rejection:');
+            const { value: reason } = await Swal.fire({
+                title: 'Reason for Rejection',
+                input: 'textarea',
+                inputLabel: 'Enter reason for rejection',
+                inputPlaceholder: 'Enter reason here...',
+                inputAttributes: {
+                    'aria-label': 'Type your reason here'
+                },
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return 'You need to write a reason for rejection!'
+                    }
+                }
+            });
+
             if (!reason) return;
 
             try {
@@ -962,18 +1247,45 @@
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Story rejected successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Story rejected successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadPendingStories(); // Refresh the list
                     loadStoriesModerationData(); // Refresh all stats
                 } else {
-                    alert('Error rejecting story: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error rejecting story: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error rejecting story:', error);
-                alert('Failed to reject story');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to reject story'
+                    });
+                }
             }
         }
 
@@ -994,24 +1306,61 @@
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Comment approved successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Comment approved successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadFlaggedComments(); // Refresh the list
                     loadStoriesModerationData(); // Refresh all stats
                 } else {
-                    alert('Error approving comment: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error approving comment: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error approving comment:', error);
-                alert('Failed to approve comment');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to approve comment'
+                    });
+                }
             }
         }
 
         // Delete flagged comment
         async function deleteComment(commentId) {
-            if (!confirm('Are you sure you want to delete this comment permanently?')) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
@@ -1024,24 +1373,61 @@
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Comment deleted successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Comment deleted successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadFlaggedComments(); // Refresh the list
                     loadStoriesModerationData(); // Refresh all stats
                 } else {
-                    alert('Error deleting comment: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error deleting comment: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error deleting comment:', error);
-                alert('Failed to delete comment');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to delete comment'
+                    });
+                }
             }
         }
 
         // Unban user
         async function unbanUser(userId) {
-            if (!confirm('Are you sure you want to unban this user?')) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "Do you want to unban this user?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, unban user!'
+            });
+
+            if (!result.isConfirmed) {
                 return;
             }
 
@@ -1054,18 +1440,45 @@
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('User unbanned successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'User unbanned successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadBannedUsers(); // Refresh the list
                     loadStoriesModerationData(); // Refresh all stats
                 } else {
-                    alert('Error unbanning user: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error unbanning user: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error unbanning user:', error);
-                alert('Failed to unban user');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to unban user'
+                    });
+                }
             }
         }
 
@@ -1076,13 +1489,28 @@
         }
 
         // Take action on most reported story
-        function takeAction(storyId) {
-            // Call the moderation action modal
-            const action = prompt('Choose action: dismiss, delete, ban');
-            if (!action) return;
+        async function takeAction(storyId) {
+            const { value: action } = await Swal.fire({
+                title: 'Select Action',
+                input: 'select',
+                inputOptions: {
+                    'dismiss': 'Dismiss Report',
+                    'delete': 'Delete Story',
+                    'ban': 'Ban User'
+                },
+                inputPlaceholder: 'Choose an action...',
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to choose an action!'
+                    }
+                }
+            });
 
-            // Use the take action API
-            takeModerationAction(storyId, action);
+            if (action) {
+                // Use the take action API
+                takeModerationAction(storyId, action);
+            }
         }
 
         // Take general moderation action
@@ -1098,18 +1526,45 @@
                     })
                 });
 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Unauthorized - redirect to login
+                        window.location.href = '../auth/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Action completed successfully');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Action completed successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     // Refresh relevant lists
                     loadStoriesModerationData();
                 } else {
-                    alert('Error taking action: ' + result.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error taking action: ' + result.message
+                    });
                 }
             } catch (error) {
                 console.error('Error taking action:', error);
-                alert('Failed to take action');
+                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
+                    window.location.href = '../auth/login.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to take action'
+                    });
+                }
             }
         }
 

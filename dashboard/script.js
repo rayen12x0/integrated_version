@@ -262,13 +262,14 @@
             // Nav
             navItems.forEach((item) => {
                 item.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    if (item.classList.contains("logout")) {
-                        handleLogout();
-                        return;
-                    }
+                    // Only prevent default if it's an internal page navigation (has data-page attribute)
                     const pageName = item.getAttribute("data-page");
                     if (pageName) {
+                        e.preventDefault();
+                        if (item.classList.contains("logout")) {
+                            handleLogout();
+                            return;
+                        }
                         showPage(pageName);
                         // Update active state in nav
                         document.querySelectorAll('.nav-item[data-page]').forEach(n => {
@@ -280,7 +281,12 @@
                         if (window.innerWidth < 1024) { // lg breakpoint
                             sidebar.classList.add("-translate-x-full");
                         }
+                    } else if (item.classList.contains("logout")) {
+                        // Handle logout without preventing default
+                        e.preventDefault();
+                        handleLogout();
                     }
+                    // For links without data-page (external pages), let the default behavior occur
                 });
             });
 
