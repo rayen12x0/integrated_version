@@ -5,13 +5,14 @@ try {
     require_once __DIR__ . '/../../controllers/StoryController.php';
     require_once __DIR__ . '/../../config/config.php';
     require_once __DIR__ . '/../../utils/AuthHelper.php';
-    
-    // Check if user is admin
-    if (!AuthHelper::isAdmin()) {
+
+    // Verify admin role
+    $currentUser = AuthHelper::getCurrentUser();
+    if (!AuthHelper::isAdmin($currentUser)) {
         http_response_code(403);
         echo json_encode([
             "success" => false,
-            "message" => "Access denied. Admin privileges required."
+            "message" => "Unauthorized. Admin access required."
         ]);
         exit;
     }

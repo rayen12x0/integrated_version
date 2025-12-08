@@ -251,6 +251,10 @@ class Resource
             $sqlParts[] = "status = :status";
             $params[':status'] = $data['status'];
         }
+        if (isset($data['admin_notes'])) {
+            $sqlParts[] = "admin_notes = :admin_notes";
+            $params[':admin_notes'] = $data['admin_notes'];
+        }
         if (isset($data['image_url'])) {
             $sqlParts[] = "image_url = :image_url";
             $params[':image_url'] = $data['image_url'];

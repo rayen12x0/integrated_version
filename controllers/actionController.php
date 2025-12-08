@@ -303,6 +303,7 @@ class ActionController
 
         $id = $input['id'];
         $action = $input['action']; // 'approve' or 'reject'
+        $admin_notes = $input['admin_notes'] ?? null; // Capture admin notes for rejection
 
         if ($action === 'approve') {
             // Get the existing action before approve to get the title and creator_id
@@ -322,7 +323,12 @@ class ActionController
             // Get the existing action before reject to get the title and creator_id
             $existingAction = $this->action->findById($id);
 
-            $result = $this->action->reject($id);
+            // Update the action with rejection status and admin notes
+            $result = $this->action->update($id, [
+                'status' => 'rejected',
+                'admin_notes' => $admin_notes // Store admin notes if provided
+            ]);
+
             $message = $result ? "Action rejected successfully" : "Failed to reject action";
 
             if ($result && $existingAction) {

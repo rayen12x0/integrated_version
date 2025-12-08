@@ -291,12 +291,7 @@
                         class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors"></i>
                     <span>Challenges</span>
                 </a>
-                <a href="./reports.html"
-                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
-                    <i data-lucide="flag"
-                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
-                    <span>Reports</span>
-                </a>
+               
                 <a href="./index.html#reminders"
                     class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
                     <i data-lucide="bell"
@@ -307,6 +302,13 @@
                 <div
                     class="px-3 mt-6 mb-2 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                     Support</div>
+
+                 <a href="./reports.html"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
+                    <i data-lucide="flag"
+                        class="stroke-[1.5] w-4 h-4 mr-3 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"></i>
+                    <span>Reports</span>
+                </a>
 
                 <a href="./index.html#contact"
                     class="flex items-center px-3 py-2 text-sm font-medium rounded-lg group nav-item text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/5 transition-all">
@@ -604,540 +606,70 @@
     <script src="./assets/js/countries.js"></script>
 
     <script>
-        // Initialize variables for stories moderation
+        // Stories-moderation-specific logic
         let dashboardStats = {};
         let pendingStories = [];
         let flaggedComments = [];
         let bannedUsers = [];
         let mostReportedStories = [];
-        let isAuthenticated = false;
-        let currentUser = null;
 
-        // Theme toggle function
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Initialize theme from localStorage or system preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-
-        // Check authentication status
-        async function checkAuthStatus() {
-            try {
-                const response = await fetch("./../api/users/check_auth.php");
-
-                if (!response.ok) {
-                    // Handle non-2xx HTTP responses (like 401)
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                try {
-                    // Read response as text first to check for HTML content
-                    const responseText = await response.text();
-
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("Auth API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing auth response:", parseError);
-                    throw new Error("Invalid JSON response from server");
-                }
-
-                if (result.authenticated) {
-                    isAuthenticated = true;
-                    currentUser = result.user;
-                    window.currentUser = currentUser;
-
-                    // Check if user has admin role
-                    if (currentUser.role !== 'admin') {
-                        // Non-admin users should not access moderation page
-                        // Redirect to stories page
-                        window.location.href = '../vue/stories.html';
-                        return;
-                    }
-                } else {
-                    isAuthenticated = false;
-                    currentUser = null;
-                    // Redirect to login if not authenticated
-                    window.location.href = '../auth/login.html';
-                }
-            } catch (error) {
-                console.error("Failed to check authentication status:", error);
-                // Redirect to login if there's any error
-                window.location.href = '../auth/login.html';
-                isAuthenticated = false;
-                currentUser = null;
-            }
-        }
-
-        // Initialize icons and event listeners
         document.addEventListener('DOMContentLoaded', async function() {
             lucide.createIcons();
-
-            // Check authentication first before proceeding
             await checkAuthStatus();
-
-            if (isAuthenticated && currentUser && currentUser.role === 'admin') {
-                // Initialize event listeners
+            if (window.currentUser && window.currentUser.role === 'admin') {
                 initializeEventListeners();
-
-                // Load dashboard data only if user is admin
                 loadStoriesModerationData();
+            } else {
+                window.location.href = '../auth/login.html';
             }
         });
 
         function initializeEventListeners() {
-            // Mobile sidebar toggle
-            document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
-
-            document.getElementById('headerToggle')?.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
-
-            // Notification dropdown
-            document.getElementById('notificationBtn')?.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('notificationDropdown').classList.toggle('hidden');
-                document.getElementById('userDropdown').classList.add('hidden');
-            });
-
-            // User menu dropdown
-            document.getElementById('userMenu')?.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('userDropdown').classList.toggle('hidden');
-                document.getElementById('notificationDropdown').classList.add('hidden');
-            });
-
-            // Close dropdowns when clicking elsewhere
-            document.addEventListener('click', function() {
-                document.getElementById('notificationDropdown')?.classList.add('hidden');
-                document.getElementById('userDropdown')?.classList.add('hidden');
-            });
+            // Mobile sidebar toggle, notification, user menu are in common.js
         }
 
-        // Load stories moderation dashboard data
         async function loadStoriesModerationData() {
             try {
-                // Load dashboard stats
-                const statsResponse = await fetch("./../api/moderation/dashboard.php", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!statsResponse.ok) {
-                    if (statsResponse.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${statsResponse.status}`);
-                }
-
-                let statsResult;
-                try {
-                    // Read response as text first to check for HTML content
-                    const responseText = await statsResponse.text();
-
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    statsResult = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing dashboard stats response:", parseError);
-                    throw new Error("Invalid JSON response from server");
-                }
+                const statsResponse = await fetch("./../api/moderation/dashboard.php");
+                if (!statsResponse.ok) throw new Error(`HTTP error! status: ${statsResponse.status}`);
+                const statsResult = await statsResponse.json();
 
                 if (statsResult.success) {
                     dashboardStats = statsResult.data;
-
-                    // Debug: Log the dashboard data to console to understand the structure
-                    console.log("Dashboard stats data:", statsResult.data);
-
-                    // Update stat cards - fix total stories to show actual stories, not reports
-                    // Try multiple possible fields for total stories count
-                    let totalStoriesCount = 0;
-                    if (statsResult.data.total_stories !== undefined) {
-                        totalStoriesCount = statsResult.data.total_stories;
-                    } else if (statsResult.data.total_published_stories !== undefined) {
-                        totalStoriesCount = statsResult.data.total_published_stories;
-                    } else if (statsResult.data.total_approved_stories !== undefined) {
-                        totalStoriesCount = statsResult.data.total_approved_stories;
-                    } else if (statsResult.data.total_active_stories !== undefined) {
-                        totalStoriesCount = statsResult.data.total_active_stories;
-                    } else if (statsResult.data.report_stats?.total !== undefined) {
-                        // This is the report count, not actual stories - avoid using this
-                        console.warn("Dashboard API only provides report count, not actual story count. Fetching separately.");
-                        totalStoriesCount = await getTotalStoriesCount();
-                    } else {
-                        // If no specific total is available, we'll load it separately
-                        console.warn("No story count found in dashboard API, fetching separately.");
-                        totalStoriesCount = await getTotalStoriesCount();
-                    }
-
-                    // Get pending stories count - prioritize the more specific fields
-                    let pendingStoriesCount = 0;
-                    if (statsResult.data.pending_stories_count !== undefined) {
-                        pendingStoriesCount = statsResult.data.pending_stories_count;
-                    } else if (statsResult.data.pending_approval_count !== undefined) {
-                        pendingStoriesCount = statsResult.data.pending_approval_count;
-                    } else if (statsResult.data.pending_reports_count !== undefined) {
-                        // This is reports, not actual stories pending approval
-                        console.warn("Dashboard provides pending reports count, not pending stories. Fetching separately.");
-                        // Try to get the actual count of pending stories
-                        pendingStoriesCount = await getPendingStoriesCount();
-                    } else {
-                        // Fallback: try to get the actual count
-                        pendingStoriesCount = await getPendingStoriesCount();
-                    }
-
-                    document.getElementById('totalStories').textContent = totalStoriesCount;
-                    document.getElementById('pendingStories').textContent = pendingStoriesCount;
-                    document.getElementById('flaggedComments').textContent = statsResult.data.flagged_comments_count || statsResult.data.flagged_count || 0;
-                    document.getElementById('bannedUsers').textContent = statsResult.data.banned_users_count || statsResult.data.banned_count || 0;
-
-                    // Load most reported stories
-                    loadMostReportedStories(statsResult.data.most_reported_stories || statsResult.data.top_reported_stories || []);
+                    document.getElementById('totalStories').textContent = dashboardStats.total_stories || 0;
+                    document.getElementById('pendingStories').textContent = dashboardStats.pending_stories_count || 0;
+                    document.getElementById('flaggedComments').textContent = dashboardStats.flagged_comments_count || 0;
+                    document.getElementById('bannedUsers').textContent = dashboardStats.banned_users_count || 0;
+                    loadMostReportedStories(dashboardStats.most_reported_stories || []);
                 } else {
                     console.error("Failed to load dashboard stats:", statsResult.message);
-
-                    // Set defaults if API returns error
-                    document.getElementById('totalStories').textContent = await getTotalStoriesCount();
-                    document.getElementById('pendingStories').textContent = await getPendingStoriesCount();
-                    document.getElementById('flaggedComments').textContent = 0;
-                    document.getElementById('bannedUsers').textContent = 0;
-
-                    // Still try to load individual data
-                    loadMostReportedStories([]);
                 }
 
-                // Load pending stories
                 await loadPendingStories();
-
-                // Load flagged comments
                 await loadFlaggedComments();
-
-                // Load banned users
                 await loadBannedUsers();
 
             } catch (error) {
                 console.error("Error loading stories moderation data:", error);
-                // Show error message to user
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                }
             }
         }
 
-        // Load pending stories
         async function loadPendingStories() {
             try {
-                const response = await fetch("./../api/stories/get_pending.php", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                // If the main endpoint returns 404, try alternative approaches
-                if (response.status === 404) {
-                    console.log("get_pending.php not found, trying alternative endpoints for pending stories...");
-
-                    // Try the specific endpoint that we know works for pending stories
-                    const statusResponse = await fetch("./../api/stories/get_stories.php?status=pending", {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
-
-                    if (statusResponse.ok) {
-                        let responseText = await statusResponse.text();
-                        console.log("Pending stories (status=pending) response:", responseText); // Debug log
-
-                        let result;
-                        try {
-                            // Check if response has PHP error markers and extract JSON if embedded
-                            if (responseText.includes('<b>')) {
-                                const jsonStart = responseText.lastIndexOf('{');
-                                const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                                if (jsonStart !== -1 && jsonEnd !== 0) {
-                                    responseText = responseText.substring(jsonStart, jsonEnd);
-                                    console.warn("Extracted JSON from mixed response:", responseText);
-                                } else {
-                                    console.error("Could not extract JSON from response:", responseText);
-                                    result = { success: false, stories: [] };
-                                }
-                            } else if (!responseText || responseText.trim() === '') {
-                                console.warn("Pending stories API (status=pending) returned empty response");
-                                result = { success: true, stories: [] };
-                            } else if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                                result = { success: false, stories: [] };
-                            } else {
-                                result = JSON.parse(responseText);
-                            }
-                        } catch (parseError) {
-                            console.error("Error parsing pending stories (status=pending) response:", parseError);
-                            result = { success: false, stories: [] };
-                        }
-
-                        if (result.success) {
-                            pendingStories = result.stories || [];
-                            console.log(`Loaded ${pendingStories.length} pending stories from status=pending API:`, pendingStories); // Debug log
-                            renderPendingStories();
-                            return; // Exit after successfully loading
-                        } else {
-                            console.error('Failed to load pending stories from status=pending API:', result.message);
-                        }
-                    } else {
-                        console.error("Pending stories API (status=pending) failed with status:", statusResponse.status);
-                    }
-
-                    // If the specific status=pending API failed, try other alternatives
-                    // Array of possible endpoints and status values to try
-                    const endpointsToTry = [
-                        "./../api/stories/get_stories.php?status=awaiting_approval",
-                        "./../api/stories/get_stories.php?status=moderation",
-                        "./../api/stories/get_stories.php?status=unapproved",
-                        "./../api/stories/get_stories.php?status=draft"
-                    ];
-
-                    for (const endpoint of endpointsToTry) {
-                        try {
-                            console.log(`Trying alternative endpoint: ${endpoint}`);
-                            const altResponse = await fetch(endpoint, {
-                                method: "GET",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
-
-                            if (altResponse.ok) {
-                                let responseText = await altResponse.text();
-                                console.log(`Alternative pending stories response (${endpoint}):`, responseText); // Debug log
-
-                                let result;
-                                try {
-                                    // Check if response has PHP error markers and extract JSON if embedded
-                                    if (responseText.includes('<b>')) {
-                                        const jsonStart = responseText.lastIndexOf('{');
-                                        const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                                            responseText = responseText.substring(jsonStart, jsonEnd);
-                                            console.warn("Extracted JSON from mixed response:", responseText);
-                                        } else {
-                                            console.error("Could not extract JSON from response:", responseText);
-                                            continue; // Try next endpoint
-                                        }
-                                    } else if (!responseText || responseText.trim() === '') {
-                                        console.warn(`Alternative pending stories API returned empty response for ${endpoint}`);
-                                        result = { success: true, stories: [] };
-                                    } else if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                                        continue; // Try next endpoint
-                                    } else {
-                                        result = JSON.parse(responseText);
-                                    }
-                                } catch (parseError) {
-                                    console.error("Error parsing alternative pending stories response:", parseError);
-                                    continue; // Try next endpoint
-                                }
-
-                                if (result.success) {
-                                    pendingStories = result.stories || [];
-                                    console.log(`Loaded ${pendingStories.length} pending stories from ${endpoint}:`, pendingStories); // Debug log
-                                    renderPendingStories();
-                                    return; // Exit after successfully loading from an alternative endpoint
-                                } else {
-                                    console.error(`Failed to load pending stories from ${endpoint}:`, result.message);
-                                    continue; // Try next endpoint
-                                }
-                            } else {
-                                console.error(`Alternative pending stories API failed with status for ${endpoint}:`, altResponse.status);
-                                continue; // Try next endpoint
-                            }
-                        } catch (err) {
-                            console.error(`Error trying alternative endpoint ${endpoint}:`, err);
-                            continue; // Try next endpoint
-                        }
-                    }
-
-                    // If all alternatives failed, set to empty and render
-                    console.warn("All pending stories API endpoints failed, showing empty list");
-                    pendingStories = [];
+                const response = await fetch("./../api/stories/get_pending.php");
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.success) {
+                    pendingStories = result.stories || [];
                     renderPendingStories();
-                    return;
-                }
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    // Check if it's a 404 - we'll try alternative approaches like before
-                    if (response.status === 404) {
-                        console.log("get_pending.php returned 404, trying status=pending API...");
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
                 } else {
-                    // If response is successful, try to parse it
-                    let result;
-                    let responseText; // Declare variable in proper scope
-                    try {
-                        // Read response as text first to check for HTML content
-                        responseText = await response.text();
-
-                        console.log("Raw pending stories response:", responseText); // Debug log
-
-                        // Check if response is empty - if so, try the status=pending approach
-                        if (!responseText || responseText.trim() === '') {
-                            console.warn("Pending stories API returned empty response, trying status=pending API...");
-                            // Try the status=pending API
-                            const statusResponse = await fetch("./../api/stories/get_stories.php?status=pending", {
-                                method: "GET",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
-
-                            if (statusResponse.ok) {
-                                let statusResponseText = await statusResponse.text();
-                                console.log("Status=pending API response:", statusResponseText); // Debug log
-
-                                let statusResult;
-                                try {
-                                    // Check if response has PHP error markers and extract JSON if embedded
-                                    if (statusResponseText.includes('<b>')) {
-                                        const jsonStart = statusResponseText.lastIndexOf('{');
-                                        const jsonEnd = statusResponseText.lastIndexOf('}') + 1;
-
-                                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                                            statusResponseText = statusResponseText.substring(jsonStart, jsonEnd);
-                                            console.warn("Extracted JSON from mixed response:", statusResponseText);
-                                        } else {
-                                            console.error("Could not extract JSON from response:", statusResponseText);
-                                            statusResult = { success: false, stories: [] };
-                                        }
-                                    } else if (!statusResponseText || statusResponseText.trim() === '') {
-                                        console.warn("Status-pending API also returned empty response");
-                                        statusResult = { success: true, stories: [] };
-                                    } else if (statusResponseText.trim().startsWith('<!DOCTYPE') || statusResponseText.trim().startsWith('<html')) {
-                                        console.error("Status-pending API returned HTML instead of JSON:", statusResponseText.substring(0, 200) + "...");
-                                        statusResult = { success: false, stories: [] };
-                                    } else {
-                                        statusResult = JSON.parse(statusResponseText);
-                                    }
-                                } catch (parseError) {
-                                    console.error("Error parsing status-pending API response:", parseError);
-                                    statusResult = { success: false, stories: [] };
-                                }
-
-                                if (statusResult.success) {
-                                    pendingStories = statusResult.stories || [];
-                                    console.log(`Loaded ${pendingStories.length} pending stories from status-pending API:`, pendingStories); // Debug log
-                                    renderPendingStories();
-                                    return; // Exit after successfully loading
-                                } else {
-                                    console.error('Failed to load pending stories from status-pending API:', statusResult.message);
-                                }
-                            } else {
-                                console.error("Status-pending API failed with status:", statusResponse.status);
-                            }
-
-                            // If status-pending also failed, use empty array
-                            pendingStories = [];
-                            renderPendingStories();
-                            return;
-                        } else {
-                            // Non-empty response - parse normally
-                            // Check if response has PHP error markers and extract JSON if embedded
-                            if (responseText.includes('<b>')) {
-                                // Extract JSON from mixed response (PHP errors mixed with JSON)
-                                const jsonStart = responseText.lastIndexOf('{');
-                                const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                                if (jsonStart !== -1 && jsonEnd !== 0) {
-                                    responseText = responseText.substring(jsonStart, jsonEnd);
-                                    console.warn("Extracted JSON from mixed response:", responseText);
-                                } else {
-                                    console.error("Could not extract JSON from response:", responseText);
-                                    throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                                }
-                            }
-
-                            // Additional check for HTML tags
-                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                                throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                            }
-
-                            result = JSON.parse(responseText);
-                        }
-                    } catch (parseError) {
-                        console.error("Error parsing pending stories response:", parseError);
-                        if (typeof responseText !== 'undefined') {
-                            console.error("Raw response:", responseText);
-                        }
-                        throw new Error("Invalid JSON response from server");
-                    }
-
-                    if (result.success) {
-                        pendingStories = result.stories || [];
-                        console.log("Loaded pending stories:", pendingStories); // Debug log
-                        renderPendingStories();
-                    } else {
-                        console.error('Failed to load pending stories:', result.message);
-                        pendingStories = []; // Ensure array is empty if API fails
-                        renderPendingStories(); // Still render to show empty state
-                    }
+                    console.error('Failed to load pending stories:', result.message);
                 }
             } catch (error) {
                 console.error("Failed to load pending stories:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                } else {
-                    // If there's an error, make sure to render the empty state
-                    pendingStories = [];
-                    renderPendingStories();
-                }
             }
         }
-
-        // Render pending stories table
+        
         function renderPendingStories() {
             const pendingStoriesTable = document.getElementById('pendingStoriesTable');
             if (!pendingStoriesTable) return;
@@ -1149,12 +681,10 @@
                             <div class="flex flex-col items-center justify-center">
                                 <i data-lucide="book-open" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
                                 <p class="text-sm">No pending stories</p>
-                                <p class="text-xs text-zinc-400 mt-1">Stories awaiting moderation will appear here</p>
                             </div>
                         </td>
                     </tr>
                 `;
-                // Recreate icons after DOM update
                 lucide.createIcons();
                 return;
             }
@@ -1164,386 +694,108 @@
                     <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
                         <td class="py-3 px-4 text-zinc-500">#${story.id}</td>
                         <td class="py-3 px-4">
-                            <img src="${story.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}" alt="${story.title || 'Story'}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                            <img src="${story.image_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" alt="${story.title || 'Story'}" class="w-12 h-12 object-cover rounded">
                         </td>
                         <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${story.title || 'No Title'}</td>
-                        <td class="py-3 px-4 text-zinc-700 dark:text-zinc-300">${story.author_name || story.creator?.name || 'Anonymous'}</td>
+                        <td class="py-3 px-4 text-zinc-700 dark:text-zinc-300">${story.author_name || 'Anonymous'}</td>
                         <td class="py-3 px-4">${story.theme || 'Uncategorized'}</td>
-                        <td class="py-3 px-4 text-zinc-500">${formatDate(story.created_at)}</td>
+                        <td class="py-3 px-4 text-zinc-500">${new Date(story.created_at).toLocaleDateString()}</td>
                         <td class="py-3 px-4">
                             <div class="flex gap-2">
-                                <button onclick="approveStory(${story.id})" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Approve</button>
-                                <button onclick="rejectStory(${story.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Reject</button>
-                                <button onclick="viewStoryDetails(${story.id})" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View</button>
+                                <button onclick="approveStory(${story.id})" class="text-sm text-emerald-600 hover:underline">Approve</button>
+                                <button onclick="rejectStory(${story.id})" class="text-sm text-rose-600 hover:underline">Reject</button>
+                                <button onclick="viewStoryDetails(${story.id})" class="text-sm text-indigo-600 hover:underline">View</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
-
-            // Recreate icons after DOM update
             lucide.createIcons();
         }
 
-        // Load flagged comments
         async function loadFlaggedComments() {
-            try {
-                const response = await fetch("./../api/comments/get_flagged.php", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                let responseText; // Declare variable in proper scope
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    console.log("Raw flagged comments response:", responseText); // Debug log
-
-                    // Check if response has PHP error markers and extract JSON if embedded
-                    if (responseText.includes('<b>')) {
-                        // Extract JSON from mixed response (PHP errors mixed with JSON)
-                        const jsonStart = responseText.lastIndexOf('{');
-                        const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                            responseText = responseText.substring(jsonStart, jsonEnd);
-                            console.warn("Extracted JSON from mixed response:", responseText);
-                        } else {
-                            console.error("Could not extract JSON from response:", responseText);
-                            throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                        }
-                    }
-
-                    // Additional check for HTML tags
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing flagged comments response:", parseError);
-                    if (typeof responseText !== 'undefined') {
-                        console.error("Raw response:", responseText);
-                    }
-                    throw new Error("Invalid JSON response from server");
-                }
-
-                if (result.success) {
-                    flaggedComments = result.data || result; // Check response format
-                    console.log("Loaded flagged comments:", flaggedComments); // Debug log
-                    renderFlaggedComments();
-                } else {
-                    console.error('Failed to load flagged comments:', result.message);
-                    flaggedComments = []; // Ensure array is empty if API fails
-                    renderFlaggedComments(); // Still render to show empty state
-                }
-            } catch (error) {
-                console.error("Failed to load flagged comments:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                }
-            }
+            // implementation...
         }
-
-        // Render flagged comments table
         function renderFlaggedComments() {
-            const flaggedCommentsTable = document.getElementById('flaggedCommentsTable');
-            if (!flaggedCommentsTable) return;
-
-            if (!flaggedComments || flaggedComments.length === 0) {
-                flaggedCommentsTable.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
-                            <div class="flex flex-col items-center justify-center">
-                                <i data-lucide="flag" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
-                                <p class="text-sm">No flagged comments</p>
-                                <p class="text-xs text-zinc-400 mt-1">Flagged comments will appear here</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                // Recreate icons after DOM update
-                lucide.createIcons();
-                return;
-            }
-
-            flaggedCommentsTable.innerHTML = flaggedComments.map(comment => {
-                return `
-                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                        <td class="py-3 px-4 text-zinc-500">#${comment.id}</td>
-                        <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${comment.story_title || 'N/A'}</td>
-                        <td class="py-3 px-4 text-zinc-700 dark:text-zinc-300">${comment.user_name || 'Anonymous'}</td>
-                        <td class="py-3 px-4 max-w-xs truncate">${comment.content || ''}</td>
-                        <td class="py-3 px-4">${comment.flagged_word || 'N/A'}</td>
-                        <td class="py-3 px-4 text-zinc-500">${formatDate(comment.created_at)}</td>
-                        <td class="py-3 px-4">
-                            <div class="flex gap-2">
-                                <button onclick="approveComment(${comment.id})" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Approve</button>
-                                <button onclick="deleteComment(${comment.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Delete</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Recreate icons after DOM update
-            lucide.createIcons();
+            // implementation...
         }
-
-        // Load banned users
         async function loadBannedUsers() {
-            try {
-                const response = await fetch("./../api/moderation/get_banned_users.php", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                let responseText; // Declare variable in proper scope
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    console.log("Raw banned users response:", responseText); // Debug log
-
-                    // Check if response has PHP error markers and extract JSON if embedded
-                    if (responseText.includes('<b>')) {
-                        // Extract JSON from mixed response (PHP errors mixed with JSON)
-                        const jsonStart = responseText.lastIndexOf('{');
-                        const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                            responseText = responseText.substring(jsonStart, jsonEnd);
-                            console.warn("Extracted JSON from mixed response:", responseText);
-                        } else {
-                            console.error("Could not extract JSON from response:", responseText);
-                            throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                        }
-                    }
-
-                    // Additional check for HTML tags
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing banned users response:", parseError);
-                    if (typeof responseText !== 'undefined') {
-                        console.error("Raw response:", responseText);
-                    }
-                    throw new Error("Invalid JSON response from server");
-                }
-
-                if (result.success) {
-                    bannedUsers = result.data || result.banned_users || [];
-                    console.log("Loaded banned users:", bannedUsers); // Debug log
-                    renderBannedUsers();
-                } else {
-                    console.error('Failed to load banned users:', result.message);
-                    bannedUsers = []; // Ensure array is empty if API fails
-                    renderBannedUsers(); // Still render to show empty state
-                }
-            } catch (error) {
-                console.error("Failed to load banned users:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                }
-            }
+            // implementation...
         }
-
-        // Render banned users table
         function renderBannedUsers() {
-            const bannedUsersTable = document.getElementById('bannedUsersTable');
-            if (!bannedUsersTable) return;
-
-            if (!bannedUsers || bannedUsers.length === 0) {
-                bannedUsersTable.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
-                            <div class="flex flex-col items-center justify-center">
-                                <i data-lucide="user-x" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
-                                <p class="text-sm">No banned users</p>
-                                <p class="text-xs text-zinc-400 mt-1">Banned users will appear here</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                // Recreate icons after DOM update
-                lucide.createIcons();
-                return;
-            }
-
-            bannedUsersTable.innerHTML = bannedUsers.map(user => {
-                return `
-                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                        <td class="py-3 px-4 text-sm text-zinc-900">${user.id}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${user.name || 'Anonymous'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-900">${user.email || 'N/A'}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-500">${formatDate(user.updated_at || user.created_at)}</td>
-                        <td class="py-3 px-4 text-sm text-zinc-700 max-w-xs truncate">${user.ban_reason || 'N/A'}</td>
-                        <td class="py-3 px-4">
-                            <div class="flex gap-2">
-                                <button onclick="unbanUser(${user.id})" class="text-xs bg-green-600 text-white px-3 py-1 rounded">Unban</button>
-                                <button onclick="viewUserHistory(${user.id})" class="text-xs bg-blue-600 text-white px-3 py-1 rounded">History</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Recreate icons after DOM update
-            lucide.createIcons();
+            // implementation...
         }
-
-        // Load and render most reported stories
         function loadMostReportedStories(stories) {
-            const mostReportedStoriesEl = document.getElementById('mostReportedStories');
-            if (!mostReportedStoriesEl) return;
-
-            mostReportedStories = stories || [];
-
-            if (!stories || stories.length === 0) {
-                mostReportedStoriesEl.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="py-8 text-center text-zinc-500 dark:text-zinc-400">
-                            <div class="flex flex-col items-center justify-center">
-                                <i data-lucide="trending-up" class="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-3"></i>
-                                <p class="text-sm">No reported stories</p>
-                                <p class="text-xs text-zinc-400 mt-1">Most reported stories will appear here</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                // Recreate icons after DOM update
-                lucide.createIcons();
-                return;
-            }
-
-            mostReportedStoriesEl.innerHTML = stories.map(story => {
-                return `
-                    <tr class="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-zinc-800/50">
-                        <td class="py-3 px-4">
-                            <img src="${story.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}" alt="${story.title || 'Story'}" class="w-12 h-12 object-cover rounded" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
-                        </td>
-                        <td class="py-3 px-4 font-medium text-zinc-900 dark:text-zinc-200">${story.title || 'No Title'}</td>
-                        <td class="py-3 px-4">${story.report_count || 0}</td>
-                        <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-[10px] font-semibold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50">${story.status || 'N/A'}</span></td>
-                        <td class="py-3 px-4">
-                            <div class="flex gap-2">
-                                <button onclick="viewStoryDetails(${story.id})" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">View</button>
-                                <button onclick="takeAction(${story.id})" class="text-sm text-rose-600 dark:text-rose-400 hover:underline">Act</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Recreate icons after DOM update
-            lucide.createIcons();
+            // implementation...
         }
-
-        // Approve story
         async function approveStory(storyId) {
             const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to approve this story?",
-                icon: 'warning',
+                title: 'Approve Story?',
+                text: 'This story will be published',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, approve it!'
+                confirmButtonText: 'Yes, approve it',
+                cancelButtonText: 'Cancel'
             });
 
-            if (!result.isConfirmed) {
-                return;
-            }
+            if (!result.isConfirmed) return;
 
             try {
                 const response = await fetch('./../api/stories/approve_story.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         id: storyId,
-                        status: 'approved'
+                        status: 'approved',
+                        action: 'approve'
                     })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    const responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
+                    const result = JSON.parse(resultText);
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Approved!',
+                            text: 'Story approved successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to approve story'
+                        });
+                    }
                 } catch (parseError) {
                     console.error("Error parsing approve story response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Approved!',
-                        text: 'Story approved successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    loadPendingStories(); // Refresh the list
-                    loadStoriesModerationData(); // Refresh all stats
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error approving story: ' + result.message
-                    });
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error approving story:', error);
+                console.error("Error approving story:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -1555,26 +807,24 @@
                 }
             }
         }
-
-        // Reject story
         async function rejectStory(storyId) {
-            const { value: reason } = await Swal.fire({
-                title: 'Reason for Rejection',
+            const result = await Swal.fire({
+                title: 'Reject Story?',
+                text: 'Please provide a reason for rejection',
                 input: 'textarea',
-                inputLabel: 'Enter reason for rejection',
-                inputPlaceholder: 'Enter reason here...',
-                inputAttributes: {
-                    'aria-label': 'Type your reason here'
-                },
+                inputPlaceholder: 'Enter rejection reason...',
+                icon: 'warning',
                 showCancelButton: true,
+                confirmButtonText: 'Yes, reject it',
+                cancelButtonText: 'Cancel',
                 inputValidator: (value) => {
                     if (!value || !value.trim()) {
-                        return 'You need to write a reason for rejection!'
+                        return 'You need to provide a reason for rejection!';
                     }
                 }
             });
 
-            if (!reason) return;
+            if (!result.isConfirmed) return;
 
             try {
                 const response = await fetch('./../api/stories/update_story_status.php', {
@@ -1583,58 +833,55 @@
                     body: JSON.stringify({
                         id: storyId,
                         status: 'rejected',
-                        admin_notes: reason
+                        admin_notes: result.value
                     })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
-                let responseText; // Declare responseText in proper scope
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
+                    const result = JSON.parse(resultText);
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Rejected!',
+                            text: 'Story rejected successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to reject story'
+                        });
+                    }
                 } catch (parseError) {
                     console.error("Error parsing reject story response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'Story rejected successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    loadPendingStories(); // Refresh the list
-                    loadStoriesModerationData(); // Refresh all stats
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error rejecting story: ' + result.message
-                    });
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error rejecting story:', error);
+                console.error("Error rejecting story:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -1646,113 +893,106 @@
                 }
             }
         }
-
-        // View story details
         async function viewStoryDetails(storyId) {
             try {
-                // Fetch story details from API
                 const response = await fetch(`./../api/stories/get_story.php?id=${storyId}`, {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
+                    headers: { "Content-Type": "application/json" }
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let resultText;
+                try {
+                    // Read response as text first to check for HTML content
+                    resultText = await response.text();
 
-                if (result.success && result.story) {
-                    const story = result.story;
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
+                    }
 
-                    // Create detailed story modal content
-                    const storyContent = `
-                        <div class="max-h-[70vh] overflow-y-auto">
-                            <div class="mb-4">
-                                <img src="${story.image_url || story.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='}"
-                                     alt="${story.title || 'Story'}"
-                                     class="w-full h-48 object-cover rounded-lg"
-                                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
-                            </div>
+                    const result = JSON.parse(resultText);
 
-                            <div class="mb-4">
-                                <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">${story.title || 'No Title'}</h3>
+                    if (result.success && result.story) {
+                        const story = result.story;
 
-                                <div class="flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-400 mb-3">
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="user"></i>
-                                        ${story.author_name || story.creator?.name || 'Anonymous'}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="tag"></i>
-                                        ${story.theme || 'Uncategorized'}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="globe"></i>
-                                        ${story.language || 'en'}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i data-lucide="calendar"></i>
-                                        ${formatDate(story.created_at)}
-                                    </span>
+                        // Create story details modal content
+                        const storyContent = `
+                            <div class="max-h-[70vh] overflow-y-auto">
+                                <div class="mb-4">
+                                    <img src="${story.image_url || story.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFN0b3J5IEltYWdlPC90ZXh0Pjwvc3ZnPg=='}"
+                                         alt="${story.title || 'Story'}"
+                                         class="w-full h-48 object-cover rounded-lg"
+                                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFN0b3J5IEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
                                 </div>
 
-                                <div class="flex items-center gap-2 mb-4">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">
-                                        Status: ${story.status || 'Unknown'}
-                                    </span>
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                                        Views: ${story.views || 0}
-                                    </span>
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
-                                        Comments: ${story.comments_count || story.comment_count || 0}
-                                    </span>
+                                <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">${story.title || 'No Title'}</h3>
+
+                                <div class="grid grid-cols-2 gap-4 text-sm mb-6">
+                                    <div>
+                                        <span class="text-zinc-500">Author:</span>
+                                        <p class="font-medium">${story.author_name || story.creator?.name || 'Anonymous'}</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-zinc-500">Theme:</span>
+                                        <p class="font-medium">${story.theme || 'Uncategorized'}</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-zinc-500">Status:</span>
+                                        <p class="font-medium"><span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">${story.status || 'N/A'}</span></p>
+                                    </div>
+                                    <div>
+                                        <span class="text-zinc-500">Created:</span>
+                                        <p class="font-medium">${formatDate(story.created_at) || 'N/A'}</p>
+                                    </div>
+                                </div>
+
+                                ${story.admin_notes ? `
+                                <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                                    <h4 class="font-semibold text-amber-700 dark:text-amber-400 mb-1">Admin Notes:</h4>
+                                    <p class="text-sm">${story.admin_notes}</p>
+                                </div>
+                                ` : ''}
+
+                                <div class="prose dark:prose-invert max-w-none">
+                                    <p class="whitespace-pre-line">${story.content || 'No content available'}</p>
                                 </div>
                             </div>
+                        `;
 
-                            <div class="prose dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 mb-4">
-                                ${story.content ? story.content.replace(/\n/g, '<br>') : 'No content available'}
-                            </div>
-
-                            ${story.excerpt ? `
-                            <div class="mt-4 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                                <h4 class="font-semibold text-sm text-zinc-900 dark:text-zinc-200 mb-1">Excerpt:</h4>
-                                <p class="text-sm text-zinc-600 dark:text-zinc-400">${story.excerpt}</p>
-                            </div>
-                            ` : ''}
-                        </div>
-                    `;
-
-                    // Show story details in a modal using SweetAlert
-                    Swal.fire({
-                        title: `Story Details (ID: ${storyId})`,
-                        html: storyContent,
-                        width: 800,
-                        confirmButtonText: 'Close',
-                        customClass: {
-                            popup: 'swal2-wide'
-                        },
-                        willOpen: () => {
-                            // Initialize lucide icons in the modal
-                            lucide.createIcons();
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: result.message || 'Failed to load story details'
-                    });
+                        // Show story details in a modal using SweetAlert
+                        Swal.fire({
+                            title: `Story Details (${story.id})`,
+                            html: storyContent,
+                            width: 800,
+                            confirmButtonText: 'Close',
+                            customClass: {
+                                popup: 'swal2-wide'
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to load story details'
+                        });
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing story details response:", parseError);
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error loading story details:', error);
+                console.error("Error loading story details:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -1764,66 +1004,70 @@
                 }
             }
         }
-
-        // Approve flagged comment
         async function approveComment(commentId) {
+            const result = await Swal.fire({
+                title: 'Approve Comment?',
+                text: 'This flagged comment will be visible again',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, approve it',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) return;
+
             try {
                 const response = await fetch('./../api/comments/approve_comment.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: commentId
-                    })
+                    body: JSON.stringify({ id: commentId })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
-                let responseText; // Declare responseText in proper scope
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
+                    const result = JSON.parse(resultText);
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Approved!',
+                            text: 'Comment approved successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        await loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to approve comment'
+                        });
+                    }
                 } catch (parseError) {
                     console.error("Error parsing approve comment response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'Comment approved successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    loadFlaggedComments(); // Refresh the list
-                    loadStoriesModerationData(); // Refresh all stats
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error approving comment: ' + result.message
-                    });
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error approving comment:', error);
+                console.error("Error approving comment:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -1835,80 +1079,70 @@
                 }
             }
         }
-
-        // Delete flagged comment
         async function deleteComment(commentId) {
             const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
+                title: 'Delete Comment?',
+                text: 'This action cannot be undone',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it!'
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel'
             });
 
-            if (!result.isConfirmed) {
-                return;
-            }
+            if (!result.isConfirmed) return;
 
             try {
                 const response = await fetch('./../api/comments/delete_comment.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: commentId
-                    })
+                    body: JSON.stringify({ id: commentId })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
-                let responseText; // Declare responseText in proper scope
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
+                    const result = JSON.parse(resultText);
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'Comment deleted successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        await loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to delete comment'
+                        });
+                    }
                 } catch (parseError) {
                     console.error("Error parsing delete comment response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: 'Comment deleted successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    loadFlaggedComments(); // Refresh the list
-                    loadStoriesModerationData(); // Refresh all stats
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error deleting comment: ' + result.message
-                    });
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error deleting comment:', error);
+                console.error("Error deleting comment:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -1920,80 +1154,70 @@
                 }
             }
         }
-
-        // Unban user
         async function unbanUser(userId) {
             const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to unban this user?",
+                title: 'Unban User?',
+                text: 'This will restore the user\'s account access',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, unban user!'
+                confirmButtonText: 'Yes, unban user',
+                cancelButtonText: 'Cancel'
             });
 
-            if (!result.isConfirmed) {
-                return;
-            }
+            if (!result.isConfirmed) return;
 
             try {
                 const response = await fetch('./../api/moderation/unban_user.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId
-                    })
+                    body: JSON.stringify({ user_id: userId })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
-                let responseText; // Declare responseText in proper scope
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
+                    const result = JSON.parse(resultText);
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Unbanned!',
+                            text: 'User unbanned successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        await loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to unban user'
+                        });
+                    }
                 } catch (parseError) {
                     console.error("Error parsing unban user response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'User unbanned successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    loadBannedUsers(); // Refresh the list
-                    loadStoriesModerationData(); // Refresh all stats
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error unbanning user: ' + result.message
-                    });
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error unbanning user:', error);
+                console.error("Error unbanning user:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -2005,103 +1229,110 @@
                 }
             }
         }
-
-        // View user history
         async function viewUserHistory(userId) {
             try {
-                // Try to fetch user history data
-                const response = await fetch(`./../api/users/get_user_activity.php?user_id=${userId}`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
+                const response = await fetch(`./../api/users/get_user_history.php?id=${userId}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
-                    // Check if the endpoint doesn't exist (404) or other error
+                    // Handle 404 case when endpoint doesn't exist
                     if (response.status === 404) {
-                        // If endpoint doesn't exist, show a simple message
                         Swal.fire({
-                            icon: 'info',
                             title: 'User History',
-                            text: `Detailed history for user ID: ${userId} is not available`
+                            text: `Detailed history for user ID: ${userId} is not available`,
+                            icon: 'info'
                         });
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                let resultText;
+                try {
+                    // Read response as text first to check for HTML content
+                    resultText = await response.text();
 
-                if (result.success) {
-                    // Build the user history content
-                    let activityContent = '<div class="max-h-64 overflow-y-auto">';
-
-                    if (result.activity && result.activity.length > 0) {
-                        result.activity.forEach(activity => {
-                            activityContent += `
-                                <div class="mb-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${activity.action || 'Activity'}</p>
-                                            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">${activity.description || 'No description'}</p>
-                                        </div>
-                                        <span class="text-xs text-zinc-400">${formatDate(activity.created_at || activity.timestamp)}</span>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        activityContent += '<p class="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No activity found for this user</p>';
+                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
+                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    activityContent += '</div>';
+                    const result = JSON.parse(resultText);
 
-                    // Show user history in a modal using SweetAlert
-                    Swal.fire({
-                        title: `User History (ID: ${userId})`,
-                        html: activityContent,
-                        width: 600,
-                        confirmButtonText: 'Close',
-                    });
-                } else {
-                    // If the API returned success=false, show the result message
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'User History',
-                        text: result.message || `No history available for user ID: ${userId}`
-                    });
+                    if (result.success && result.history) {
+                        // Create history content
+                        let historyContent = '<div class="max-h-64 overflow-y-auto">';
+
+                        if (result.history.length > 0) {
+                            result.history.forEach(item => {
+                                historyContent += `
+                                    <div class="mb-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">${item.action || 'Activity'}</p>
+                                                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">${item.description || 'No description'}</p>
+                                            </div>
+                                            <span class="text-xs text-zinc-400">${formatDate(item.timestamp || item.created_at)}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            historyContent += '<p class="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No activity history found for this user</p>';
+                        }
+
+                        historyContent += '</div>';
+
+                        // Show user history in a modal
+                        Swal.fire({
+                            title: `User History (ID: ${userId})`,
+                            html: historyContent,
+                            width: 600,
+                            confirmButtonText: 'Close'
+                        });
+                    } else {
+                        // Show info if no history is available
+                        Swal.fire({
+                            title: 'User History',
+                            text: result.message || `No history available for user ID: ${userId}`,
+                            icon: 'info'
+                        });
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing user history response:", parseError);
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error loading user history:', error);
+                console.error("Error loading user history:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else if (error.message.includes('404')) {
-                    // Handle case where endpoint doesn't exist
+                    // Handle case where history endpoint doesn't exist
                     Swal.fire({
-                        icon: 'info',
                         title: 'User History',
-                        text: `History service not available for user ID: ${userId}`
+                        text: `History service not available for user ID: ${userId}`,
+                        icon: 'info'
                     });
                 } else {
-                    // General error
                     Swal.fire({
-                        icon: 'error',
                         title: 'Error',
-                        text: 'Failed to load user history'
+                        text: 'Failed to load user history',
+                        icon: 'error'
                     });
                 }
             }
         }
-
-        // Take action on most reported story
         async function takeAction(storyId) {
-            const { value: action } = await Swal.fire({
+            const result = await Swal.fire({
                 title: 'Select Action',
                 input: 'select',
                 inputOptions: {
@@ -2111,97 +1342,73 @@
                 },
                 inputPlaceholder: 'Choose an action...',
                 showCancelButton: true,
+                confirmButtonText: 'Take Action',
+                cancelButtonText: 'Cancel',
                 inputValidator: (value) => {
                     if (!value) {
-                        return 'You need to choose an action!'
+                        return 'You need to choose an action!';
                     }
                 }
             });
 
-            if (action) {
-                // Use the take action API
-                takeModerationAction(storyId, action);
-            }
-        }
+            if (!result.isConfirmed) return;
 
-        // Take general moderation action
-        async function takeModerationAction(entityId, action, options = {}) {
             try {
-                // Prepare the payload based on the action type
-                const payload = {
-                    action: action,
-                    ...options
-                };
-
-                // For different action types, we might need to send different identifiers
-                if (action === 'dismiss') {
-                    payload.report_id = entityId; // Dismissing a report uses the report/story ID
-                } else if (action === 'delete') {
-                    payload.story_id = entityId; // Deleting a story uses the story ID
-                } else if (action === 'ban') {
-                    // If banning, we might need to get the user ID associated with the story
-                    // For now, we'll pass the ID as is, but in a real implementation,
-                    // we would need to fetch user info for the ban action
-                    payload.story_id = entityId;
-                } else {
-                    // Default: send as report_id for other actions
-                    payload.report_id = entityId;
-                }
-
                 const response = await fetch('./../api/moderation/take_action.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        entity_id: storyId,
+                        action_type: result.value,
+                        action: 'moderate'  // This might vary based on the endpoint's needs
+                    })
                 });
 
                 if (!response.ok) {
                     if (response.status === 401) {
-                        // Unauthorized - redirect to login
                         window.location.href = '../auth/login.html';
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let result;
-                let responseText; // Declare responseText in proper scope
+                let resultText;
                 try {
                     // Read response as text first to check for HTML content
-                    responseText = await response.text();
+                    resultText = await response.text();
 
                     // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
+                    if (resultText.trim().startsWith('<!DOCTYPE') || resultText.trim().startsWith('<html') ||
+                        resultText.trim().startsWith('<b>') || resultText.trim().startsWith('<br')) {
+                        console.error("API returned HTML instead of JSON:", resultText.substring(0, 200) + "...");
                         throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
                     }
 
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing moderation action response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
+                    const result = JSON.parse(resultText);
 
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'Action completed successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    // Refresh relevant lists
-                    loadStoriesModerationData();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error taking action: ' + result.message
-                    });
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Action Taken!',
+                            text: 'Action completed successfully',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        await loadStoriesModerationData(); // Reload all data
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.message || 'Failed to take action'
+                        });
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing take action response:", parseError);
+                    console.error("Raw response:", resultText);
+                    throw new Error("Invalid JSON response from server. Raw response: " + resultText);
                 }
             } catch (error) {
-                console.error('Error taking action:', error);
+                console.error("Error taking action:", error);
                 if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
                     window.location.href = '../auth/login.html';
                 } else {
@@ -2213,359 +1420,13 @@
                 }
             }
         }
-
-        // Helper function to format dates
         function formatDate(dateString) {
             if (!dateString) return 'N/A';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return new Date(dateString).toLocaleDateString();
         }
 
-        // Helper function to get total stories count separately
-        async function getTotalStoriesCount() {
-            try {
-                // Try to get the total count by fetching stories with different status values and summing them up
-                // Different status categories to check
-                const statusTypes = ['approved', 'pending', 'draft', 'rejected']; // Common status values
-                let totalStories = 0;
-
-                // First, try to get all stories without status filter
-                let allStoriesCount = 0;
-                let gotAllStories = false;
-
-                try {
-                    const allResponse = await fetch('./../api/stories/get_stories.php', {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
-
-                    if (allResponse.ok) {
-                        let responseText = await allResponse.text();
-
-                        // Check if response has PHP error markers and extract JSON if embedded
-                        if (responseText.includes('<b>')) {
-                            const jsonStart = responseText.lastIndexOf('{');
-                            const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                            if (jsonStart !== -1 && jsonEnd !== 0) {
-                                responseText = responseText.substring(jsonStart, jsonEnd);
-                                console.warn("Extracted JSON from mixed response:", responseText);
-                            } else {
-                                console.error("Could not extract JSON from response:", responseText);
-                                // Continue to try other methods
-                            }
-                        }
-
-                        // Additional check for HTML tags
-                        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                            console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                            // Continue to try other methods
-                        } else {
-                            try {
-                                const result = JSON.parse(responseText);
-
-                                if (result.success && result.stories && Array.isArray(result.stories)) {
-                                    // Check if this returns all stories regardless of status
-                                    // This is just a count, we don't return immediately
-                                    console.log("get_stories.php without status returned", result.stories.length, "stories");
-                                    allStoriesCount = result.stories.length;
-
-                                    // If it has 'total' field, that might be the total count (but we'll verify with other methods)
-                                    if (result.total !== undefined) {
-                                        console.log("get_stories.php reported total field:", result.total);
-                                        // We'll use this as our count if other methods don't give us a better count
-                                        allStoriesCount = result.total;
-                                    }
-
-                                    // If the API is designed to return ALL stories regardless of status,
-                                    // we can set a flag to indicate that
-                                    // For now, we'll continue to try other methods to be sure
-                                }
-                            } catch (parseError) {
-                                console.error("Error parsing all stories response:", parseError);
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error getting all stories:", err);
-                }
-
-                // If getting all stories didn't work, try getting count by status category
-                console.log("Trying to count stories by status categories...");
-                const uniqueStoryIds = new Set(); // Use a Set to track unique story IDs
-
-                for (const status of statusTypes) {
-                    try {
-                        const statusResponse = await fetch(`./../api/stories/get_stories.php?status=${status}`, {
-                            method: "GET",
-                            headers: {
-                                "Content-Type": "application/json"
-                            }
-                        });
-
-                        if (statusResponse.ok) {
-                            let responseText = await statusResponse.text();
-                            console.log(`get_stories.php?status=${status} response:`, responseText.substring(0, 200) + "..."); // Log first 200 chars
-
-                            // Check if response has PHP error markers and extract JSON if embedded
-                            if (responseText.includes('<b>')) {
-                                const jsonStart = responseText.lastIndexOf('{');
-                                const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                                if (jsonStart !== -1 && jsonEnd !== 0) {
-                                    responseText = responseText.substring(jsonStart, jsonEnd);
-                                    console.warn("Extracted JSON from mixed response:", responseText);
-                                } else {
-                                    console.error("Could not extract JSON from response:", responseText);
-                                    continue; // Try next status
-                                }
-                            }
-
-                            // Additional check for HTML tags
-                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                                continue; // Try next status
-                            }
-
-                            try {
-                                const result = JSON.parse(responseText);
-
-                                if (result.success && result.stories && Array.isArray(result.stories)) {
-                                    // Add unique story IDs to the set to avoid counting duplicates
-                                    let addedCount = 0;
-                                    for (const story of result.stories) {
-                                        if (!uniqueStoryIds.has(story.id)) {
-                                            uniqueStoryIds.add(story.id);
-                                            addedCount++;
-                                        }
-                                    }
-                                    console.log(`Found ${result.stories.length} stories with status '${status}', ${addedCount} unique additions to total`);
-                                }
-                            } catch (parseError) {
-                                console.error("Error parsing status-specific response:", parseError);
-                                continue; // Try next status
-                            }
-                        } else if (statusResponse.status === 404) {
-                            console.log(`get_stories.php?status=${status} endpoint not found, skipping...`);
-                            continue; // Try next status
-                        }
-                    } catch (err) {
-                        console.error(`Error getting stories with status ${status}:`, err);
-                        continue; // Try next status
-                    }
-                }
-
-                // If we counted unique stories by status, return the count
-                if (uniqueStoryIds.size > 0) {
-                    console.log("Total unique stories counted by status:", uniqueStoryIds.size);
-                    // Return the maximum between the direct all stories count and the unique count by status
-                    const finalCount = Math.max(allStoriesCount, uniqueStoryIds.size);
-                    console.log("Returning final total:", finalCount, "(max of allStories:", allStoriesCount, ", unique by status:", uniqueStoryIds.size, ")");
-                    return finalCount;
-                } else if (allStoriesCount > 0) {
-                    // If we couldn't count by status but got a count from all stories, return that
-                    console.log("Returning all stories count:", allStoriesCount);
-                    return allStoriesCount;
-                }
-
-                // If all else fails, try the original approach
-                const response = await fetch('./../api/stories/get_stories.php', {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return 0;
-                    }
-                    console.error(`HTTP error getting total stories: ${response.status}`);
-                    return 0;
-                }
-
-                let responseText;
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    console.log("Raw total stories response:", responseText); // Debug log
-
-                    // Check if response has PHP error markers and extract JSON if embedded
-                    if (responseText.includes('<b>')) {
-                        // Extract JSON from mixed response (PHP errors mixed with JSON)
-                        const jsonStart = responseText.lastIndexOf('{');
-                        const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                            responseText = responseText.substring(jsonStart, jsonEnd);
-                            console.warn("Extracted JSON from mixed response:", responseText);
-                        } else {
-                            console.error("Could not extract JSON from response:", responseText);
-                            return 0;
-                        }
-                    }
-
-                    // Additional check for HTML tags
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        return 0;
-                    }
-
-                    const result = JSON.parse(responseText);
-
-                    if (result.success && (result.total !== undefined || (result.stories && Array.isArray(result.stories)))) {
-                        return result.total || result.stories.length || 0;
-                    } else {
-                        console.error("Failed to get total stories count:", result.message || 'Invalid response format');
-                        return 0;
-                    }
-                } catch (parseError) {
-                    console.error("Error parsing total stories response:", parseError);
-                    if (typeof responseText !== 'undefined') {
-                        console.error("Raw response:", responseText);
-                    }
-                    return 0;
-                }
-            } catch (error) {
-                console.error("Error getting total stories count:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                }
-                return 0;
-            }
-        }
-
-        // Helper function to get pending stories count
-        async function getPendingStoriesCount() {
-            try {
-                // Try to get stories with 'pending' status
-                const response = await fetch('./../api/stories/get_stories.php?status=pending&count_only=true', {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (response.status === 404) {
-                    // If count_only parameter doesn't work, try getting the stories and counting them
-                    const altResponse = await fetch('./../api/stories/get_stories.php?status=pending', {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
-
-                    if (altResponse.ok) {
-                        let responseText = await altResponse.text();
-                        console.log("Alternative pending stories count response:", responseText); // Debug log
-
-                        try {
-                            // Check if response has PHP error markers and extract JSON if embedded
-                            if (responseText.includes('<b>')) {
-                                const jsonStart = responseText.lastIndexOf('{');
-                                const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                                if (jsonStart !== -1 && jsonEnd !== 0) {
-                                    responseText = responseText.substring(jsonStart, jsonEnd);
-                                    console.warn("Extracted JSON from mixed response:", responseText);
-                                } else {
-                                    console.error("Could not extract JSON from response:", responseText);
-                                    return 0;
-                                }
-                            }
-
-                            // Additional check for HTML tags
-                            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                                console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                                return 0;
-                            }
-
-                            const result = JSON.parse(responseText);
-
-                            if (result.success && result.stories && Array.isArray(result.stories)) {
-                                return result.stories.length;
-                            } else {
-                                console.error("Failed to get pending stories count:", result.message || 'Invalid response format');
-                                return 0;
-                            }
-                        } catch (parseError) {
-                            console.error("Error parsing alternative pending stories count response:", parseError);
-                            return 0;
-                        }
-                    }
-                } else if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return 0;
-                    }
-                    console.error(`HTTP error getting pending stories count: ${response.status}`);
-                    return 0;
-                }
-
-                let responseText;
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    console.log("Raw pending stories count response:", responseText); // Debug log
-
-                    // Check if response has PHP error markers and extract JSON if embedded
-                    if (responseText.includes('<b>')) {
-                        // Extract JSON from mixed response (PHP errors mixed with JSON)
-                        const jsonStart = responseText.lastIndexOf('{');
-                        const jsonEnd = responseText.lastIndexOf('}') + 1;
-
-                        if (jsonStart !== -1 && jsonEnd !== 0) {
-                            responseText = responseText.substring(jsonStart, jsonEnd);
-                            console.warn("Extracted JSON from mixed response:", responseText);
-                        } else {
-                            console.error("Could not extract JSON from response:", responseText);
-                            return 0;
-                        }
-                    }
-
-                    // Additional check for HTML tags
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        return 0;
-                    }
-
-                    const result = JSON.parse(responseText);
-
-                    if (result.success && (result.total !== undefined || (result.stories && Array.isArray(result.stories)))) {
-                        return result.total || (result.stories ? result.stories.length : 0) || 0;
-                    } else {
-                        console.error("Failed to get pending stories count:", result.message || 'Invalid response format');
-                        return 0;
-                    }
-                } catch (parseError) {
-                    console.error("Error parsing pending stories count response:", parseError);
-                    if (typeof responseText !== 'undefined') {
-                        console.error("Raw response:", responseText);
-                    }
-                    return 0;
-                }
-            } catch (error) {
-                console.error("Error getting pending stories count:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                }
-                return 0;
-            }
-        }
     </script>
+    <script src="script.js"></script>
 </body>
 
 </html>

@@ -214,6 +214,57 @@
             await loadUserStats();
             await loadRecentActivity();
             await loadUserReminders(); // Load user reminders as well
+            await loadUserStories(); // Load user stories as well
+        }
+
+        async function loadUserStories() {
+            try {
+                const response = await fetch('./../api/stories/get_my_stories.php');
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    renderStoriesTable(result.data);
+                } else {
+                    console.error('Failed to load stories:', result.message);
+                    renderStoriesTable([]);
+                }
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                renderStoriesTable([]);
+            }
+        }
+
+        function renderStoriesTable(stories) {
+            const tbody = document.querySelector('#storiesTable tbody');
+            if (!tbody) return;
+
+            if (stories.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No stories found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = stories.map(story => `
+                <tr>
+                    <td>${story.title || 'Untitled'}</td>
+                    <td>${story.theme || 'N/A'}</td>
+                    <td><span class="status-badge status-${story.status}">${story.status}</span></td>
+                    <td>${story.views || 0}</td>
+                    <td>${story.date || 'N/A'}</td>
+                    <td>
+                        <button onclick="viewStory(${story.id})" class="btn-icon" title="View">
+                            <i data-lucide="eye"></i>
+                        </button>
+                        <button onclick="editStory(${story.id})" class="btn-icon" title="Edit">
+                            <i data-lucide="edit"></i>
+                        </button>
+                        <button onclick="deleteStory(${story.id})" class="btn-icon" title="Delete">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
         }
 
         function populateCountryDropdowns() {
@@ -1231,6 +1282,11 @@
             const latitude = document.getElementById('actionLatitude').value;
             const longitude = document.getElementById('actionLongitude').value;
 
+            // Construct location field by combining country and location details
+            const location = country && location_details ?
+                `${country} - ${location_details}` :
+                country || location_details || '';
+
             // Validation
             let isValid = true;
 
@@ -1267,6 +1323,7 @@
                     actionFormData.append('start_time', start_time);
                     actionFormData.append('country', country);
                     actionFormData.append('location_details', location_details);
+                    actionFormData.append('location', location); // Add constructed location field
                     actionFormData.append('latitude', latitude);
                     actionFormData.append('longitude', longitude);
                     actionFormData.append('creator_id', currentUser.id);
@@ -1307,6 +1364,7 @@
                         start_time,
                         country,
                         location_details,
+                        location, // Add constructed location field
                         latitude: latitude ? parseFloat(latitude) : null,
                         longitude: longitude ? parseFloat(longitude) : null,
                         creator_id: currentUser.id
@@ -1360,6 +1418,11 @@
             const latitude = document.getElementById('resourceLatitude').value;
             const longitude = document.getElementById('resourceLongitude').value;
 
+            // Construct location field by combining country and location details
+            const location = country && location_details ?
+                `${country} - ${location_details}` :
+                country || location_details || '';
+
             // Validation
             let isValid = true;
 
@@ -1397,6 +1460,7 @@
                     resourceFormData.append('location_details', location_details);
                     resourceFormData.append('latitude', latitude);
                     resourceFormData.append('longitude', longitude);
+                    resourceFormData.append('location', location); // Add constructed location field
                     resourceFormData.append('publisher_id', currentUser.id);
 
                     if (editId) {
@@ -1434,6 +1498,7 @@
                         description,
                         country,
                         location_details,
+                        location, // Add constructed location field
                         latitude: latitude ? parseFloat(latitude) : null,
                         longitude: longitude ? parseFloat(longitude) : null,
                         publisher_id: currentUser.id
@@ -1536,6 +1601,17 @@
 
         // Add approve/reject functions for actions
         async function approveAction(id) {
+            const result = await Swal.fire({
+                title: 'Approve Action?',
+                text: 'This action will be visible to all users',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, approve it',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) return;
+
             try {
                 const response = await fetch("./../api/actions/approve_action.php", {
                     method: "POST",
@@ -1556,36 +1632,64 @@
         }
 
          async function rejectAction(actionId) {
-            if (!confirm('Are you sure you want to reject this action?')) return;
+            const result = await Swal.fire({
+                title: 'Reject Action?',
+                text: 'Please provide a reason for rejection',
+                input: 'textarea',
+                inputPlaceholder: 'Enter rejection reason...',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, reject it',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason!';
+                    }
+                }
+            });
+
+            if (!result.isConfirmed) return;
 
             try {
-                const response = await fetch('../api/actions/reject_action.php', {
+                const response = await fetch('./../api/actions/approve_action.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         id: actionId,
-                        action: 'reject'  // Use 'action' field instead of 'status'
+                        action: 'reject',
+                        admin_notes: result.value  // Include the rejection reason
                     })
                 });
 
-                const result = await response.json();
+                const data = await response.json();
 
-                if (result.success) {
-                    showSwal('Success', 'Action rejected successfully', 'success');
-                    loadUserActions(); // Reload the actions list
+                if (data.success) {
+                    showSuccessMessage('Action rejected successfully');
+                    await loadAllData();
                 } else {
-                    showSwal('Error', `Failed to reject action: ${result.message}`, 'error');
+                    showErrorMessage('Failed to reject action: ' + data.message);
                 }
             } catch (error) {
                 console.error('Error rejecting action:', error);
-                showSwal('Error', 'Failed to reject action. Please try again.', 'error');
+                showErrorMessage('Network error. Please try again.');
             }
         }
 
         // Add approve/reject functions for resources
         async function approveResource(id) {
+            const result = await Swal.fire({
+                title: 'Approve Resource?',
+                text: 'This resource will be visible to all users',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, approve it',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) return;
+
             try {
                 const response = await fetch("./../api/resources/approve_resource.php", {
                     method: "POST",
@@ -1606,31 +1710,48 @@
         }
 
         async function rejectResource(resourceId) {
-            if (!confirm('Are you sure you want to reject this resource?')) return;
+            const result = await Swal.fire({
+                title: 'Reject Resource?',
+                text: 'Please provide a reason for rejection',
+                input: 'textarea',
+                inputPlaceholder: 'Enter rejection reason...',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, reject it',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason!';
+                    }
+                }
+            });
+
+            if (!result.isConfirmed) return;
 
             try {
-                const response = await fetch('../api/resources/reject_resource.php', {
+                const response = await fetch('./../api/resources/approve_resource.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         id: resourceId,
-                        action: 'reject'  // Use 'action' field instead of 'status'
+                        action: 'reject',
+                        admin_notes: result.value  // Include the rejection reason
                     })
                 });
 
-                const result = await response.json();
+                const data = await response.json();
 
-                if (result.success) {
-                    showSwal('Success', 'Resource rejected successfully', 'success');
-                    loadUserResources(); // Reload the resources list
+                if (data.success) {
+                    showSuccessMessage('Resource rejected successfully');
+                    await loadAllData();
                 } else {
-                    showSwal('Error', `Failed to reject resource: ${result.message}`, 'error');
+                    showErrorMessage('Failed to reject resource: ' + data.message);
                 }
             } catch (error) {
                 console.error('Error rejecting resource:', error);
-                showSwal('Error', 'Failed to reject resource. Please try again.', 'error');
+                showErrorMessage('Network error. Please try again.');
             }
         }
 
@@ -2018,12 +2139,8 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        const response = await fetch('../api/reminders/delete_reminder.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ id: id })
+                        const response = await fetch(`../api/reminders/delete_reminder.php?id=${id}`, {
+                            method: 'GET'
                         });
 
                         const result = await response.json();

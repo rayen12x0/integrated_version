@@ -198,37 +198,100 @@ class StoryController
 
     // Get approved stories method (for public display)
     public function getApproved() {
+        header("Content-Type: application/json");
+
         try {
             $stories = $this->story->getApproved();
-            // Return the data for the API endpoint to format
-            return $stories;
+
+            // Send the response directly
+            if ($stories !== false && $stories !== null) {
+                echo json_encode([
+                    "success" => true,
+                    "stories" => $stories,
+                    "message" => "Approved stories retrieved successfully",
+                    "count" => is_array($stories) ? count($stories) : 0
+                ]);
+            } else {
+                echo json_encode([
+                    "success" => false,
+                    "stories" => [],
+                    "message" => "No approved stories found",
+                    "count" => 0
+                ]);
+            }
         } catch (Exception $e) {
-            // Throw exception for the API endpoint to handle
-            throw $e;
+            echo json_encode([
+                "success" => false,
+                "message" => "Server error: " . $e->getMessage()
+            ]);
         }
     }
 
     // Get all stories method
     public function getAll() {
+        header("Content-Type: application/json");
+
         try {
-            $stories = $this->story->getAll();
-            // Return the data for the API endpoint to format
-            return $stories;
+            // Check if status parameter is provided in GET
+            $status = $_GET['status'] ?? null;
+
+            if ($status === 'pending') {
+                $stories = $this->story->getPending();
+            } else {
+                $stories = $this->story->getAll();
+            }
+
+            // Send the response directly
+            if ($stories !== false && $stories !== null) {
+                echo json_encode([
+                    "success" => true,
+                    "stories" => $stories,
+                    "message" => "Stories retrieved successfully",
+                    "count" => is_array($stories) ? count($stories) : 0
+                ]);
+            } else {
+                echo json_encode([
+                    "success" => false,
+                    "stories" => [],
+                    "message" => "No stories found",
+                    "count" => 0
+                ]);
+            }
         } catch (Exception $e) {
-            // Throw exception for the API endpoint to handle
-            throw $e;
+            echo json_encode([
+                "success" => false,
+                "message" => "Server error: " . $e->getMessage()
+            ]);
         }
     }
 
     // Get pending stories method (for admin dashboard)
     public function getPending() {
+        header("Content-Type: application/json");
+
         try {
             $stories = $this->story->getPending();
-            // Return the data for the API endpoint to format
-            return $stories;
+
+            if ($stories !== false && $stories !== null) {
+                echo json_encode([
+                    "success" => true,
+                    "stories" => $stories,
+                    "message" => "Pending stories retrieved successfully",
+                    "count" => count($stories)
+                ]);
+            } else {
+                echo json_encode([
+                    "success" => false,
+                    "stories" => [],
+                    "message" => "No pending stories found or error retrieving stories",
+                    "count" => 0
+                ]);
+            }
         } catch (Exception $e) {
-            // Throw exception for the API endpoint to handle
-            throw $e;
+            echo json_encode([
+                "success" => false,
+                "message" => "Server error: " . $e->getMessage()
+            ]);
         }
     }
 
@@ -348,6 +411,66 @@ class StoryController
             ApiResponse::success(null, $message, 200);
         } else {
             ApiResponse::error($message, 400);
+        }
+    }
+
+    public function updateStatus() {
+        header("Content-Type: application/json");
+
+        // Get input from $_POST (set by API endpoints)
+        $id = $_POST['id'] ?? null;
+        $status = $_POST['status'] ?? null;
+        $adminNotes = $_POST['admin_notes'] ?? null;
+
+        if (!$id || !$status) {
+            ApiResponse::error("Missing required fields: id and status", 400);
+            return;
+        }
+
+        // Validate status
+        $validStatuses = ['pending', 'approved', 'rejected'];
+        if (!in_array($status, $validStatuses)) {
+            ApiResponse::error("Invalid status. Must be: pending, approved, or rejected", 400);
+            return;
+        }
+
+        // Get existing story
+        $existingStory = $this->story->findById($id);
+        if (!$existingStory) {
+            ApiResponse::error("Story not found", 404);
+            return;
+        }
+
+        // Update status in database
+        $updateData = ['status' => $status];
+        if ($adminNotes) {
+            $updateData['admin_notes'] = $adminNotes;
+        }
+
+        $result = $this->story->update($id, $updateData);
+
+        if ($result) {
+            require_once __DIR__ . "/../model/notification.php";
+            $notification = new Notification($this->pdo);
+
+            // Create appropriate notification
+            if ($status === 'approved') {
+                $notification->createStoryApprovedNotification(
+                    $existingStory['creator_id'],
+                    $id,
+                    $existingStory['title']
+                );
+            } elseif ($status === 'rejected') {
+                $notification->createStoryRejectedNotification(
+                    $existingStory['creator_id'],
+                    $id,
+                    $existingStory['title']
+                );
+            }
+
+            ApiResponse::success(null, "Story status updated to {$status}", 200);
+        } else {
+            ApiResponse::error("Failed to update story status", 400);
         }
     }
 

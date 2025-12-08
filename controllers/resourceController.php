@@ -316,6 +316,7 @@ class ResourceController
 
         $id = $input['id'];
         $action = $input['action']; // 'approve' or 'reject'
+        $admin_notes = $input['admin_notes'] ?? null; // Capture admin notes for rejection
 
         if ($action === 'approve') {
             // Get the existing resource before approve to get the resource_name and publisher_id
@@ -335,7 +336,12 @@ class ResourceController
             // Get the existing resource before reject to get the resource_name and publisher_id
             $existingResource = $this->resource->findById($id);
 
-            $result = $this->resource->reject($id);
+            // Update the resource with rejection status and admin notes
+            $result = $this->resource->update($id, [
+                'status' => 'rejected',
+                'admin_notes' => $admin_notes // Store admin notes if provided
+            ]);
+
             $message = $result ? "Resource rejected successfully" : "Failed to reject resource";
 
             if ($result && $existingResource) {

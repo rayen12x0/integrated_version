@@ -1,10 +1,6 @@
 <?php
 // api/stories/get_stories.php
-// Turn off error display to prevent HTML from being output
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors in API responses
-ini_set('log_errors', 1); // Log errors to file
-
+// Get stories with optional filtering by status and search term
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -16,71 +12,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-require_once __DIR__ . '/../../controllers/StoryController.php';
-require_once __DIR__ . '/../../model/Story.php';
-require_once __DIR__ . '/../../utils/AuthHelper.php';
+try {
+    require_once __DIR__ . '/../../controllers/StoryController.php';
+    require_once __DIR__ . '/../../model/Story.php';
+    require_once __DIR__ . '/../../utils/AuthHelper.php';
 
-$controller = new StoryController();
+    $controller = new StoryController();
 
-// Get query parameters for filtering
-$status = $_GET['status'] ?? '';
-$search = $_GET['search'] ?? '';
+    // Get query parameters for filtering
+    $status = $_GET['status'] ?? '';
+    $search = $_GET['search'] ?? '';
 
-// Determine which method to call based on status parameter
-if ($status === 'pending') {
-    $stories = $controller->getPending();
-} elseif ($status === 'approved') {
-    $stories = $controller->getApproved();
-} elseif ($status === 'all') {
-    $stories = $controller->getAll(); // Get all stories regardless of status
-} else {
-    // If no specific status is requested, get approved stories by default
-    $stories = $controller->getApproved();
-}
+    // If search is provided, we need to handle it differently (filter after fetching)
+    if ($search) {
+        // Instantiate story model directly to fetch and filter stories
+        require_once __DIR__ . '/../../config/config.php';
+        $config = new Config();
+        $pdo = $config->getConnexion();
+        $storyModel = new Story($pdo);
 
-// Apply search filter if provided
-if ($search && $stories !== false) {
-    $searchTerm = strtolower($search);
-    $filteredStories = [];
+        // Get stories based on status
+        if ($status === 'pending') {
+            $stories = $storyModel->getPending();
+        } elseif ($status === 'approved') {
+            $stories = $storyModel->getApproved();
+        } elseif ($status === 'all') {
+            $stories = $storyModel->getAll();
+        } else {
+            // Default to approved stories
+            $stories = $storyModel->getApproved();
+        }
 
-    foreach ($stories as $story) {
-        // Search in title, content, author_name
-        if (strpos(strtolower($story['title'] ?? ''), $searchTerm) !== false ||
-            strpos(strtolower($story['content'] ?? ''), $searchTerm) !== false ||
-            strpos(strtolower($story['author_name'] ?? ''), $searchTerm) !== false) {
-            $filteredStories[] = $story;
+        if ($stories !== false && $stories !== null) {
+            // Apply search filter
+            $searchTerm = strtolower($search);
+            $filteredStories = [];
+
+            foreach ($stories as $story) {
+                // Search in title, content, author_name
+                if (strpos(strtolower($story['title'] ?? ''), $searchTerm) !== false ||
+                    strpos(strtolower($story['content'] ?? ''), $searchTerm) !== false ||
+                    strpos(strtolower($story['author_name'] ?? ''), $searchTerm) !== false) {
+                        $filteredStories[] = $story;
+                }
+            }
+
+            $stories = $filteredStories;
+            
+            // Add reaction counts to each story
+            foreach ($stories as &$story) {
+                $reactionCounts = $storyModel->getReactionCounts($story['id']);
+                $story['reaction_counts'] = $reactionCounts;
+            }
+
+            // Return filtered stories
+            echo json_encode([
+                'success' => true,
+                'stories' => $stories,
+                'message' => 'Stories retrieved successfully',
+                'count' => count($stories),
+                'status_code' => 200
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'stories' => [],
+                'message' => 'No stories found',
+                'count' => 0,
+                'status_code' => 200
+            ]);
+        }
+    } else {
+        // If no search parameter, use the controller method which handles its own response
+        if ($status === 'pending') {
+            $controller->getPending();
+        } elseif ($status === 'approved') {
+            $controller->getApproved();
+        } elseif ($status === 'all') {
+            $controller->getAll();
+        } else {
+            // Default to approved stories
+            $controller->getApproved();
         }
     }
-
-    $stories = $filteredStories;
-}
-
-// Add reaction counts to each story
-if ($stories !== false) {
-    // Initialize Story model to get reaction counts
-    require_once __DIR__ . '/../../config/config.php';
-    $config = new Config();
-    $pdo = $config->getConnexion();
-    $storyModel = new Story($pdo);
-
-    foreach ($stories as &$story) {
-        $reactionCounts = $storyModel->getReactionCounts($story['id']);
-        $story['reaction_counts'] = $reactionCounts;
-    }
-}
-
-// Format the response to be compatible with the frontend expectations
-require_once __DIR__ . '/../../utils/ApiResponse.php';
-if ($stories !== false) {
-    // Make sure we return stories in the format expected by frontend
-    // The frontend expects result.stories format
+} catch (Exception $e) {
     echo json_encode([
-        'success' => true,
-        'stories' => $stories,
-        'message' => 'Stories retrieved successfully',
-        'status_code' => 200
+        "success" => false,
+        "message" => "Server error: " . $e->getMessage()
     ]);
-} else {
-    ApiResponse::error('Failed to retrieve stories', 500);
 }
 ?>

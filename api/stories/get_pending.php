@@ -17,11 +17,8 @@ try {
     }
     
     $controller = new StoryController();
-    
-    // Set the status filter to 'pending' to get pending stories
-    $_GET['status'] = 'pending';
-    
-    $controller->getAll();
+
+    $controller->getPending();
 } catch (Exception $e) {
     echo json_encode([
         "success" => false,

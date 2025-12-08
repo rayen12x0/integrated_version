@@ -45,27 +45,32 @@ class ModerationController {
         header("Content-Type: application/json");
 
         try {
-            // Get statistics
+            // Get report statistics
             $reportStats = $this->report->getStatistics();
-            
+
             // Get pending reports count
             $pendingReportsCount = $this->report->getPending()->rowCount();
-            
+
             // Get flagged comments count
             $flaggedCommentsCount = $this->comment->getFlagged()->rowCount();
-            
+
             // Get most reported stories
             $mostReported = $this->report->getMostReported(5)->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Get banned users count
             $bannedUsersCount = $this->report->getBannedUsers()->rowCount();
+
+            // Get story statistics using the existing getStatistics method
+            $storyStats = $this->story->getStatistics();
 
             $data = [
                 'report_stats' => $reportStats,
                 'pending_reports_count' => $pendingReportsCount,
                 'flagged_comments_count' => $flaggedCommentsCount,
                 'most_reported_stories' => $mostReported,
-                'banned_users_count' => $bannedUsersCount
+                'banned_users_count' => $bannedUsersCount,
+                'total_stories' => $storyStats['total_stories'] ?? 0,  // Use actual total stories count
+                'pending_stories_count' => $storyStats['pending_stories'] ?? 0  // Use actual pending stories count
             ];
 
             ApiResponse::success($data, 'Moderation stats retrieved successfully', 200);

@@ -544,104 +544,41 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./assets/js/countries.js"></script>
+    <script src="./assets/js/dashboard_common.js"></script>
+    
    
-
     <script>
-        // Initialize variables for reports
+        // Reports-specific logic
         let reportsData = [];
 
-        // Theme toggle function
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-
-        // Initialize theme from localStorage or system preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
-
-        // Initialize icons and event listeners
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
-            
-            // Initialize event listeners
-            initializeEventListeners();
-            
-            // Load reports data
+            initializeReportsEventListeners();
             loadReportsData();
         });
 
-        function initializeEventListeners() {
-            // Mobile sidebar toggle
-            document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
-
-            document.getElementById('headerToggle')?.addEventListener('click', function() {
-                document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            });
-
-            // Notification dropdown
-            document.getElementById('notificationBtn')?.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('notificationDropdown').classList.toggle('hidden');
-                document.getElementById('userDropdown').classList.add('hidden');
-            });
-
-            // User menu dropdown
-            document.getElementById('userMenu')?.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('userDropdown').classList.toggle('hidden');
-                document.getElementById('notificationDropdown').classList.add('hidden');
-            });
-
-            // Close dropdowns when clicking elsewhere
-            document.addEventListener('click', function() {
-                document.getElementById('notificationDropdown')?.classList.add('hidden');
-                document.getElementById('userDropdown')?.classList.add('hidden');
-            });
-
-            // Add event listeners for filters
+        function initializeReportsEventListeners() {
             document.getElementById('searchReports')?.addEventListener('input', filterReportsTable);
             document.getElementById('statusFilter')?.addEventListener('change', filterReportsTable);
             document.getElementById('categoryFilter')?.addEventListener('change', filterReportsTable);
         }
 
-        // Load reports data
         async function loadReportsData() {
             try {
-                // Load dashboard stats for moderation overview
                 const dashboardResponse = await fetch("./../api/moderation/dashboard.php");
                 if (dashboardResponse.ok) {
                     const dashboardResult = await dashboardResponse.json();
                     if (dashboardResult.success) {
                         const stats = dashboardResult.data;
-
-                        // Update stats - use the counts from moderation API instead of filtering reports
                         document.getElementById('totalReportsCount').textContent = stats.report_stats.total || 0;
                         document.getElementById('pendingReportsCount').textContent = stats.pending_reports_count || 0;
                         document.getElementById('resolvedReportsCount').textContent = stats.report_stats.by_status?.resolved || 0;
                     }
                 }
 
-                // Load reports data
                 const response = await fetch("./../api/reports/get_reports.php");
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
-
                 if (result.success) {
                     reportsData = result.data || result.reports || [];
                     renderReports(reportsData);
@@ -654,10 +591,9 @@
             }
         }
 
-        // Render reports table
         function renderReports(reports) {
             const tbody = document.getElementById('reports-table-body');
-            if (!tbody) return; // Safety check
+            if (!tbody) return;
 
             if (!reports || reports.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-zinc-500 dark:text-zinc-400">No reports found</td></tr>';
@@ -665,27 +601,16 @@
             }
 
             tbody.innerHTML = reports.map(r => {
-                // Determine proper item type with extended fallback options
                 let itemType = r.item_type || r.itemType || r.type || r.reported_item_type || r.itemType || r.reportedItemType || '';
-
-                // If still empty or N/A, try to extract from message or related item
                 if (!itemType || itemType === 'N/A' || itemType === '') {
-                    // If we know the reported item type from other fields, use that
                     if (r.item_title || r.itemTitle || r.title) {
-                        // If the item title suggests it's an action or resource
-                        if ((r.item_title || r.title || '').toLowerCase().includes('action') || r.item_type === 'action') {
-                            itemType = 'action';
-                        } else if ((r.item_title || r.title || '').toLowerCase().includes('resource') || r.item_type === 'resource') {
-                            itemType = 'resource';
-                        } else {
-                            itemType = r.reported_item_type || r.reportedItemType || 'item';
-                        }
+                        if ((r.item_title || r.title || '').toLowerCase().includes('action') || r.item_type === 'action') itemType = 'action';
+                        else if ((r.item_title || r.title || '').toLowerCase().includes('resource') || r.item_type === 'resource') itemType = 'resource';
+                        else itemType = r.reported_item_type || r.reportedItemType || 'item';
                     } else {
                         itemType = r.reported_item_type || r.reportedItemType || 'item';
                     }
                 }
-
-                // Capitalize the first letter for better display
                 itemType = itemType.charAt(0).toUpperCase() + itemType.slice(1);
 
                 return `
@@ -704,53 +629,35 @@
             }).join('');
         }
 
-        // Filtering function
         function filterReportsTable() {
             if (!reportsData || reportsData.length === 0) return;
-
             const searchTerm = document.getElementById('searchReports').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
             const categoryFilter = document.getElementById('categoryFilter').value;
-
             const filtered = reportsData.filter(report => {
-                const matchesSearch = report.reason.toLowerCase().includes(searchTerm) ||
-                    (report.item_title && report.item_title.toLowerCase().includes(searchTerm));
+                const matchesSearch = report.reason.toLowerCase().includes(searchTerm) || (report.item_title && report.item_title.toLowerCase().includes(searchTerm));
                 const matchesStatus = !statusFilter || report.status === statusFilter;
                 const matchesCategory = !categoryFilter || report.category === categoryFilter;
-
                 return matchesSearch && matchesStatus && matchesCategory;
             });
-
             renderReports(filtered);
         }
 
-        // Report functionality
         function viewReportDetails(id) {
             const report = reportsData.find(r => r.id == id);
             if (report) {
                 document.getElementById('reportIdDetail').textContent = "#" + report.id;
-
                 document.getElementById('reporterNameDetail').textContent = report.reporter_name || report.reporterName || report.user_name || 'Unknown';
-
                 document.getElementById('reporterEmailDetail').textContent = report.reporter_email || report.reporterEmail || report.user_email || 'No email';
-
                 document.getElementById('reportedItemTypeDetail').textContent = report.item_type || report.itemType || report.type || 'Unknown';
-
                 document.getElementById('reportedItemTitleDetail').textContent = report.item_title || report.itemTitle || report.title || 'Untitled';
-
                 document.getElementById('reportReasonDetail').textContent = report.reason || report.report_reason || report.message || 'No reason provided';
-
                 document.getElementById('reportCategoryDetail').textContent = report.category || report.report_category || 'Uncategorized';
-
                 document.getElementById('reportStatusDetail').textContent = report.status || 'Unknown';
-
                 const dateValue = report.created_at || report.date || report.createdAt;
                 if (dateValue) document.getElementById('reportDateDetail').textContent = new Date(dateValue).toLocaleString();
                 else document.getElementById('reportDateDetail').textContent = 'Unknown date';
-
-                // Set the ID for later actions
                 document.getElementById('reportDetailsModal').dataset.reportId = report.id;
-
                 document.getElementById('reportDetailsModal').classList.remove('hidden');
             }
         }
@@ -762,156 +669,55 @@
         async function updateReportStatus(status) {
             const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
             if (!reportId) return;
-
             try {
                 const response = await fetch("./../api/reports/update_report_status.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: reportId, status })
                 });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                let responseText; // Declare responseText in proper scope
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing update report status response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
                 if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: `Report marked as ${status}`,
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
+                    showSuccessMessage(`Report marked as ${status}`);
                     closeReportDetailsModal();
-                    loadReportsData(); // Reload reports list
+                    loadReportsData();
+                    loadNotifications();
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: `Failed to update report: ${result.message}`
-                    });
+                    showErrorMessage(`Failed to update report: ${result.message}`);
                 }
             } catch (error) {
                 console.error("Error updating report:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Network error. Please try again.'
-                    });
-                }
+                showErrorMessage('Network error. Please try again.');
             }
         }
 
         async function deleteReport() {
             const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
             if (!reportId) return;
-
-            const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
+            const confirmation = await Swal.fire({
+                title: 'Are you sure?', text: "You won't be able to revert this!", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Yes, delete it!'
             });
-
-            if (!result.isConfirmed) {
-                return;
-            }
-
+            if (!confirmation.isConfirmed) return;
             try {
                 const response = await fetch('./../api/reports/delete_report.php', {
                     method: 'POST',
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: reportId })
                 });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                let responseText; // Declare responseText in proper scope
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing delete report response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
                 if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: 'Report deleted successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
+                    showSuccessMessage('Report deleted successfully');
                     closeReportDetailsModal();
-                    loadReportsData(); // Reload reports list
+                    loadReportsData();
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: `Failed to delete report: ${result.message}`
-                    });
+                    showErrorMessage(`Failed to delete report: ${result.message}`);
                 }
             } catch (error) {
                 console.error("Error deleting report:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Network error. Please try again.'
-                    });
-                }
+                showErrorMessage('Network error. Please try again.');
             }
         }
 
@@ -919,69 +725,26 @@
             const reportId = document.getElementById('reportDetailsModal').dataset.reportId;
             const notes = document.getElementById('adminNotesTextarea').value;
             if (!reportId) return;
-
+            if (!notes.trim()) {
+                showErrorMessage('Admin notes cannot be empty');
+                return;
+            }
             try {
                 const response = await fetch("./../api/reports/update_report_status.php", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: reportId, admin_notes: notes })
                 });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Unauthorized - redirect to login
-                        window.location.href = '../auth/login.html';
-                        return;
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                let result;
-                let responseText; // Declare responseText in proper scope
-                try {
-                    // Read response as text first to check for HTML content
-                    responseText = await response.text();
-
-                    // Check if response looks like HTML (starts with <!DOCTYPE or <html) or PHP errors
-                    if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html') ||
-                        responseText.trim().startsWith('<b>') || responseText.trim().startsWith('<br')) {
-                        console.error("API returned HTML instead of JSON:", responseText.substring(0, 200) + "...");
-                        throw new Error("Server returned HTML instead of JSON. Check for PHP errors.");
-                    }
-
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error("Error parsing save report notes response:", parseError);
-                    console.error("Raw response:", typeof responseText !== 'undefined' ? responseText : 'responseText not available');
-                    throw new Error("Invalid JSON response from server. Raw response: " + (typeof responseText !== 'undefined' ? responseText : 'responseText not available'));
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
                 if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: 'Notes saved successfully',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
+                    showSuccessMessage('Notes saved successfully');
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: result.message || 'Failed to save notes'
-                    });
+                    showErrorMessage(result.message || 'Failed to save notes');
                 }
             } catch (error) {
                 console.error("Error saving notes:", error);
-                if (error.message.includes('401') || error.message.toLowerCase().includes('unauthorized')) {
-                    window.location.href = '../auth/login.html';
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Network error'
-                    });
-                }
+                showErrorMessage('Network error');
             }
         }
     </script>

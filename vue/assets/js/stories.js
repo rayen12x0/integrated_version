@@ -22,6 +22,92 @@ let addCommentBtn;
 let reportModal;
 let reportForm;
 
+function showSwal(title, text, icon, position = 'top-end') {
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        position: position,
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        toast: true,
+        background: '#ffffff',
+        color: '#333333',
+        width: '350px',
+        padding: '1rem',
+        customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            content: 'swal2-content-custom'
+        },
+        willOpen: (popup) => {
+            popup.style.zIndex = '9999999';
+        }
+    });
+}
+
+// Accessibility helpers for modals
+let focusedElementBeforeModal;
+let pageWrapper; // Will be initialized on DOMContentLoaded
+
+function trapFocus(e) {
+    const modal = e.currentTarget;
+    if (!modal.classList.contains('active')) return;
+
+    const focusableEls = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const firstFocusableEl = focusableEls[0];
+    const lastFocusableEl = focusableEls[focusableEls.length - 1];
+    const isTabPressed = (e.key === 'Tab' || e.keyCode === 9);
+
+    if (!isTabPressed) {
+        return;
+    }
+
+    if (e.shiftKey) /* shift + tab */ {
+        if (document.activeElement === firstFocusableEl) {
+            lastFocusableEl.focus();
+            e.preventDefault();
+        }
+    } else /* tab */ {
+        if (document.activeElement === lastFocusableEl) {
+            firstFocusableEl.focus();
+            e.preventDefault();
+        }
+    }
+}
+
+function openModal(modalElement, triggerElement) {
+    if (!modalElement) return;
+
+    focusedElementBeforeModal = triggerElement || document.activeElement;
+    if (pageWrapper) pageWrapper.setAttribute('aria-hidden', 'true');
+    
+    modalElement.classList.remove('hidden');
+    modalElement.classList.add('active');
+    
+    const firstFocusableEl = modalElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (firstFocusableEl) {
+        firstFocusableEl.focus();
+    }
+
+    modalElement.addEventListener('keydown', trapFocus);
+}
+
+function closeModal(modalElement) {
+    if (!modalElement || !modalElement.classList.contains('active')) return;
+
+    modalElement.classList.add('hidden');
+    modalElement.classList.remove('active');
+    if (pageWrapper) pageWrapper.setAttribute('aria-hidden', 'false');
+
+    if (focusedElementBeforeModal) {
+        focusedElementBeforeModal.focus();
+    }
+
+    modalElement.removeEventListener('keydown', trapFocus);
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function () {
     console.log('Stories page initializing...');
@@ -66,6 +152,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize image preview
     initializeImagePreview();
+
+    // Profile dropdown toggle
+    const profileAvatar = document.querySelector('.profile-avatar');
+    const dropdown = document.querySelector('.dropdown');
+    
+    if (profileAvatar && dropdown) {
+        profileAvatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
+        });
+        
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('hidden');
+            dropdown.classList.add('hidden');
+        });
+    }
+
+    // Initialize accessibility helpers
+    pageWrapper = document.getElementById('page-wrapper');
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const openModalEl = document.querySelector('.modal.active');
+            if (openModalEl) {
+                if(openModalEl.id === 'storyDetailsModal') closeStoryDetailsModal();
+                if(openModalEl.id === 'createStoryModal') closeCreateStoryModal();
+                if(openModalEl.id === 'reportModal') closeReportModal();
+            }
+        }
+    });
 });
 
 // Check authentication
@@ -344,7 +459,7 @@ async function handleStoryReaction(button) {
     const reactionType = button.getAttribute('data-reaction');
 
     if (!isUserLoggedIn) {
-        alert('Please log in to react to stories');
+        showSwal('Info', 'Please log in to react to stories', 'info');
         return;
     }
 
@@ -387,7 +502,7 @@ async function handleStoryReaction(button) {
             } else {
                 button.classList.remove('active');
             }
-            alert('Error: ' + (result.message || 'Failed to react'));
+            showSwal('Error', result.message || 'Failed to react', 'error');
         }
     } catch (error) {
         console.error('Error handling reaction:', error);
@@ -398,7 +513,7 @@ async function handleStoryReaction(button) {
         } else {
             button.classList.remove('active');
         }
-        alert('Failed to react. Please try again.');
+        showSwal('Error', 'Failed to react. Please try again.', 'error');
     } finally {
         button.disabled = false;
     }
@@ -519,12 +634,16 @@ async function loadStoryComments(storyId) {
     try {
         const response = await fetch(`../api/comments/get_story_comments.php?story_id=${storyId}`);
         const result = await response.json();
+        console.log('Comments API response:', result); // Logging as per plan
 
         const commentsList = document.getElementById('storyCommentsList');
         if (!commentsList) return;
 
-        if (result.success && result.comments && result.comments.length > 0) {
-            renderComments(result.comments, commentsList);
+        const comments = result.data?.comments || [];
+        console.log('Extracted comments:', comments); // Logging as per plan
+
+        if (result.success && comments.length > 0) {
+            renderComments(comments, commentsList);
         } else {
             commentsList.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4">No comments yet. Be the first to comment!</p>';
         }
@@ -543,12 +662,12 @@ async function handlePostComment() {
     const content = commentInput.value.trim();
 
     if (!content) {
-        alert('Please enter a comment');
+        showSwal('Warning', 'Please enter a comment', 'warning');
         return;
     }
 
     if (!isUserLoggedIn) {
-        alert('Please log in to comment');
+        showSwal('Info', 'Please log in to comment', 'info');
         return;
     }
 
@@ -565,21 +684,22 @@ async function handlePostComment() {
         const result = await response.json();
 
         if (result.success) {
+            showSwal('Success', 'Comment posted successfully!', 'success');
             commentInput.value = '';
             loadStoryComments(currentStoryId);
         } else {
-            alert('Error posting comment: ' + result.message);
+            showSwal('Error', 'Error posting comment: ' + result.message, 'error');
         }
     } catch (error) {
         console.error('Error posting comment:', error);
-        alert('Failed to post comment');
+        showSwal('Error', 'Failed to post comment', 'error');
     }
 }
 
 // Open create story modal
 function openCreateStoryModal() {
     if (!isUserLoggedIn) {
-        alert('Please log in to share your story');
+        showSwal('Info', 'Please log in to share your story', 'info');
         return;
     }
 
@@ -683,6 +803,7 @@ function validateField(fieldId, value, rules) {
 function validateStoryForm() {
     resetFormErrors();
     let isValid = true;
+    console.log('--- Running Story Form Validation ---');
 
     // Validate title
     const title = document.getElementById('storyTitle').value;
@@ -695,6 +816,7 @@ function validateStoryForm() {
     if (titleErrors.length > 0) {
         addFieldError('storyTitle', titleErrors[0]);
         isValid = false;
+        console.log('Validation FAILED for title:', titleErrors[0]);
     }
 
     // Validate author name
@@ -707,6 +829,7 @@ function validateStoryForm() {
     if (authorErrors.length > 0) {
         addFieldError('storyAuthorName', authorErrors[0]);
         isValid = false;
+        console.log('Validation FAILED for author name:', authorErrors[0]);
     }
 
     // Validate content
@@ -721,6 +844,7 @@ function validateStoryForm() {
     if (contentErrors.length > 0) {
         addFieldError('storyContent', contentErrors[0]);
         isValid = false;
+        console.log('Validation FAILED for content:', contentErrors[0]);
     }
 
     // Validate theme
@@ -728,6 +852,7 @@ function validateStoryForm() {
     if (!theme) {
         addFieldError('storyTheme', 'Please select a theme');
         isValid = false;
+        console.log('Validation FAILED for theme: not selected');
     }
 
     // Validate image (if provided)
@@ -737,12 +862,15 @@ function validateStoryForm() {
         if (!file.type.startsWith('image/')) {
             addFieldError('storyImage', 'Please select a valid image file');
             isValid = false;
+            console.log('Validation FAILED for image: invalid file type');
         } else if (file.size > 5 * 1024 * 1024) {  // 5MB
             addFieldError('storyImage', 'Image must be less than 5MB');
             isValid = false;
+            console.log('Validation FAILED for image: file size exceeds 5MB');
         }
     }
-
+    
+    console.log('Form validation result:', isValid);
     return isValid;
 }
 
@@ -752,6 +880,7 @@ async function handleStoryFormSubmit(e) {
 
     // Validate form
     if (!validateStoryForm()) {
+        showSwal('Error', 'Please fix the errors in the form.', 'error');
         return;
     }
 
@@ -774,6 +903,16 @@ async function handleStoryFormSubmit(e) {
         formData.append('image', imageFile);
     }
 
+    console.log('Form data being sent:', {
+        id: storyId || null,
+        title: formData.get('title'),
+        content: formData.get('content'),
+        theme: formData.get('theme'),
+        author_name: formData.get('author_name'),
+        hasImage: !!imageFile
+    });
+
+
     try {
         // Determine the appropriate API endpoint
         const apiUrl = storyId
@@ -789,15 +928,15 @@ async function handleStoryFormSubmit(e) {
 
         if (result.success) {
             const actionText = storyId ? 'updated' : 'created';
-            alert(`Story ${actionText} successfully!`);
+            showSwal('Success', `Story ${actionText} successfully!`, 'success');
             closeCreateStoryModal();
             loadStories();
         } else {
-            alert(`Error ${storyId ? 'updating' : 'creating'} story: ` + result.message);
+            showSwal('Error', `Error ${storyId ? 'updating' : 'creating'} story: ` + result.message, 'error');
         }
     } catch (error) {
         console.error(`Error ${storyId ? 'updating' : 'creating'} story:`, error);
-        alert(`Failed to ${storyId ? 'update' : 'create'} story`);
+        showSwal('Error', `Failed to ${storyId ? 'update' : 'create'} story`, 'error');
     }
 }
 
@@ -839,7 +978,7 @@ async function handleReportSubmit(e) {
     const details = document.getElementById('reportDetails').value;
 
     if (!reason) {
-        alert('Please select a reason');
+        showSwal('Warning', 'Please select a reason', 'warning');
         return;
     }
 
@@ -858,14 +997,14 @@ async function handleReportSubmit(e) {
         const result = await response.json();
 
         if (result.success) {
-            alert('Thank you for your report');
+            showSwal('Success', 'Thank you for your report', 'success');
             closeReportModal();
         } else {
-            alert('Error: ' + (result.message || 'Failed to submit report'));
+            showSwal('Error', 'Error: ' + (result.message || 'Failed to submit report'), 'error');
         }
     } catch (error) {
         console.error('Error submitting report:', error);
-        alert('Failed to submit report');
+        showSwal('Error', 'Failed to submit report', 'error');
     }
 }
 
@@ -937,13 +1076,13 @@ function initializeImagePreview() {
             const file = e.target.files[0];
             if (file) {
                 if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file');
+                    showSwal('Warning', 'Please select an image file', 'warning');
                     this.value = '';
                     return;
                 }
 
                 if (file.size > 5 * 1024 * 1024) {
-                    alert('Image must be less than 5MB');
+                    showSwal('Warning', 'Image must be less than 5MB', 'warning');
                     this.value = '';
                     return;
                 }
@@ -1005,7 +1144,7 @@ async function saveComment(commentId) {
     const newContent = textarea.value.trim();
 
     if (!newContent) {
-        alert('Comment content cannot be empty');
+        showSwal('Warning', 'Comment content cannot be empty', 'warning');
         return;
     }
 
@@ -1022,16 +1161,14 @@ async function saveComment(commentId) {
         const result = await response.json();
 
         if (result.success) {
-            // Update the comment display
-            const contentElement = document.getElementById(`comment-content-${commentId}`);
-            contentElement.textContent = newContent;
-            contentElement.className = 'text-sm text-zinc-700 comment-content';
+            showSwal('Success', 'Comment updated!', 'success');
+            loadStoryComments(currentStoryId); // Reload comments
         } else {
-            alert('Error updating comment: ' + result.message);
+            showSwal('Error', 'Error updating comment: ' + result.message, 'error');
         }
     } catch (error) {
         console.error('Error saving comment:', error);
-        alert('Failed to update comment');
+        showSwal('Error', 'Failed to update comment', 'error');
     }
 }
 
@@ -1043,34 +1180,38 @@ function cancelEdit(commentId) {
 
 // Delete comment function
 async function deleteComment(commentId) {
-    if (!confirm('Are you sure you want to delete this comment?')) {
-        return;
-    }
+    Swal.fire({
+        title: 'Delete Comment?',
+        text: 'This action cannot be undone',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch('../api/comments/delete_comment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: commentId
+                    })
+                });
 
-    try {
-        const response = await fetch('../api/comments/delete_comment.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: commentId
-            })
-        });
+                const result = await response.json();
 
-        const result = await response.json();
-
-        if (result.success) {
-            // Remove the comment from the UI
-            const commentElement = document.getElementById(`comment-${commentId}`);
-            if (commentElement) {
-                commentElement.remove();
+                if (result.success) {
+                    showSwal('Success', 'Comment deleted!', 'success');
+                    loadStoryComments(currentStoryId); // Reload comments
+                } else {
+                    showSwal('Error', 'Error deleting comment: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting comment:', error);
+                showSwal('Error', 'Failed to delete comment', 'error');
             }
-        } else {
-            alert('Error deleting comment: ' + result.message);
         }
-    } catch (error) {
-        console.error('Error deleting comment:', error);
-        alert('Failed to delete comment');
-    }
+    });
 }
 
 // Edit story function
@@ -1081,7 +1222,7 @@ function editStory(storyId) {
     // Load the story data to fill the form
     const story = storiesData.find(s => s.id == storyId);
     if (!story) {
-        alert('Story not found');
+        showSwal('Error', 'Story not found', 'error');
         return;
     }
 
@@ -1094,10 +1235,20 @@ function editStory(storyId) {
     document.getElementById('storyPrivacy').value = story.privacy || 'public';
     document.getElementById('storyContent').value = story.content;
 
-    // Clear and set image
-    document.getElementById('storyImage').value = '';
-    document.getElementById('imagePreview').src = '';
-    document.getElementById('imagePreviewContainer').classList.add('hidden');
+    // Handle image preview
+    const imageInput = document.getElementById('storyImage');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImage = document.getElementById('imagePreview');
+    
+    imageInput.value = ''; // Clear the file input
+    
+    if (story.image_url) {
+        previewImage.src = story.image_url;
+        previewContainer.classList.remove('hidden');
+    } else {
+        previewImage.src = '';
+        previewContainer.classList.add('hidden');
+    }
 
     // Update modal title
     document.getElementById('createStoryModalTitle').textContent = 'Edit Story';
@@ -1114,33 +1265,41 @@ function editStory(storyId) {
 
 // Delete story function
 async function deleteStory(storyId) {
-    if (!confirm('Are you sure you want to delete this story? This action cannot be undone.')) {
-        return;
-    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch('../api/stories/delete_story.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: storyId
+                    })
+                });
 
-    try {
-        const response = await fetch('../api/stories/delete_story.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: storyId
-            })
-        });
+                const result = await response.json();
 
-        const result = await response.json();
-
-        if (result.success) {
-            // Close the modal and reload stories
-            closeStoryDetailsModal();
-            loadStories();
-            alert('Story deleted successfully');
-        } else {
-            alert('Error deleting story: ' + result.message);
+                if (result.success) {
+                    // Close the modal and reload stories
+                    closeStoryDetailsModal();
+                    loadStories();
+                    showSwal('Success', 'Story deleted successfully', 'success');
+                } else {
+                    showSwal('Error', 'Error deleting story: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting story:', error);
+                showSwal('Error', 'Failed to delete story', 'error');
+            }
         }
-    } catch (error) {
-        console.error('Error deleting story:', error);
-        alert('Failed to delete story');
-    }
+    });
 }
 
 
